@@ -3,6 +3,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "Graph.h"
 #include <chrono>
+#include <filesystem> 
+
 
 using namespace std;
 
@@ -11,54 +13,64 @@ using namespace std;
 int main() {
        
 
-    //cv::Mat img = cv::imread("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/tree5x5.png", 
-    //cv::IMREAD_UNCHANGED /*cv::IMREAD_COLOR*/);
-
-    //cv::Mat img = cv::imread("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/tree5x5.jpg", 
-    //cv::IMREAD_COLOR);
-
-    /*
-
-    
-    if (img.empty()) {
-        std::cerr << "Error: Could not read the image." << std::endl;
-        return -1;
-    }
-
-    int rows = img.rows;
-    int cols = img.cols;
-    */
     //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/tree5x5.png");
     //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/tree461x207.png");
     //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/images/icon_64/actions-address-book-new.png");
     //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/tree5x5.png");
-    Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/images/icon_64/actions-address-book-new.png");
-    //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/2colscreen.png");
-
-    img_graph.setMulticut();
+    //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/images/icon_64/actions-address-book-new.png");
     
+    string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/mlcv-multicut/code/test_img";
+    std::filesystem::path p1 { imgDir };
+    int count {};
+    int i = 0;
 
-    //img_graph.printGraph();
-    //img_graph.printEdgeBits();
-    auto startTime = std::chrono::high_resolution_clock::now();
-    img_graph.findAllRegions();
-    // Record the end time
-    auto endTime = std::chrono::high_resolution_clock::now();
+    for (auto& p : std::filesystem::directory_iterator(p1))
+    {
+        ++count;
+    }
 
-    // Calculate the duration in milliseconds
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+    for (const auto& dirEntry : std::filesystem::directory_iterator(imgDir)){
+        if(dirEntry.path().filename().string() == ".DS_Store" || dirEntry.path().extension().string() != ".png"){
+            continue;
+        }
 
-    // Print the duration
-    std::cout << "\nFunction took " << duration.count() << " milliseconds." << std::endl;
+        Graph img_graph(dirEntry.path().string()); 
+        //cout << dirEntry.path().filename().string() << ", ";
+        //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/images/photo_wikipedia/011.png");
 
-    //img_graph.printColorRegions();
-    //img_graph.printSize();
-    img_graph.reconstructImage();
+        img_graph.setMulticut();
+        
 
-    //cv::imshow("Image", img);
-    //cv::waitKey(3000);
+        //img_graph.printGraph();
+        //img_graph.printEdgeBits();
+        //auto startTime = std::chrono::high_resolution_clock::now();
 
-    //img_graph.printConnectedPixels(20);
+        //img_graph.findAllRegions();
+        img_graph.assignRegions();
+
+
+        //img_graph.printColorRegions();
+        //img_graph.printSize();
+        img_graph.reconstructImage();
+
+        //cv::imshow("Image", img);
+        //cv::waitKey(3000);
+        //img_graph.printColorRegions();
+        //img_graph.printRegionVector();
+        //break;
+
+        //img_graph.printConnectedPixels(20);
+        //img_graph.printProgressBar(i, count);
+        ++i;
+
+        //std::vector<int> regions = img_graph.getVertexRegions();
+
+        //cout << "size in byte: " << sizeof(regions) * 8 << ", .size(): " << regions.size() * 8 << endl;
+
+    }
+    
+    //cout << "size of int: " << sizeof(int) * 8 << " bit" << endl;
+        
 
     return 0;
 }

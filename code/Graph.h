@@ -9,9 +9,17 @@
 
 
 struct RGB {
+    
     std::bitset<8> red;
     std::bitset<8> green;
     std::bitset<8> blue;
+    
+   /*
+   std::uint8_t red;
+    std::uint8_t green;
+    std::uint8_t blue;
+   */
+    
 };
 
 
@@ -46,6 +54,9 @@ public:
     cv::Mat generateRandomImage(int width, int height);
     void printProgressBar(int progress, int total);
     void printRegionVector();
+    void assignRegions();
+    std::vector<RGB> getRegionColors();
+    std::vector<int> getVertexRegions();
     
 
 private:
@@ -62,6 +73,7 @@ private:
     std::vector<int> neighborsOffsets;
     std::vector<RGB> regionColors;
     std::vector<std::vector<int>> regions;
+    std::vector<int> vertexRegions;
 };
 
 #endif // GRAPH_H

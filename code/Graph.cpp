@@ -13,7 +13,7 @@ Graph::Graph(const std::string& imagePath) {
     //img = generateRandomImage(39,29);
 
     if (img.empty()) {
-        std::cerr << "Error: Could not read the image." << std::endl;
+        std::cerr << "Error: Could not read the image: " << imagePath << std::endl;
     }
     this->cols = img.cols;
     this->rows = img.rows;
@@ -27,6 +27,7 @@ Graph::Graph(const std::string& imagePath) {
     //TODO: init size richtig
     edgeBits.resize(2*vertices, std::bitset<1>(0));
     edgeBitsRLE.resize(2*vertices, std::bitset<1>(0));
+    vertexRegions.resize(vertices, -1);
 }
 
 int Graph::getVertices() const{
@@ -37,6 +38,13 @@ std::string Graph::getImagePath() const{
     return imagePath;
 }
 
+std::vector<int> Graph::getVertexRegions(){
+    return vertexRegions;
+}
+
+//std::vector<RGB> getRegionColors(){
+//    return regionColors;
+//}
 
 // Function to add an edge to the graph
 void Graph::addEdge(int v, int w) {
@@ -85,15 +93,19 @@ void Graph::printColorRegions(){
 }
 
 void Graph::printSize(){
-    std::cout << "size of regionColors " << "(" << regionColors.size() << " entries): " << sizeof(regionColors) * 8 << std::endl;
+    //std::cout << "size of regionColors " << "(" << regionColors.size() << " entries): " << sizeof(regionColors) * 8 << std::endl;
     //std::cout << sizeof(getVertexColor(0))<< std::endl;
-    std::cout << "size of regions vector: " << sizeof(regions) * 8 << std::endl;
-    std::cout << "total: " << sizeof(regionColors) * 8 + sizeof(regions) * 8 << std::endl;
-    std::cout << "size of one RGB value: " << sizeof(getVertexColor(0)) * 8 << std::endl;
-    RGB test;
-    std::cout << "size of one test RGB value: " << sizeof(test) * 8 << std::endl;
+    //std::cout << "size of regions vector: " << sizeof(regions) * 8 << std::endl;
+    //std::cout << "total: " << sizeof(regionColors) * 8 + sizeof(regions) * 8 << std::endl;
+    //std::cout << "size of one RGB value: " << sizeof(getVertexColor(0)) * 8 << std::endl;
+    //RGB test;
+    //std::cout << "size of one test RGB value: " << sizeof(test) * 8 << std::endl;
 
-
+    std::cout << "size of vertexRegions in kBit: " << vertexRegions.size() * sizeof(int) * 8 / 1024 << std::endl;
+    std::cout << "size of regionColors: " << regionColors.size() << std::endl;
+    std::cout << "size of int: " << sizeof(int) << std::endl;
+    std::cout << "size of RGB: " << sizeof(RGB) << std::endl;
+    std::cout << "size of uint: " << sizeof(uint8_t) << std::endl;
 
 }
 
@@ -174,7 +186,7 @@ bool Graph::getEdgeBit(int v, int w) const {
 
 void Graph::setMulticut(){
     // Iterate through every pixel from top-left to bottom-right
-    std::cout << "setting colors\n";
+    //std::cout << "setting colors\n";
     int pixel_index = 0;
     for (int y = 0; y < rows; ++y) {
         for (int x = 0; x < cols; ++x) {
@@ -196,11 +208,11 @@ void Graph::setMulticut(){
             setVertexColor(y*cols+x, static_cast<int>(red), static_cast<int>(green), static_cast<int>(blue));
             pixel_index++;
         }
-        printProgressBar(y, rows);
+        //printProgressBar(y, rows);
 
     }
 
-    std::cout << "\nsetting multicut bits\n";
+    //std::cout << "\nsetting multicut bits\n";
     int regionIndex = 0;
     // Check neighbors for every vertex and set multicut bits
     for (int v = 0; v < getVertices(); ++v) {
@@ -222,7 +234,7 @@ void Graph::setMulticut(){
                 }
             }
         }
-        printProgressBar(v, getVertices());
+        //printProgressBar(v, getVertices());
     }
 
 }
@@ -304,8 +316,46 @@ std::cout << "\nfinding regions \n";
     }
 }
 
+void Graph::assignRegions() {
+    std::vector<int> visited(vertices, 0);
+    int currentRegion = 0;
+
+    for (int v = 0; v < vertices; ++v) {
+        if (visited[v] == 0) {
+            std::vector<int> connectedPixels = getConnectedPixels(v);
+
+            // Assign the current region index to all connected pixels
+            for (int pixel : connectedPixels) {
+                vertexRegions[pixel] = currentRegion;
+                visited[pixel] = 1; // Mark as visited to avoid redundant processing
+            }
+
+            RGB currentColor = getVertexColor(v);
+            regionColors.push_back({currentColor});
+
+            //printProgressBar(v, vertices);
+
+            // Move to the next region
+            currentRegion++;
+        }
+    }
+
+    /*
+    std::set<int> uniqueRegions(vertexRegions.begin(), vertexRegions.end());
+    std::cout << "Unique Region Indices: ";
+    for (int region : uniqueRegions) {
+        std::cout << region << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "number of pixels: " << getVertices() << std::endl;
+    */
+   
+}
+
+
 void Graph::printRegionVector(){
     // Print the regions
+    std::cout << "region vector: \n";
     
     for (int i = 0; i < regions.size(); ++i) {
         std::cout << "Region " << i << "(size: " << sizeof(regions[i]) << "bit)" << "Pixels: [ ";
@@ -390,7 +440,8 @@ void Graph::printProgressBar(int progress, int total) {
     std::cout.flush();
 }
 
-void Graph::reconstructImage(/*std::vector<std::vector<int>> regions, std::vector<RGB> regionColors*/){
+/*
+void Graph::reconstructImage(){
     cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
     std::cout << "\nreconstructing image..." << std::endl;
     for (int index = 0; index < rows * cols; ++index) {
@@ -425,6 +476,31 @@ void Graph::reconstructImage(/*std::vector<std::vector<int>> regions, std::vecto
     //std::cout << "size of regions vector: " << region
     //std::cout << "size of reconstruction: " << 
     //std::cout << findVectorIndex(regions, 17) << std::endl;
+}
+*/
+
+
+void Graph::reconstructImage(){
+    //std::cout << "\n reconstructing image\n";
+    cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
+    for (int index = 0; index < rows * cols; ++index) {
+        // Calculate row and column indices from the linear index
+        int y = index / cols;
+        int x = index % cols;
+        if(index%100 == 0){
+            //printProgressBar(index, rows*cols);
+        }
+        // get color
+        RGB col = regionColors[vertexRegions[index]];
+        //RGB col = getVertexColor(0);
+        //std::cout << col.green.to_ulong() << std::endl;
+        // Set the color (BGR format)
+        image.at<cv::Vec3b>(y, x) = cv::Vec3b(col.blue.to_ulong(), col.green.to_ulong(), col.red.to_ulong());  
+    }
+    printSize();
+    cv::imshow("Original", img);
+    cv::imshow("Reconstruction", image);
+    cv::waitKey(0);
 }
 
 
