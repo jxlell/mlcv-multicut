@@ -6,19 +6,20 @@
 #include <bitset>
 #include <iostream>
 #include <opencv2/opencv.hpp>
+#include "partition.hxx"
 
 
 struct RGB {
-    
+    /*
     std::bitset<8> red;
     std::bitset<8> green;
     std::bitset<8> blue;
-    
-   /*
-   std::uint8_t red;
+    */
+   
+    std::uint8_t red;
     std::uint8_t green;
     std::uint8_t blue;
-   */
+   
     
 };
 
@@ -57,6 +58,9 @@ public:
     void assignRegions();
     std::vector<RGB> getRegionColors();
     std::vector<int> getVertexRegions();
+    void unionFindMulticut();
+    void reconstructMulticut();
+    andres::Partition<int> getRegions();
     
 
 private:
@@ -67,6 +71,7 @@ private:
     std::vector<int> vertexValues;
     std::vector<std::bitset<1>> edgeBits;
     std::vector<std::bitset<1>> edgeBitsRLE;
+    std::vector<bool> edgeBits01;
     cv::Mat img;
     int cols;
     int rows;

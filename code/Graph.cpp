@@ -4,6 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <stack>
 #include <unordered_set>
+#include "partition.hxx"
 
 Graph::Graph(const std::string& imagePath) {
     
@@ -17,7 +18,7 @@ Graph::Graph(const std::string& imagePath) {
     }
     this->cols = img.cols;
     this->rows = img.rows;
-    this->neighborsOffsets = {-cols, cols, -1, 1};
+    this->neighborsOffsets = {-cols, -1, cols, 1};
     vertices = rows*cols;
 
     this->imagePath = imagePath;
@@ -27,6 +28,7 @@ Graph::Graph(const std::string& imagePath) {
     //TODO: init size richtig
     edgeBits.resize(2*vertices, std::bitset<1>(0));
     edgeBitsRLE.resize(2*vertices, std::bitset<1>(0));
+    edgeBits01.resize((cols-1)*rows + cols*(rows-1));
     vertexRegions.resize(vertices, -1);
 }
 
@@ -70,7 +72,7 @@ void Graph::printGraph() {
             std::cout << neighbor << "(" << getEdgeBit(v,neighbor) << ")" << " ";
         }
         RGB color = getVertexColor(v);
-        std::cout << std::endl << "Color (RGB): " << color.red.to_ulong() << ", " << color.green.to_ulong() << ", " << color.blue.to_ulong()
+        std::cout << std::endl << "Color (RGB): " << static_cast<int>(color.red) << ", " << static_cast<int>(color.green) << ", " << static_cast<int>(color.blue)
              << std::endl;
         
     }
@@ -87,7 +89,7 @@ void Graph::printEdgeBits(){
 
 void Graph::printColorRegions(){
     for (const auto& color : regionColors) {
-        std::cout << "RGB: " << color.red.to_ulong() << ", " << color.green.to_ulong() << ", " << color.blue.to_ulong() << std::endl;
+        std::cout << "RGB: " << color.red << ", " << color.green << ", " << color.blue << std::endl;
     }
     
 }
@@ -100,21 +102,25 @@ void Graph::printSize(){
     //std::cout << "size of one RGB value: " << sizeof(getVertexColor(0)) * 8 << std::endl;
     //RGB test;
     //std::cout << "size of one test RGB value: " << sizeof(test) * 8 << std::endl;
-
+    std::cout << imagePath << ": " << std::endl;
+    std::cout << "size of vertexRegions: " << vertexRegions.size() << std::endl;
     std::cout << "size of vertexRegions in kBit: " << vertexRegions.size() * sizeof(int) * 8 / 1024 << std::endl;
-    std::cout << "size of regionColors: " << regionColors.size() << std::endl;
-    std::cout << "size of int: " << sizeof(int) << std::endl;
-    std::cout << "size of RGB: " << sizeof(RGB) << std::endl;
-    std::cout << "size of uint: " << sizeof(uint8_t) << std::endl;
+    std::cout << "size of regionColors in kBit: " << regionColors.size() * sizeof(RGB) * 8 / 1024 << std::endl;
+    std::cout << "size of regionColors vector: " << regionColors.size() << std::endl;
+    //std::cout << "size of int: " << sizeof(int) << std::endl;
+    //std::cout << "size of RGB: " << sizeof(RGB) << std::endl;
+    //std::cout << "size of uint: " << sizeof(uint8_t) << std::endl;
 
 }
 
 // Setter method to set the RGB value for a vertex
 void Graph::setVertexColor(int v, int red, int green, int blue) {
     if (v >= 0 && v < vertices) {
-        vertexColors[v].red = std::bitset<8>(red);
-        vertexColors[v].green = std::bitset<8>(green);
-        vertexColors[v].blue = std::bitset<8>(blue);
+        //std::cout << red << " - ";
+        vertexColors[v].red = static_cast<std::uint8_t>(red);
+        vertexColors[v].green = static_cast<std::uint8_t>(green);
+        vertexColors[v].blue = static_cast<std::uint8_t>(blue);
+        //std::cout << static_cast<int>(vertexColors[v].red) << ", ";
     } else {
         std::cout << "Invalid vertex index." << std::endl;
     }
@@ -126,7 +132,7 @@ RGB Graph::getVertexColor(int v) const {
         return vertexColors[v];
     } else {
         std::cout << "Invalid vertex index. Returning (0, 0, 0)." << std::endl;
-        return {std::bitset<8>(0), std::bitset<8>(0), std::bitset<8>(0)};
+        return {0, 0, 0};
     }
 }
 
@@ -163,7 +169,7 @@ void Graph::setEdgeBit(int v, int w, bool value) {
     
     if (edgeIndex < adjList[v].size()) {
         // If the edge exists, set the bit for the corresponding edge
-        edgeBits[v] = value; // changed from edgeBits[v][edgeIndex] = value;
+        edgeBits[v][edgeIndex] = value; // changed from edgeBits[v][edgeIndex] = value;
     } else {
         // Handle the case where the edge does not exist
         std::cerr << "Edge does not exist." << std::endl;
@@ -199,13 +205,14 @@ void Graph::setMulticut(){
             uchar red = pixel[2];
 
             //std::cout << "Pixel at (" << x << ", " << y << "): ";
-            //cout << "B: " << static_cast<int>(blue) << ", ";
-            //cout << "G: " << static_cast<int>(green) << ", ";
-            //cout << "R: " << static_cast<int>(red) << endl;
+            //std::cout << "B: " << static_cast<int>(blue) << ", ";
+            //std::cout << "G: " << static_cast<int>(green) << ", ";
+            //std::cout << "R: " << static_cast<int>(red) << std::endl;
 
             //set rgb values for vertex
             //img_graph.setVertexColor(pixel_index, static_cast<int>(red), static_cast<int>(blue), static_cast<int>(green));
             setVertexColor(y*cols+x, static_cast<int>(red), static_cast<int>(green), static_cast<int>(blue));
+            //std::cout << getVertexColor(y*cols+x).red << ", ";
             pixel_index++;
         }
         //printProgressBar(y, rows);
@@ -214,6 +221,7 @@ void Graph::setMulticut(){
 
     //std::cout << "\nsetting multicut bits\n";
     int regionIndex = 0;
+    int edgeIndex = -1;
     // Check neighbors for every vertex and set multicut bits
     for (int v = 0; v < getVertices(); ++v) {
         RGB currentColor = getVertexColor(v);
@@ -228,15 +236,37 @@ void Graph::setMulticut(){
             int neighbor = v + offset;
             if (neighbor >= 0 && neighbor < getVertices() && ((neighbor / cols == v / cols) || (abs(neighbor - v) > 1))) {
                 addEdge(neighbor, v);
+                if(offset == 1 || offset == cols){
+                    //std::cout << edgeIndex << ", ";
+                    edgeIndex++;
+                    if(!compareRGB(currentColor, getVertexColor(neighbor))){
+                        //set edgeBit01
+                        edgeBits01[edgeIndex] = true;
+                        std::cout << "offset: " << offset << ", ";
+                    }
+                }
+
+                //obsolete edgebit part 
                 if(!compareRGB(currentColor, getVertexColor(neighbor))){
-                // ###### add multicut bit 
-                setEdgeBit(v,neighbor,1);
+                    //std::cout << "comparing: " << static_cast<int>(currentColor.red) << " " << static_cast<int>(currentColor.blue) <<  " " << static_cast<int>(currentColor.green) <<std::endl;
+                    //std::cout << "to: " << static_cast<int>(getVertexColor(neighbor).red) << " " << static_cast<int>(getVertexColor(neighbor).blue) << " " << static_cast<int>(getVertexColor(neighbor).green) << std::endl;
+                    // ###### add multicut bit 
+                    setEdgeBit(v,neighbor,1);
+
+                    
+                    
                 }
             }
         }
         //printProgressBar(v, getVertices());
     }
+    
 
+
+    std::cout << std::endl;
+    for(bool edgebit : edgeBits01){
+        std::cout << edgebit << ", ";
+    }
 }
 
 std::vector<int> Graph::getConnectedPixels(int seed) {
@@ -280,7 +310,7 @@ void Graph::printConnectedPixels(int seed) {
 
     for (int pixel : connectedPixels) {
         RGB color = getVertexColor(pixel);
-        std::cout << "Pixel " << pixel << ": RGB(" << color.red.to_ulong() << ", " << color.green.to_ulong() << ", " << color.blue.to_ulong() << ")" << std::endl;
+        std::cout << "Pixel " << pixel << ": RGB(" << color.red<< ", " << color.green << ", " << color.blue << ")" << std::endl;
     }
 }
 
@@ -351,7 +381,6 @@ void Graph::assignRegions() {
     */
    
 }
-
 
 void Graph::printRegionVector(){
     // Print the regions
@@ -440,6 +469,12 @@ void Graph::printProgressBar(int progress, int total) {
     std::cout.flush();
 }
 
+void Graph::unionFindMulticut(){
+    andres::Partition<> unionFind(10); 
+    unionFind.merge(0,1);
+    std::cout << "rep of 1: " << unionFind.find(1) << std::endl; 
+}
+
 /*
 void Graph::reconstructImage(){
     cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
@@ -479,7 +514,6 @@ void Graph::reconstructImage(){
 }
 */
 
-
 void Graph::reconstructImage(){
     //std::cout << "\n reconstructing image\n";
     cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
@@ -495,7 +529,7 @@ void Graph::reconstructImage(){
         //RGB col = getVertexColor(0);
         //std::cout << col.green.to_ulong() << std::endl;
         // Set the color (BGR format)
-        image.at<cv::Vec3b>(y, x) = cv::Vec3b(col.blue.to_ulong(), col.green.to_ulong(), col.red.to_ulong());  
+        image.at<cv::Vec3b>(y, x) = cv::Vec3b(col.blue, col.green, col.red);  
     }
     printSize();
     cv::imshow("Original", img);
@@ -503,4 +537,28 @@ void Graph::reconstructImage(){
     cv::waitKey(0);
 }
 
+andres::Partition<int> Graph::getRegions(){
+    andres::Partition<int> reconstruction(rows*cols);
+    for (int index = 0; index < rows * cols; ++index) {
+        for (int offset : neighborsOffsets) {
+            int neighbor = index + offset;
+            if (neighbor >= 0 && neighbor < getVertices() && ((neighbor / cols == index / cols) || (abs(neighbor - index) > 1))) {
+                // check if neighbours are separated by multicut 
+                // if no: merge 
+                if(getEdgeBit(index, neighbor) == 0){
+                    reconstruction.merge(index, neighbor);
+                    //std::cout << reconstruction.find(index) << ", ";
+                }
+            }
+        }
+    }
+    return reconstruction;
+}
 
+void Graph::reconstructMulticut(){
+    cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
+    andres::Partition<int> reconstruction = getRegions();
+    for (int index = 0; index < rows * cols; ++index) {
+        std::cout << reconstruction.find(index) << ", ";
+    }
+}

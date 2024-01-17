@@ -19,7 +19,7 @@ int main() {
     //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/tree5x5.png");
     //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/images/icon_64/actions-address-book-new.png");
     
-    string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/mlcv-multicut/code/test_img";
+    string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/mlcv-multicut/code/5x5example";
     std::filesystem::path p1 { imgDir };
     int count {};
     int i = 0;
@@ -46,12 +46,15 @@ int main() {
         //auto startTime = std::chrono::high_resolution_clock::now();
 
         //img_graph.findAllRegions();
-        img_graph.assignRegions();
+        //img_graph.assignRegions();
 
 
         //img_graph.printColorRegions();
         //img_graph.printSize();
-        img_graph.reconstructImage();
+        //img_graph.reconstructImage();
+
+        //img_graph.unionFindMulticut();
+        //img_graph.reconstructMulticut();
 
         //cv::imshow("Image", img);
         //cv::waitKey(3000);
