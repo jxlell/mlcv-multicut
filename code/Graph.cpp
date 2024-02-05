@@ -5,6 +5,8 @@
 #include <stack>
 #include <unordered_set>
 #include "partition.hxx"
+#include <cstdlib>
+#include <queue>
 
 Graph::Graph(const std::string& imagePath) {
     
@@ -30,6 +32,9 @@ Graph::Graph(const std::string& imagePath) {
     edgeBitsRLE.resize(2*vertices, std::bitset<1>(0));
     edgeBits01.resize((cols-1)*rows + cols*(rows-1));
     vertexRegions.resize(vertices, -1);
+
+    regionRepresentatives.resize(cols*rows, -1);
+    dualBits.resize((cols+1)*(rows+1));
 }
 
 int Graph::getVertices() const{
@@ -190,6 +195,25 @@ bool Graph::getEdgeBit(int v, int w) const {
     }
 }
 
+int Graph::getEdgeBitFromList(int v, int w) const {
+    int index = std::min(v,w);
+    int row = index / cols + 1;
+    //std::cout << std::endl << "row: " << row << std::endl;
+    if(abs(v-w) == 1){
+        int rightBit = edgeBits01[index * 2 - (row - 2)];
+        //std::cout << "rightBitIndex: " << index * 2 - (row - 2) << std::endl;
+        return rightBit;
+    }
+    else{
+        int edgeI = index * 2 - (row - 1);
+        int downBit = edgeBits01[edgeI];
+        //std::cout << "downBitIndex: " << edgeI << std::endl;
+        return downBit;
+    }
+    
+}
+
+
 void Graph::setMulticut(){
     // Iterate through every pixel from top-left to bottom-right
     //std::cout << "setting colors\n";
@@ -204,10 +228,6 @@ void Graph::setMulticut(){
             uchar green = pixel[1];
             uchar red = pixel[2];
 
-            //std::cout << "Pixel at (" << x << ", " << y << "): ";
-            //std::cout << "B: " << static_cast<int>(blue) << ", ";
-            //std::cout << "G: " << static_cast<int>(green) << ", ";
-            //std::cout << "R: " << static_cast<int>(red) << std::endl;
 
             //set rgb values for vertex
             //img_graph.setVertexColor(pixel_index, static_cast<int>(red), static_cast<int>(blue), static_cast<int>(green));
@@ -242,7 +262,7 @@ void Graph::setMulticut(){
                     if(!compareRGB(currentColor, getVertexColor(neighbor))){
                         //set edgeBit01
                         edgeBits01[edgeIndex] = true;
-                        std::cout << "offset: " << offset << ", ";
+                        //std::cout << "offset: " << offset << ", ";
                     }
                 }
 
@@ -252,9 +272,6 @@ void Graph::setMulticut(){
                     //std::cout << "to: " << static_cast<int>(getVertexColor(neighbor).red) << " " << static_cast<int>(getVertexColor(neighbor).blue) << " " << static_cast<int>(getVertexColor(neighbor).green) << std::endl;
                     // ###### add multicut bit 
                     setEdgeBit(v,neighbor,1);
-
-                    
-                    
                 }
             }
         }
@@ -262,11 +279,49 @@ void Graph::setMulticut(){
     }
     
 
+    /*
+    std::cout << std::endl << "edge bits listed: ";
+        for(bool edgebit : edgeBits01){
+            std::cout << edgebit << ", ";
+        }
+        std::cout << "13th: " << edgeBits01[13] << std::endl;
+    std::cout << "edge bit 7,2: " << getEdgeBitFromList(7,2) << std::endl;
+    
+    
+    //std::cout << "edge bit between 17 and 18: " ;
+    int edgeBit01Index = 0;
+    */
 
+
+    andres::Partition<int> multicutregion = getRegions();
+    //for(int i = 0; i<25; i++){
+    //    std::cout << "region of index " << i << ": " << multicutregion.find(i) << ", ";
+    //}
+
+    std::vector<int> reps;
+    multicutregion.representatives(std::back_inserter(reps));
     std::cout << std::endl;
-    for(bool edgebit : edgeBits01){
-        std::cout << edgebit << ", ";
+    for (int rep : reps) {
+        //std::cout << rep << ", ";
+        regionColors.push_back(getVertexColor(rep));
+        //std::cout << static_cast<int>(repRGB.red) << ", ";
     }
+    regionColors.resize(reps.size());
+    /*
+    for(RGB rgb : regionColors){
+        std::cout << static_cast<int>(rgb.red) << " " << static_cast<int>(rgb.green) << " " << static_cast<int>(rgb.blue) << std::endl;
+    }
+    */
+    
+    /*
+    labelRegions();
+   for (int label : regionRepresentatives) {
+    std::cout << label << " ";
+    }
+    std::cout << std::endl;
+    */
+   
+
 }
 
 std::vector<int> Graph::getConnectedPixels(int seed) {
@@ -537,28 +592,117 @@ void Graph::reconstructImage(){
     cv::waitKey(0);
 }
 
+void Graph::labelRegions() {
+    std::queue<int> pixelQueue;
+    int regionNumber = 0;
+
+    // Iterate over all pixels
+    for (int index = 0; index < rows * cols; ++index) {
+        if (regionRepresentatives[index] == -1) {
+            // Found an unlabeled pixel
+            pixelQueue.push(index);
+
+            while (!pixelQueue.empty()) {
+                int currentPixel = pixelQueue.front();
+                pixelQueue.pop();
+
+                // Label the current pixel with the region number
+                regionRepresentatives[currentPixel] = regionNumber;
+
+                // Get color of current pixel
+                RGB currentColor = getVertexColor(currentPixel);
+
+                // Check neighbors
+                for (int offset : neighborsOffsets) {
+                    int neighbor = currentPixel + offset;
+                    if (isValidNeighbor(neighbor) && regionRepresentatives[neighbor] == -1) {
+                        // Check if neighbor has same color as current pixel
+                        //TODO: check if multicut runs between vertices/pixels 
+                        RGB neighborColor = getVertexColor(neighbor);
+                        if (compareRGB(currentColor, neighborColor)) {
+                            // Enqueue neighbor for processing
+                            pixelQueue.push(neighbor);
+                        }
+                    }
+                }
+            }
+
+            // Increment region number for the next region
+            regionNumber++;
+        }
+    }
+}
+
+bool Graph::isValidNeighbor(int neighbor) const {
+    return neighbor >= 0 && neighbor < rows * cols;
+}
+
 andres::Partition<int> Graph::getRegions(){
-    andres::Partition<int> reconstruction(rows*cols);
+    andres::Partition<int> region(rows*cols);
     for (int index = 0; index < rows * cols; ++index) {
         for (int offset : neighborsOffsets) {
             int neighbor = index + offset;
             if (neighbor >= 0 && neighbor < getVertices() && ((neighbor / cols == index / cols) || (abs(neighbor - index) > 1))) {
                 // check if neighbours are separated by multicut 
                 // if no: merge 
-                if(getEdgeBit(index, neighbor) == 0){
-                    reconstruction.merge(index, neighbor);
+
+                //TODO: getedgebit ersetzen durch check über edgebits01
+                if(getEdgeBitFromList(index, neighbor) == 0){
+                    region.merge(index, neighbor);
                     //std::cout << reconstruction.find(index) << ", ";
                 }
+
+                
             }
         }
     }
-    return reconstruction;
+    return region;
 }
 
 void Graph::reconstructMulticut(){
     cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
     andres::Partition<int> reconstruction = getRegions();
+    std::vector<int> reps;
+    reconstruction.representatives(std::back_inserter(reps));
     for (int index = 0; index < rows * cols; ++index) {
-        std::cout << reconstruction.find(index) << ", ";
+
+        //std::cout << reconstruction.find(index) << ", ";
+
+        // Calculate row and column indices from the linear index
+        int y = index / cols;
+        int x = index % cols;
+        if(index%100 == 0){
+            //printProgressBar(index, rows*cols);
+        }
+        // get color
+        int region = reconstruction.find(index);
+
+        // an welchem index steht nummer "region" im vector der representatives
+        
+        //quadratic runtime?
+        auto it = std::find(reps.begin(), reps.end(), region);
+        std::size_t indexInReps;
+
+        if (it != reps.end()) {
+            indexInReps = std::distance(reps.begin(), it);
+            //std::cout << "Index of region " << region << " in reps: " << indexInReps << std::endl;
+        }
+
+        RGB col = regionColors[indexInReps];
+
+        //RGB col = getVertexColor(0);
+        //std::cout << col.green.to_ulong() << std::endl;
+        // Set the color (BGR format)
+        image.at<cv::Vec3b>(y, x) = cv::Vec3b(col.blue, col.green, col.red);  
     }
+    
+    //printSize();
+    cv::imshow("Original", img);
+    cv::imshow("Reconstruction", image);
+    cv::waitKey(0);
+
+    
+    
+
+
 }

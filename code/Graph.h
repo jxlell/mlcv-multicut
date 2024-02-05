@@ -19,7 +19,6 @@ struct RGB {
     std::uint8_t red;
     std::uint8_t green;
     std::uint8_t blue;
-   
     
 };
 
@@ -61,6 +60,9 @@ public:
     void unionFindMulticut();
     void reconstructMulticut();
     andres::Partition<int> getRegions();
+    int getEdgeBitFromList(int v, int w) const;
+    void labelRegions();
+    bool isValidNeighbor(int neighbor) const;
     
 
 private:
@@ -72,6 +74,7 @@ private:
     std::vector<std::bitset<1>> edgeBits;
     std::vector<std::bitset<1>> edgeBitsRLE;
     std::vector<bool> edgeBits01;
+    std::vector<int> regionRepresentatives;
     cv::Mat img;
     int cols;
     int rows;
@@ -79,6 +82,7 @@ private:
     std::vector<RGB> regionColors;
     std::vector<std::vector<int>> regions;
     std::vector<int> vertexRegions;
+    std::vector<bool> dualBits;
 };
 
 #endif // GRAPH_H

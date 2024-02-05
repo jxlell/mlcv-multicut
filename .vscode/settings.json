@@ -76,6 +76,7 @@
         "concepts": "cpp",
         "numeric": "cpp",
         "algorithm": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "charconv": "cpp"
     }
 }

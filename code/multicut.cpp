@@ -30,7 +30,7 @@ int main() {
     }
 
     for (const auto& dirEntry : std::filesystem::directory_iterator(imgDir)){
-        if(dirEntry.path().filename().string() == ".DS_Store" || dirEntry.path().extension().string() != ".png"){
+        if(dirEntry.path().extension().string() != ".png"){
             continue;
         }
 
