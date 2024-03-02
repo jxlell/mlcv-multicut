@@ -300,7 +300,7 @@ void Graph::setMulticut(){
 
     std::vector<int> reps;
     multicutregion.representatives(std::back_inserter(reps));
-    std::cout << std::endl;
+    //std::cout << std::endl;
     for (int rep : reps) {
         //std::cout << rep << ", ";
         regionColors.push_back(getVertexColor(rep));
@@ -424,6 +424,14 @@ void Graph::assignRegions() {
             currentRegion++;
         }
     }
+    
+    /*
+    std::cout << "regions: "; 
+    for (auto &reg : vertexRegions){
+        std::cout << reg << ", ";
+    }
+    */
+    
 
     /*
     std::set<int> uniqueRegions(vertexRegions.begin(), vertexRegions.end());
@@ -434,6 +442,8 @@ void Graph::assignRegions() {
     std::cout << std::endl;
     std::cout << "number of pixels: " << getVertices() << std::endl;
     */
+    
+    
    
 }
 
@@ -659,9 +669,65 @@ andres::Partition<int> Graph::getRegions(){
     return region;
 }
 
+void Graph::dfs_multicut_path(int v, std::vector<bool>& visited, std::vector<int>& path, std::vector<std::pair<int, uint8_t>>& pathDirections) {
+    visited[v] = true;
+    path.push_back(v); // Add vertex to the current path
+
+    // Check neighboring vertices connected by multicut edges
+    int numVertices = visited.size();
+    for (int u = 0; u < numVertices; ++u) {
+        int edgeIndex = v * numVertices + u;
+        if (edgeBits01[edgeIndex] && !visited[u]) {
+            // Determine the direction of the edge (v, u)
+            int delta = u - v;
+            uint8_t dir;
+            if (delta == -1) {
+                dir = 0b11; // West
+            } else if (delta == 1) {
+                dir = 0b01; // East
+            } else if (delta == -cols) {
+                dir = 0b00; // North
+            } else if (delta == cols) {
+                dir = 0b10; // South
+            } else {
+                // Handle invalid edge
+                continue;
+            }
+
+            // Store the edge index and direction in the path
+            pathDirections.emplace_back(v, dir);
+            dfs_multicut_path(u, visited, path, pathDirections);
+        }
+    }
+}
+
+// Function to extract multicut paths from the edgeBits01 vector
+std::vector<std::vector<std::pair<int, uint8_t>>> Graph::extract_multicut_paths() {
+    int numVertices = rows*cols;
+    std::vector<bool> visited(numVertices, false); // Track visited vertices
+    std::vector<std::vector<std::pair<int, uint8_t>>> paths; // Store the extracted paths
+
+    // Iterate through all vertices and start DFS from unvisited vertices
+    for (int v = 0; v < numVertices; ++v) {
+        if (!visited[v]) {
+            std::vector<int> path;
+            std::vector<std::pair<int, uint8_t>> pathDirections;
+            dfs_multicut_path(v, visited, path, pathDirections);
+            if (!pathDirections.empty()) {
+                paths.push_back(pathDirections); // Store the extracted path directions
+            }
+        }
+    }
+
+    return paths;
+}
+
+
 void Graph::reconstructMulticut(){
     cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
     andres::Partition<int> reconstruction = getRegions();
+    std::map<int, int> representativeLabels;
+    reconstruction.representativeLabeling(representativeLabels);
     std::vector<int> reps;
     reconstruction.representatives(std::back_inserter(reps));
     for (int index = 0; index < rows * cols; ++index) {
@@ -676,9 +742,11 @@ void Graph::reconstructMulticut(){
         }
         // get color
         int region = reconstruction.find(index);
+        int continuousLabel = representativeLabels[region];
 
         // an welchem index steht nummer "region" im vector der representatives
         
+        /*
         //quadratic runtime?
         auto it = std::find(reps.begin(), reps.end(), region);
         std::size_t indexInReps;
@@ -687,8 +755,11 @@ void Graph::reconstructMulticut(){
             indexInReps = std::distance(reps.begin(), it);
             //std::cout << "Index of region " << region << " in reps: " << indexInReps << std::endl;
         }
+        */
+        
 
-        RGB col = regionColors[indexInReps];
+        //RGB col = regionColors[indexInReps];
+        RGB col = regionColors[continuousLabel];
 
         //RGB col = getVertexColor(0);
         //std::cout << col.green.to_ulong() << std::endl;
@@ -697,12 +768,30 @@ void Graph::reconstructMulticut(){
     }
     
     //printSize();
+    /*
+    cv::destroyAllWindows();
     cv::imshow("Original", img);
     cv::imshow("Reconstruction", image);
-    cv::waitKey(0);
+    cv::waitKey(1000);
+    */
+    
 
     
     
 
+    /*
+    std::vector<std::vector<std::pair<int, uint8_t>>> multicutPaths = extract_multicut_paths();
+
+    // Display the extracted multicut paths
+    for (const auto& path : multicutPaths) {
+        std::cout << "Multicut Path: ";
+        for (const auto& edge : path) {
+            std::cout << "(" << edge.first << ", " << static_cast<int>(edge.second) << ") ";
+        }
+        std::cout << std::endl;
+    }
+    */
+
+    
 
 }

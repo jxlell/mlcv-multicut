@@ -63,6 +63,8 @@ public:
     int getEdgeBitFromList(int v, int w) const;
     void labelRegions();
     bool isValidNeighbor(int neighbor) const;
+    std::vector<std::vector<std::pair<int, uint8_t>>> extract_multicut_paths();
+    void dfs_multicut_path(int v, std::vector<bool>& visited, std::vector<int>& path, std::vector<std::pair<int, uint8_t>>& pathDirections);
     
 
 private:
