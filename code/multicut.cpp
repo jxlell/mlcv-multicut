@@ -4,6 +4,8 @@
 #include "Graph.h"
 #include <chrono>
 #include <filesystem> 
+#include <fstream>
+#include <numeric>
 
 
 using namespace std;
@@ -19,10 +21,27 @@ int main() {
     //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/tree5x5.png");
     //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/images/icon_64/actions-address-book-new.png");
     
-    string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/images/icon_512";
+    string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/mlcv-multicut/code/5x5example";
     std::filesystem::path p1 { imgDir };
     int count {};
     int i = 0;
+
+    vector<double> compression_rates;
+    
+    std::ofstream outputFile("output_files/output" + p1.filename().string() + ".csv");
+
+    // Check if the file opened successfully
+    if (!outputFile.is_open()) {
+        std::cerr << "Error: Unable to open the file." << std::endl;
+        return 1;
+    }
+
+    long long total_time_set_multicut = 0;
+    long long total_time_reconstruct_multicut = 0;
+    
+
+    
+
 
     for (auto& p : std::filesystem::directory_iterator(p1))
     {
@@ -38,12 +57,16 @@ int main() {
         //cout << dirEntry.path().filename().string() << ", ";
         //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/images/photo_wikipedia/011.png");
 
+        std::cout << dirEntry.path() << endl;
+        auto startTime = std::chrono::high_resolution_clock::now();
+
         img_graph.setMulticut();
-        
+
+        auto end_set_multicut = std::chrono::high_resolution_clock::now();
+        total_time_set_multicut += std::chrono::duration_cast<std::chrono::milliseconds>(end_set_multicut - startTime).count();
 
         //img_graph.printGraph();
         //img_graph.printEdgeBits();
-        //auto startTime = std::chrono::high_resolution_clock::now();
 
         //img_graph.findAllRegions();
         //img_graph.assignRegions();
@@ -54,9 +77,10 @@ int main() {
         //img_graph.reconstructImage();
 
         //img_graph.unionFindMulticut();
-        img_graph.reconstructMulticut();
-        cout << dirEntry.path() << " reconstructed\n";
-
+        auto start_reconstruct_multicut = std::chrono::high_resolution_clock::now();
+        compression_rates.push_back(img_graph.reconstructMulticut());
+        auto end_reconstruct_multicut = std::chrono::high_resolution_clock::now();
+        total_time_reconstruct_multicut += std::chrono::duration_cast<std::chrono::milliseconds>(end_reconstruct_multicut - start_reconstruct_multicut).count();
         //cv::imshow("Image", img);
         //cv::waitKey(3000);
         //img_graph.printColorRegions();
@@ -74,7 +98,26 @@ int main() {
     }
     
     //cout << "size of int: " << sizeof(int) * 8 << " bit" << endl;
+
+    
+    for (size_t i = 0; i < compression_rates.size(); ++i) {
+        outputFile << compression_rates[i]; // Write the element
+
+        // Add a comma if it's not the last element
+        if (i != compression_rates.size() - 1) {
+            outputFile << ",";
+        }
+    }
         
+    outputFile.close();
+
+    double total_compression_rates = std::accumulate(compression_rates.begin(), compression_rates.end(), 0.0);
+    double avg_compression_rate = total_compression_rates / i; 
+
+    std::cout << total_time_set_multicut/i << endl;
+    std::cout << total_time_reconstruct_multicut/i << endl;
+    
+    std::cout << avg_compression_rate << endl;
 
     return 0;
 }

@@ -107,14 +107,18 @@ void Graph::printSize(){
     //std::cout << "size of one RGB value: " << sizeof(getVertexColor(0)) * 8 << std::endl;
     //RGB test;
     //std::cout << "size of one test RGB value: " << sizeof(test) * 8 << std::endl;
-    std::cout << imagePath << ": " << std::endl;
-    std::cout << "size of vertexRegions: " << vertexRegions.size() << std::endl;
-    std::cout << "size of vertexRegions in kBit: " << vertexRegions.size() * sizeof(int) * 8 / 1024 << std::endl;
-    std::cout << "size of regionColors in kBit: " << regionColors.size() * sizeof(RGB) * 8 / 1024 << std::endl;
-    std::cout << "size of regionColors vector: " << regionColors.size() << std::endl;
+    //std::cout << imagePath << ": " << std::endl;
+    //std::cout << "size of vertexRegions: " << vertexRegions.size() << std::endl;
+    //std::cout << "size of vertexRegions in kBit: " << vertexRegions.size() * sizeof(int) * 8 / 1024 << std::endl;
+    //std::cout << "size of regionColors in kBit: " << regionColors.size() * sizeof(RGB) * 8 / 1024 << std::endl;
+    //std::cout << "size of regionColors vector: " << regionColors.size() << std::endl;
     //std::cout << "size of int: " << sizeof(int) << std::endl;
     //std::cout << "size of RGB: " << sizeof(RGB) << std::endl;
     //std::cout << "size of uint: " << sizeof(uint8_t) << std::endl;
+
+    std::cout << "\n edgebits size: " << cols*rows << " bits\n";
+    std::cout << "regioncolors size: " << regionColors.size()*3*8 << " bits\n";
+    std::cout << "compression rate: " << static_cast<double>(3*8*cols*rows) / (cols*rows + regionColors.size()*3*8 ) << std::endl;
 
 }
 
@@ -669,6 +673,7 @@ andres::Partition<int> Graph::getRegions(){
     return region;
 }
 
+
 void Graph::dfs_multicut_path(int v, std::vector<bool>& visited, std::vector<int>& path, std::vector<std::pair<int, uint8_t>>& pathDirections) {
     visited[v] = true;
     path.push_back(v); // Add vertex to the current path
@@ -678,17 +683,17 @@ void Graph::dfs_multicut_path(int v, std::vector<bool>& visited, std::vector<int
     for (int u = 0; u < numVertices; ++u) {
         int edgeIndex = v * numVertices + u;
         if (edgeBits01[edgeIndex] && !visited[u]) {
-            // Determine the direction of the edge (v, u)
+            // u -> v edge direction  
             int delta = u - v;
             uint8_t dir;
             if (delta == -1) {
-                dir = 0b11; // West
+                dir = 0b11; 
             } else if (delta == 1) {
-                dir = 0b01; // East
+                dir = 0b01; 
             } else if (delta == -cols) {
-                dir = 0b00; // North
+                dir = 0b00; 
             } else if (delta == cols) {
-                dir = 0b10; // South
+                dir = 0b10;
             } else {
                 // Handle invalid edge
                 continue;
@@ -701,7 +706,7 @@ void Graph::dfs_multicut_path(int v, std::vector<bool>& visited, std::vector<int
     }
 }
 
-// Function to extract multicut paths from the edgeBits01 vector
+
 std::vector<std::vector<std::pair<int, uint8_t>>> Graph::extract_multicut_paths() {
     int numVertices = rows*cols;
     std::vector<bool> visited(numVertices, false); // Track visited vertices
@@ -723,13 +728,57 @@ std::vector<std::vector<std::pair<int, uint8_t>>> Graph::extract_multicut_paths(
 }
 
 
-void Graph::reconstructMulticut(){
+void Graph::bfs_paths(int edge){
+
+    std::vector<bool> visited(edgeBits01.size(), false);
+
+    std::queue<int> queue; 
+
+    visited[edge] = true;
+
+    queue.push(edge);
+
+    while(!queue.empty()){
+        int current = queue.front();
+        queue.pop();
+
+        std::cout << "current bfs: " << current << std::endl;
+
+        // get neighbors 
+        // dimensions -> index -> neighbor index ausrechnen
+
+
+    }
+    
+
+
+    /*
+    for (bool edge : edgeBits01){
+        std::cout << edge << " ";
+    }
+    */
+   //visited[edge] = true;
+   //bool isVertical = 
+
+    // check neighbors
+
+    // horizontal or vertical? 
+    // index -> column -> even number? -> 
+
+
+
+    
+    return;
+}
+
+
+double Graph::reconstructMulticut(){
     cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
     andres::Partition<int> reconstruction = getRegions();
     std::map<int, int> representativeLabels;
     reconstruction.representativeLabeling(representativeLabels);
-    std::vector<int> reps;
-    reconstruction.representatives(std::back_inserter(reps));
+    //std::vector<int> reps;
+    //reconstruction.representatives(std::back_inserter(reps));
     for (int index = 0; index < rows * cols; ++index) {
 
         //std::cout << reconstruction.find(index) << ", ";
@@ -761,6 +810,7 @@ void Graph::reconstructMulticut(){
         //RGB col = regionColors[indexInReps];
         RGB col = regionColors[continuousLabel];
 
+
         //RGB col = getVertexColor(0);
         //std::cout << col.green.to_ulong() << std::endl;
         // Set the color (BGR format)
@@ -768,15 +818,17 @@ void Graph::reconstructMulticut(){
     }
     
     //printSize();
+    
     /*
     cv::destroyAllWindows();
     cv::imshow("Original", img);
     cv::imshow("Reconstruction", image);
-    cv::waitKey(1000);
+    cv::waitKey(0);
     */
     
-
     
+    
+    bfs_paths(0);
     
 
     /*
@@ -791,7 +843,19 @@ void Graph::reconstructMulticut(){
         std::cout << std::endl;
     }
     */
-
     
+    std::cout << std::endl << ((2*cols*rows-cols-rows) + regionColors.size()*3*8 ) << std::endl;
+
+    int edgeCount = 0;
+    for (bool edge : edgeBits01){
+        if(edge){edgeCount++;}
+    }
+
+    std::cout << "edges in multicut: " << edgeCount << std::endl;
+    std::cout << "edges not in multicut: " << (2*cols*rows-cols-rows) - edgeCount << std::endl;
+    std::cout << "size of regions array: " << regionColors.size() << std::endl;
+    
+   //TODO: anzahl der kanten genau berechnen
+    return static_cast<double>(3*8*cols*rows) / ((2*cols*rows-cols-rows) + regionColors.size()*3*8 );
 
 }
