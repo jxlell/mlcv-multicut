@@ -22,6 +22,8 @@ struct RGB {
     
 };
 
+enum class Direction { UP, RIGHT, DOWN, LEFT };
+
 
 class Graph {
 public:
@@ -65,8 +67,11 @@ public:
     bool isValidNeighbor(int neighbor) const;
     std::vector<std::vector<std::pair<int, uint8_t>>> extract_multicut_paths();
     void dfs_multicut_path(int v, std::vector<bool>& visited, std::vector<int>& path, std::vector<std::pair<int, uint8_t>>& pathDirections);
-    void bfs_paths(int edge);
-    
+    std::stringstream dfs_paths(int edge);
+    bool checkHorizontal(int current);
+    std::vector<bool> dfs_paths_recursive(int currentEdge, std::vector<bool>& visited, Direction currentDir, std::vector<bool>& directionVector);
+    std::string directionToString(Direction dir);
+    void reconstruct_edgeBits(int currentVertex, std::vector<bool>& visited, std::vector<bool> directions, Direction currentDir);
 
 private:
     int vertices;
@@ -86,6 +91,7 @@ private:
     std::vector<std::vector<int>> regions;
     std::vector<int> vertexRegions;
     std::vector<bool> dualBits;
+    std::vector<bool> visited; 
 };
 
 #endif // GRAPH_H

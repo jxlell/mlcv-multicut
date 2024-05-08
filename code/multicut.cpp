@@ -12,14 +12,34 @@ using namespace std;
 
 // g++ -std=c++11 -o multicut multicut.cpp Graph.cpp $(pkg-config --cflags --libs opencv4); ./multicut
 
-int main() {
-       
+void writeToOutput(std::filesystem::path p1, std::vector<double> compression_rates, int i){
+    std::ofstream outputFile("output_files/output" + p1.filename().string() + ".csv");
 
-    //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/tree5x5.png");
-    //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/tree461x207.png");
-    //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/images/icon_64/actions-address-book-new.png");
-    //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/tree5x5.png");
-    //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/images/icon_64/actions-address-book-new.png");
+    // Check if the file opened successfully
+    if (!outputFile.is_open()) {
+        std::cerr << "Error: Unable to open the file." << std::endl;
+        return;
+    }
+
+    for (size_t i = 0; i < compression_rates.size(); ++i) {
+        outputFile << compression_rates[i]; // Write the element
+
+        // Add a comma if it's not the last element
+        if (i != compression_rates.size() - 1) {
+            outputFile << ",";
+        }
+    }
+        
+    outputFile.close();
+
+    double total_compression_rates = std::accumulate(compression_rates.begin(), compression_rates.end(), 0.0);
+    double avg_compression_rate = total_compression_rates / i; 
+    std::cout << avg_compression_rate << endl;
+
+
+}
+
+int main() {
     
     string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/mlcv-multicut/code/5x5example";
     std::filesystem::path p1 { imgDir };
@@ -28,21 +48,10 @@ int main() {
 
     vector<double> compression_rates;
     
-    std::ofstream outputFile("output_files/output" + p1.filename().string() + ".csv");
-
-    // Check if the file opened successfully
-    if (!outputFile.is_open()) {
-        std::cerr << "Error: Unable to open the file." << std::endl;
-        return 1;
-    }
-
+    
     long long total_time_set_multicut = 0;
     long long total_time_reconstruct_multicut = 0;
     
-
-    
-
-
     for (auto& p : std::filesystem::directory_iterator(p1))
     {
         ++count;
@@ -99,25 +108,14 @@ int main() {
     
     //cout << "size of int: " << sizeof(int) * 8 << " bit" << endl;
 
+    // WRITE COMPRESSION RATES TO FILE
+    //writeToOutput(p1, compression_rates, i);
+
     
-    for (size_t i = 0; i < compression_rates.size(); ++i) {
-        outputFile << compression_rates[i]; // Write the element
 
-        // Add a comma if it's not the last element
-        if (i != compression_rates.size() - 1) {
-            outputFile << ",";
-        }
-    }
-        
-    outputFile.close();
-
-    double total_compression_rates = std::accumulate(compression_rates.begin(), compression_rates.end(), 0.0);
-    double avg_compression_rate = total_compression_rates / i; 
-
-    std::cout << total_time_set_multicut/i << endl;
-    std::cout << total_time_reconstruct_multicut/i << endl;
+    //std::cout << total_time_set_multicut/i << endl;
+    //std::cout << total_time_reconstruct_multicut/i << endl;
     
-    std::cout << avg_compression_rate << endl;
 
     return 0;
 }
