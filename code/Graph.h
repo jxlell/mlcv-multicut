@@ -24,6 +24,13 @@ struct RGB {
 
 enum class Direction { UP, RIGHT, DOWN, LEFT };
 
+// Define the tuple type
+// startEdge, startDirection, directionVector
+using PathInfo = std::tuple<int, Direction, std::vector<bool>>;
+
+// Define the vector of tuples
+using PathInfoVector = std::vector<PathInfo>;
+
 
 class Graph {
 public:
@@ -70,9 +77,14 @@ public:
     std::stringstream dfs_paths(int edge);
     bool checkHorizontal(int current);
     std::vector<bool> dfs_paths_recursive(int currentEdge, std::vector<bool>& visited, Direction currentDir, std::vector<bool>& directionVector);
-    std::string directionToString(Direction dir);
-    void reconstruct_edgeBits(int currentVertex, std::vector<bool>& visited, std::vector<bool> directions, Direction currentDir);
-
+    std::string directionToString(Direction dir) const;
+    void reconstruct_edgeBits(int currentedge, std::vector<bool>& visited, Direction currentDir, std::vector<bool>& directionVector);
+    void printPaths() const;
+    Direction nextDirection(Direction dir);
+    Direction previousDirection(Direction dir);
+    void reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, std::vector<bool>& directionVector);
+    int getNeighbor(int currentEdge, Direction currentDirection, int neighborIndex);
+    
 private:
     int vertices;
     std::string imagePath;
@@ -92,6 +104,8 @@ private:
     std::vector<int> vertexRegions;
     std::vector<bool> dualBits;
     std::vector<bool> visited; 
+    PathInfoVector paths;
+    int directionIndex; 
 };
 
 #endif // GRAPH_H
