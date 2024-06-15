@@ -41,7 +41,7 @@ void writeToOutput(std::filesystem::path p1, std::vector<double> compression_rat
 
 int main() {
     
-    string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/mlcv-multicut/code/5x5example";
+    string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/images/icon_64";
     std::filesystem::path p1 { imgDir };
     int count {};
     int i = 0;

@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "name": "Debug multicut",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/code/multicut",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for lldb",
+                    "text": "settings set target.debug-formatters true",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build multicut",
+            "miDebuggerPath": "/usr/bin/lldb", 
+            "logging": {
+                "moduleLoad": false
+            },
+            "internalConsoleOptions": "openOnSessionStart"
+        }
+    ]
+}

@@ -1,0 +1,24 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build multicut",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "-std=c++17",
+                "-g",                   
+                "-o",
+                "${workspaceFolder}/code/multicut",
+                "${workspaceFolder}/code/multicut.cpp",
+                "${workspaceFolder}/code/Graph.cpp",
+                "`pkg-config", "--cflags", "--libs", "opencv4`"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"]
+        }
+    ]
+}

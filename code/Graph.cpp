@@ -396,12 +396,15 @@ void Graph::setMulticut(){
         edgeI++;
     }
 
-    printPaths();
+    //printPaths();
+    
     /*
     for (bool edge : edgeBits01){
         std::cout << edge << " ";
     }
     */
+    
+    
     
     
     std::cout << "\nnumber of disconnected components: " << dfsI << std::endl;
@@ -938,6 +941,7 @@ std::string Graph::directionToString(Direction dir) const {
 }
 
 std::vector<bool> Graph::dfs_paths_recursive(int currentEdge, std::vector<bool>& visited, Direction currentDir, std::vector<bool>& directionVector){
+    //std::cout << currentEdge << std::endl;
     visited[currentEdge] = true; 
     //std::cout << currentEdge << ", ";
 
@@ -948,7 +952,7 @@ std::vector<bool> Graph::dfs_paths_recursive(int currentEdge, std::vector<bool>&
     // immediately return for edge cases
     if((currentDir == Direction::LEFT && (currentEdge % (2*cols-1) == 0)) || 
     currentDir == Direction::RIGHT && ((currentEdge+1) % (2*cols-1) == 0)){
-        std::cout << "edge case return\n"; 
+        //std::cout << "edge case return\n"; 
         directionVector.push_back(0);
         directionVector.push_back(0);
         directionVector.push_back(0);
@@ -966,11 +970,17 @@ std::vector<bool> Graph::dfs_paths_recursive(int currentEdge, std::vector<bool>&
     if((currentDir == Direction::UP) && 
     (currentEdge < 2*cols-1)){
         //std::cout << "edge case" << std::endl;
+        directionVector.push_back(0);
+        directionVector.push_back(0);
+        directionVector.push_back(0);
         return directionVector; 
     }
     if((currentDir == Direction::DOWN) && 
     (currentEdge + cols-1 >= (2*cols*rows-cols-rows))){
         //std::cout << "edge case down: " << currentEdge << std::endl;
+        directionVector.push_back(0);
+        directionVector.push_back(0);
+        directionVector.push_back(0);
         return directionVector; 
     }
 
@@ -987,6 +997,10 @@ std::vector<bool> Graph::dfs_paths_recursive(int currentEdge, std::vector<bool>&
 
     //based on current direction check next edges and set corresponding direction bits (e.g. 011 for paths to front and right)
 
+    edgeOffsets = {getNeighbor(currentEdge, currentDir, 0)-currentEdge, getNeighbor(currentEdge, currentDir, 1)-currentEdge, getNeighbor(currentEdge, currentDir, 2)-currentEdge};
+
+
+    /*
     switch (currentDir)
     {
     // offsets are in order of direction 3-bit-representation
@@ -1032,16 +1046,33 @@ std::vector<bool> Graph::dfs_paths_recursive(int currentEdge, std::vector<bool>&
         edgeOffsets = {1, 2, 2*(cols-1)+2};
         break;
     }
+    */
+    
+    
+    
+    
+    /*
+    int leftNeighbor = getNeighbor(currentEdge, currentDir, 0);
+    std::cout << "left neighbor: " << leftNeighbor << std::endl;
+    int forwardNeighbor = getNeighbor(currentEdge, currentDir, 1);
+    std::cout << "forward neighbor: " << forwardNeighbor << std::endl;
+    int rightNeighbor = getNeighbor(currentEdge, currentDir, 2);
+    std::cout << "right neighbor: " << rightNeighbor << std::endl;
+    */
+    
 
     // checken in welche richtungen es weiter geht 
-    if(!visited[currentEdge + edgeOffsets[0]]){
-        left = edgeBits01[currentEdge + edgeOffsets[0]];
+    if(!visited[getNeighbor(currentEdge, currentDir, 0)]){
+        left = edgeBits01[getNeighbor(currentEdge, currentDir, 0)];
+        //std::cout << "left: " << currentEdge + edgeOffsets[0] << std::endl;
     }
-    if(!visited[currentEdge + edgeOffsets[1]]){
-        forward = edgeBits01[currentEdge + edgeOffsets[1]];
+    if(!visited[getNeighbor(currentEdge, currentDir, 1)]){
+        forward = edgeBits01[getNeighbor(currentEdge, currentDir, 1)];
+        //std::cout << "forward: " << currentEdge + edgeOffsets[1] << std::endl;
     }
-    if(!visited[currentEdge + edgeOffsets[2]]){
-        right = edgeBits01[currentEdge + edgeOffsets[2]];   
+    if(!visited[getNeighbor(currentEdge, currentDir, 2)]){
+        right = edgeBits01[getNeighbor(currentEdge, currentDir, 2)];   
+        //std::cout << "right: " << currentEdge + edgeOffsets[2] << std::endl;
     }
 
 
@@ -1051,7 +1082,7 @@ std::vector<bool> Graph::dfs_paths_recursive(int currentEdge, std::vector<bool>&
     directionVector.push_back(forward);
     directionVector.push_back(right);
 
-    std::cout << "pushed direction: " << left << forward << right << std::endl;
+    //std::cout << "pushed direction: " << left << forward << right << std::endl;
 
     if(left){directionBits.set(2);}
     if(forward){directionBits.set(1);}
@@ -1061,31 +1092,33 @@ std::vector<bool> Graph::dfs_paths_recursive(int currentEdge, std::vector<bool>&
 
     int edge012Index = 0;
     Direction nextDir;
+    
     for (int offset : edgeOffsets){
             // TODO: neighbor anders berechnen wenn direction DOWN und neighbor auf letzter row
             int neighbor = offset + currentEdge;
-            std::cout << "current neighbor for " << currentEdge << ": " << neighbor << std::endl;
+            //std::cout << "current neighbor for " << currentEdge << ": " << neighbor << std::endl;
             // zu queue hinzufügen, wenn noch nicht visited + wenn multicut edge 
             if(neighbor >= 0 && neighbor < edgeBits01.size() && edgeBits01[neighbor]){
                 if (!visited[neighbor]) {
-                    std::cout << "neighbour " << neighbor << " considered" << std::endl;
+                    //std::cout << "neighbour " << neighbor << " considered" << std::endl;
                     //which direction is the edge facing? 
                     // dependet on: current direction and current edgeOffset
                     //std::cout << "current dir: " << directionToString(currentDir) << std::endl;
                     if(edge012Index == 0){
                         nextDir = static_cast<Direction>((static_cast<int>(currentDir) + 3 ) % 4);
-                        //std::cout << "dir calc: " << (static_cast<int>(currentDir) + 3 ) % 4 << std::endl;
+                        //std::cout << "dir calc0: " << directionToString(static_cast<Direction>((static_cast<int>(currentDir) + 3 ) % 4)) << std::endl;
                     }
                     if(edge012Index == 1){
                         nextDir = static_cast<Direction>(static_cast<int>(currentDir));
-                        //std::cout << "dir calc: " << (static_cast<int>(currentDir) ) % 4 << std::endl;
+                        //std::cout << "dir calc1: " << static_cast<int>(currentDir) << std::endl;
                     }
                     if(edge012Index == 2){
                         nextDir = static_cast<Direction>((static_cast<int>(currentDir) + 1 ) % 4);
-                        //std::cout << "dir calc: " << (static_cast<int>(currentDir) + 1 ) % 4 << std::endl;
+                        //std::cout << "dir calc2: " << (static_cast<int>(currentDir) + 1 ) % 4 << std::endl;
 
                     }
                     //std::cout << "next dir: " << directionToString(nextDir) << std::endl;
+                    //std::cout << "next edge: " << neighbor << std::endl;
 
                     dfs_paths_recursive(neighbor, visited, nextDir, directionVector);
                 }
@@ -1106,10 +1139,15 @@ void Graph::printPaths() const {
         std::cout << "Start Edge: " << startEdge << std::endl;
         std::cout << "Start Direction: " << directionToString(startDir) << std::endl;
         std::cout << "Directions: ";
+        int i = 0;
         for (bool dir : directions) {
+            if(i%3 == 0){
+                std::cout << "-";
+            }
             std::cout << dir << " ";
+            i++;
         }
-        std::cout << std::endl;
+        std::cout << std::endl << std::endl;
     }
 }
 
@@ -1203,11 +1241,22 @@ void Graph::reconstruct_edgeBits(int currentEdge, std::vector<bool>& visited, Di
 }
 
 void Graph::reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, std::vector<bool>& directionVector){
-    std::stack<int> pendingEdges;
+    /*
+    for(bool dir : directionVector){
+        std::cout << dir << " ";
+    }
+    */
+    
+    //std::cout << std::endl;
+    
+    //std::cout << "starting reconstruction for edge: " << startEdge << ", with direction " << directionToString(currentDir) << std::endl;
+
+    std::stack<std::pair<int, Direction>> pendingEdges;
     int currentEdge = startEdge;
     int newEdge;
     Direction newDirection;
-    edgeBits01[currentEdge] = true;
+    
+    //std::cout << "set true: " << currentEdge << std::endl;
     int neighbor;
     bool nextEdgeAlreadyDetermined = false;
     for(int i = 0; i<=directionVector.size(); i+=3){
@@ -1215,83 +1264,184 @@ void Graph::reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, 
         bool left = directionVector[i];
         bool forward = directionVector[i + 1];
         bool right = directionVector[i + 2];
+        //std::cout << "left: " << left << ", forward: " << forward << ", right: " << right << std::endl;
+        //std::cout << "current edge: " << currentEdge << std::endl;
+        edgeBits01[currentEdge] = true;
+        //std::cout << "current direction: " << directionToString(currentDir) << std::endl;
+
+        bool switchStack = false;
+        bool forwardPushed = false;
 
         if(!left && !forward && !right){
+            if(pendingEdges.empty()){
+                return;
+            }
+
+            // falls die oberste edge im stack die gleiche ist wie die aktuelle edge, dann poppen
+            // -> pfad geht nicht an dieser stelle weiter sondern an einer anderen 
+            // TODO: kann es sein, dass die darunterliegende edge auch eine ist, an der kein neuer pfad beginnt?
+            /*
+            if(currentEdge == pendingEdges.top().first){
+                pendingEdges.pop();
+            }
+            */
+            
+            while(!pendingEdges.empty() && edgeBits01[pendingEdges.top().first]){
+                
+                //std::cout << pendingEdges.top().first << std::endl;
+                //std::cout << "popping" << std::endl;
+                
+                pendingEdges.pop();
+            }
+            if(pendingEdges.empty()){
+                    //std::cout << "empty stack" << std::endl;
+                    return;
+                }
+            //std::cout << "jump" << std::endl;
             // jump back to stack 
-            currentEdge = pendingEdges.top();
+            std::tie(currentEdge, currentDir) = pendingEdges.top();
+            //std::cout << "jump back to edge: " << currentEdge << " with direction:  " << directionToString(currentDir) << std::endl;
             pendingEdges.pop();
+            //std::cout << getNeighbor(currentEdge, currentDir, 1) << std::endl;
             continue;
         }
         if(left){
             newEdge = getNeighbor(currentEdge, currentDir, 0);
-            edgeBits01[newEdge] = true;
+            //edgeBits01[newEdge] = true;
+            //std::cout << "set true left: " << newEdge << ", dir: " << directionToString(previousDirection(currentDir)) << std::endl;
             nextEdgeAlreadyDetermined = true;
             newDirection = previousDirection(currentDir);
+            //std::cout << "set direction: " << directionToString(newDirection) << std::endl;
         }
+        // first right then down to stack
+        
         if(forward){
+            // no new Direction required since it doesn't change for the forward neighbor
             if(!nextEdgeAlreadyDetermined){
+                //std::cout << "current edge: " << currentEdge << std::endl;
+                //std::cout << "current direction: " << directionToString(currentDir) << std::endl;
                 newEdge = getNeighbor(currentEdge, currentDir, 1);
-                edgeBits01[newEdge] = true;
+                //edgeBits01[newEdge] = true;
+                //std::cout << "set true forward: " << newEdge << std::endl;
                 nextEdgeAlreadyDetermined = true;
+                newDirection = currentDir;
             }else{
-                pendingEdges.push(getNeighbor(currentEdge, currentDir, 1));
+                pendingEdges.push({getNeighbor(currentEdge, currentDir, 1), currentDir});
+                //std::cout << "pushed to stack: " << getNeighbor(currentEdge, currentDir, 1) << std::endl;
+                forwardPushed = true;
+                //edgeBits01[getNeighbor(currentEdge, currentDir, 1)] = true;
+                //std::cout << "set true forward: " << getNeighbor(currentEdge, currentDir, 1) << std::endl;
             }
             
         }
         if(right){
-            newDirection = nextDirection(currentDir);
             if(!nextEdgeAlreadyDetermined){
+                newDirection = nextDirection(currentDir);
                 newEdge = getNeighbor(currentEdge, currentDir, 2);
-                edgeBits01[newEdge] = true;
+                //std::cout << "set true right: " << newEdge << std::endl;
+                //edgeBits01[newEdge] = true;
+                nextEdgeAlreadyDetermined = true;
             }else{
-                pendingEdges.push(getNeighbor(currentEdge, newDirection, 2));
+                pendingEdges.push({getNeighbor(currentEdge, currentDir, 2), nextDirection(currentDir)});
+                //edgeBits01[getNeighbor(currentEdge, currentDir, 2)] = true;
+                //std::cout << "set true right: " << getNeighbor(currentEdge, currentDir, 2) << std::endl;
+                //std::cout << "pushed to stack: " << getNeighbor(currentEdge, currentDir, 2) << std::endl;
+                if(forwardPushed){
+                    switchStack = true;
+                    //std::cout << "switching stack true" << std::endl;
+                }
             }
             
         }
+        // switching stack top two elements such that the forward element is the top element in the stack even though the 
+        // right neighbor was possibly pushed first
+        // 
+        if (switchStack) {
+            
+            //std::cout << "switching stack" << std::endl;
+
+            if(pendingEdges.size() >= 2){
+                auto top1 = pendingEdges.top();
+                pendingEdges.pop();
+                auto top2 = pendingEdges.top();
+                pendingEdges.pop();
+
+                pendingEdges.push(top1);
+                pendingEdges.push(top2);
+            }
+
+            std::stack<std::pair<int, Direction>> stackCopy = pendingEdges;
+            /*
+            //print stack
+            while (!stackCopy.empty()) {
+                auto top = stackCopy.top();
+                std::cout << "(" << top.first << ", " << directionToString(top.second) << ") ";
+                stackCopy.pop();
+            }
+            */
+            
+        }
+        
+        
         currentEdge = newEdge;
         currentDir = newDirection;
     }
+    return;
 }
 
 int Graph::getNeighbor(int currentEdge, Direction currentDir, int neighborIndex){
     std::vector<int> edgeOffsets;
 
-    int row = currentEdge/(2*cols-1) + 1;
-    int column = (currentEdge % (2*cols-1)) / 2;
+    int row = currentEdge/(2*cols-1) + 1; // 25 for 6409
+    int column = (currentEdge % (2*cols-1)) / 2; // 0 for 6409
     //std::cout << "row: " << row << std::endl;
     //std::cout << "column: " << column << std::endl;
 
     switch (currentDir)
     {
     // offsets are in order of direction 3-bit-representation
+    //TODO: row is never == 0?
     case Direction::UP:
+        if(row == 0){
+            return -1;
+        }
         // last row case?
-        if(row==rows){
-            edgeOffsets = {-2*cols-2-column, -2*cols-1-column, -2*cols-column};
+        else if(row==rows){
+            // calculate column in last row differently
+            column = currentEdge % (2*cols-1);
+            edgeOffsets = {-(2*cols-1)+column, -(2*cols-1)+column+1, -(2*cols-1)+column+2};
         }else{
             edgeOffsets = {-2*(cols-1)-2, -2*(cols-1)-1, -2*(cols-1)};
         }
         break;
     case Direction::DOWN:
+        if(row == rows){
+            return -1;
+        }
         // last row case?
         if(row==rows-1){
             //std::cout << "last row case for DOWN: " << currentEdge << std::endl;
-            edgeOffsets = {1,2*cols-1-column, -1};
+            edgeOffsets = {1,2*cols-2-column, -1};
         }else{
             edgeOffsets = {1,2*cols-1, -1};
         }
         break;
     case Direction::LEFT:
+        if(column == 0){
+            return -1;
+        }
         // last row case?
         if(row==rows-1){
             //std::cout << "last row case for LEFT: " << currentEdge << std::endl;
             edgeOffsets = {2*cols-2-column, -2, -1};
-            
         }else{
             edgeOffsets = {2*(cols-1), -2,-1};
         }
         break;
     case Direction::RIGHT:
+        if(column == cols-1){
+            return -1;
+        }
         // last row case?
         if(row==rows-1){
             //std::cout << "last row case for RIGHT: " << currentEdge << ", column " << column << std::endl;
@@ -1307,7 +1457,8 @@ int Graph::getNeighbor(int currentEdge, Direction currentDir, int neighborIndex)
         break;
     }
     
-    return edgeBits01[currentEdge + edgeOffsets[neighborIndex]];
+    //return edgeBits01[currentEdge + edgeOffsets[neighborIndex]];
+    return currentEdge + edgeOffsets[neighborIndex];
 }
 
 Direction Graph::nextDirection(Direction dir) {
@@ -1376,10 +1527,32 @@ double Graph::reconstructMulticut(){
     
     // reset visited vector for reconstruction dfs
     visited.assign(visited.size(), false);
+
+    std::vector<bool> old_edgeBits01 = edgeBits01;
     edgeBits01.assign(edgeBits01.size(), false);
 
+    /*
+    std::cout << "edgeBits01 before reconstruction:" << std::endl;
+    for(bool edge : edgeBits01){
+        if(edge){std::cout << "1";}else{std::cout << "0";}
+    }
+    
+    */
+    
 
-    std::cout << "init reconstruct" << std::endl;
+    
+    /*
+    for (int edge = 0; edge <=39; edge++){
+            for (Direction dir : {Direction::UP, Direction::RIGHT, Direction::DOWN, Direction::LEFT}){
+                for(int neighborI = 0; neighborI <= 2; neighborI++){
+                    std::cout << "neighbor " << neighborI << " of edge " << edge << ", " << directionToString(dir) << ": " << getNeighbor(edge, dir, neighborI) << std::endl;
+                }
+            }
+        }
+    */
+    
+    
+    //std::cout << "init reconstruct" << std::endl;
     //std::cout << "UP - 1: " << directionToString(previousDirection(Direction::UP)) << std::endl;
 
 
@@ -1387,9 +1560,30 @@ double Graph::reconstructMulticut(){
         //std::cout << directionToString(std::get<1>(pathinfo)) << std::endl;
 
         //reconstruct_edgeBits(std::get<0>(pathinfo), visited, std::get<1>(pathinfo), std::get<2>(pathinfo));
-        //reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
         
+        reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
+        //break;
     }
+
+    /*
+    for(bool edge : old_edgeBits01){
+            if(edge){std::cout << "1";}else{std::cout << "0";}
+    }   
+    std::cout << std::endl;
+    for(bool edge : edgeBits01){
+            if(edge){std::cout << "1";}else{std::cout << "0";}
+    }   
+    */
+    
+    
+    
+    
+    
+    
+    std::cout << std::endl << "reconstruction for " << imagePath << " finished: " << (old_edgeBits01 == edgeBits01) << std::endl;
+
+    
+    
 
     
 
