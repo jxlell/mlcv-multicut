@@ -10,8 +10,8 @@
                 "-g",
                 "-o",
                 "${workspaceFolder}/code/multicut",
-                "${workspaceFolder}/code/multicut.cpp",
                 "${workspaceFolder}/code/Graph.cpp",
+                "${workspaceFolder}/code/multicut.cpp",
                 "-fcolor-diagnostics",
                 "-fansi-escape-codes",
                 "`pkg-config",
@@ -23,30 +23,6 @@
             "problemMatcher": [
                 "$gcc"
             ]
-        },
-        {
-            "type": "cppbuild",
-            "label": "C/C++: clang++ Aktive Datei kompilieren",
-            "command": "/usr/bin/clang++",
-            "args": [
-                "-fcolor-diagnostics",
-                "-fansi-escape-codes",
-                "-g",
-                "${file}",
-                "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
-            ],
-            "options": {
-                "cwd": "${fileDirname}"
-            },
-            "problemMatcher": [
-                "$gcc"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "detail": "Vom Debugger generierte Aufgabe."
         }
     ]
 }

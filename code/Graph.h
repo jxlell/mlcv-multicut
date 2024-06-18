@@ -77,16 +77,19 @@ public:
     std::stringstream dfs_paths(int edge);
     bool checkHorizontal(int current);
     std::vector<bool> dfs_paths_recursive(int currentEdge, std::vector<bool>& visited, Direction currentDir, std::vector<bool>& directionVector);
+    std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std::vector<bool>& visited);
     std::string directionToString(Direction dir) const;
     void reconstruct_edgeBits(int currentedge, std::vector<bool>& visited, Direction currentDir, std::vector<bool>& directionVector);
     void printPaths() const;
     Direction nextDirection(Direction dir);
     Direction previousDirection(Direction dir);
     void reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, std::vector<bool>& directionVector);
+
     int getNeighbor(int currentEdge, Direction currentDirection, int neighborIndex);
     
 private:
     int vertices;
+    int callstack;
     std::string imagePath;
     std::vector<std::vector<int>> adjList;
     std::vector<RGB> vertexColors;

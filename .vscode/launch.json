@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug with lldb",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/code/multicut",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "preLaunchTask": "build multicut"
+        }
+    ]
+}

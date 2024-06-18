@@ -23,6 +23,7 @@ Graph::Graph(const std::string& imagePath) {
     this->neighborsOffsets = {-cols, -1, cols, 1};
     vertices = rows*cols;
 
+
     this->imagePath = imagePath;
     adjList.resize(vertices);
     vertexValues.resize(vertices, 0);
@@ -221,7 +222,7 @@ int Graph::getEdgeBitFromList(int v, int w) const {
 
 void Graph::setMulticut(){
     // Iterate through every pixel from top-left to bottom-right
-    //std::cout << "setting colors\n";
+    std::cout << "setting multicut\n";
     int pixel_index = 0;
     for (int y = 0; y < rows; ++y) {
         for (int x = 0; x < cols; ++x) {
@@ -385,8 +386,10 @@ void Graph::setMulticut(){
         dfsI++;
 
         std::vector<bool> directionVector;
-        directionVector = dfs_paths_recursive(edgeI, visited, currentDir, directionVector);
+        //directionVector = dfs_paths_recursive(edgeI, visited, currentDir, directionVector);
+        directionVector = dfs_paths_iterative(edgeI, currentDir, visited);
         paths.emplace_back(edgeI, currentDir, directionVector);
+        //std::cout << "path size: " << directionVector.size() << std::endl;
         
         //std::cout << std::endl;
         //for(bool v : visited){
@@ -998,67 +1001,6 @@ std::vector<bool> Graph::dfs_paths_recursive(int currentEdge, std::vector<bool>&
     //based on current direction check next edges and set corresponding direction bits (e.g. 011 for paths to front and right)
 
     edgeOffsets = {getNeighbor(currentEdge, currentDir, 0)-currentEdge, getNeighbor(currentEdge, currentDir, 1)-currentEdge, getNeighbor(currentEdge, currentDir, 2)-currentEdge};
-
-
-    /*
-    switch (currentDir)
-    {
-    // offsets are in order of direction 3-bit-representation
-    case Direction::UP:
-        // last row case?
-        if(row==rows){
-            edgeOffsets = {-2*cols-2-column, -2*cols-1-column, -2*cols-column};
-        }else{
-            edgeOffsets = {-2*(cols-1)-2, -2*(cols-1)-1, -2*(cols-1)};
-        }
-        break;
-    case Direction::DOWN:
-        // last row case?
-        if(row==rows-1){
-            //std::cout << "last row case for DOWN: " << currentEdge << std::endl;
-            edgeOffsets = {1,2*cols-1-column, -1};
-        }else{
-            edgeOffsets = {1,2*cols-1, -1};
-        }
-        break;
-    case Direction::LEFT:
-        // last row case?
-        if(row==rows-1){
-            //std::cout << "last row case for LEFT: " << currentEdge << std::endl;
-            edgeOffsets = {2*cols-2-column, -2, -1};
-            
-        }else{
-            edgeOffsets = {2*(cols-1), -2,-1};
-        }
-        break;
-    case Direction::RIGHT:
-        // last row case?
-        if(row==rows-1){
-            //std::cout << "last row case for RIGHT: " << currentEdge << ", column " << column << std::endl;
-            edgeOffsets = {1, 2, 2*cols-1-column};
-        }
-        else{
-            edgeOffsets = {1, 2, 2*(cols-1)+2};
-        }
-        break;
-    
-    default:
-        edgeOffsets = {1, 2, 2*(cols-1)+2};
-        break;
-    }
-    */
-    
-    
-    
-    
-    /*
-    int leftNeighbor = getNeighbor(currentEdge, currentDir, 0);
-    std::cout << "left neighbor: " << leftNeighbor << std::endl;
-    int forwardNeighbor = getNeighbor(currentEdge, currentDir, 1);
-    std::cout << "forward neighbor: " << forwardNeighbor << std::endl;
-    int rightNeighbor = getNeighbor(currentEdge, currentDir, 2);
-    std::cout << "right neighbor: " << rightNeighbor << std::endl;
-    */
     
 
     // checken in welche richtungen es weiter geht 
@@ -1130,6 +1072,95 @@ std::vector<bool> Graph::dfs_paths_recursive(int currentEdge, std::vector<bool>&
     return directionVector;
 }
 
+std::vector<bool> Graph::dfs_paths_iterative(int currentEdge, Direction currentDir, std::vector<bool>& visited){
+    std::vector<bool> directionVector;
+    //std::vector<bool> visited(edgeBits01.size(), false);
+    std::stack<std::pair<int, Direction>> pendingEdges;
+    while(!pendingEdges.empty()){
+        pendingEdges.pop();
+    }
+    pendingEdges.push(std::make_pair(currentEdge, currentDir));
+    visited[currentEdge] = true;
+    bool left, front, right;
+    while(!pendingEdges.empty()){
+        left = false;
+        front = false;
+        right = false;
+        std::tie(currentEdge, currentDir) = pendingEdges.top();
+        pendingEdges.pop();
+        //std::cout << "current edge: " << currentEdge << std::endl;
+
+
+        //TODO: push 000 und continue falls nächste edges nicht multicut oder schon visited 
+        if(getNeighbor(currentEdge, currentDir, 0) == -1){
+            directionVector.push_back(0);
+            directionVector.push_back(0);
+            directionVector.push_back(0);
+            //std::cout << "000" << std::endl;
+            continue;
+        }
+
+
+        if(!visited[getNeighbor(currentEdge, currentDir, 0)]){
+            left = edgeBits01[getNeighbor(currentEdge, currentDir, 0)];
+            directionVector.push_back(left);
+        }else{
+            directionVector.push_back(false);
+        }
+        if(!visited[getNeighbor(currentEdge, currentDir, 1)]){
+            front = edgeBits01[getNeighbor(currentEdge, currentDir, 1)];
+            directionVector.push_back(front);
+        }
+        else{
+            directionVector.push_back(false);
+        }
+        if(!visited[getNeighbor(currentEdge, currentDir, 2)]){
+            right = edgeBits01[getNeighbor(currentEdge, currentDir, 2)];
+            directionVector.push_back(right);
+        }
+        else{
+            directionVector.push_back(false);
+        }
+
+        //std::cout << left << front << right << std::endl;
+
+        bool lastThreeAllFalse = false;
+        if (directionVector.size() >= 3) {
+            lastThreeAllFalse = !directionVector[directionVector.size() - 1] &&
+                                !directionVector[directionVector.size() - 2] &&
+                                !directionVector[directionVector.size() - 3];
+        }
+
+        if(!left && !front && !right && !lastThreeAllFalse){
+            directionVector.push_back(0);
+            directionVector.push_back(0);
+            directionVector.push_back(0);
+            continue;
+        }
+
+        if(right){
+            if(!visited[getNeighbor(currentEdge, currentDir, 2)]){
+                pendingEdges.push(std::make_pair(getNeighbor(currentEdge, currentDir, 2), nextDirection(currentDir)));
+                visited[getNeighbor(currentEdge, currentDir, 2)] = true;
+            }
+        }
+        if(front){
+            if(!visited[getNeighbor(currentEdge, currentDir, 1)]){
+                pendingEdges.push(std::make_pair(getNeighbor(currentEdge, currentDir, 1), currentDir));
+                visited[getNeighbor(currentEdge, currentDir, 1)] = true;
+            }
+        }
+        if(left){
+            if(!visited[getNeighbor(currentEdge, currentDir, 0)]){
+                pendingEdges.push(std::make_pair(getNeighbor(currentEdge, currentDir, 0), previousDirection(currentDir)));
+                visited[getNeighbor(currentEdge, currentDir, 0)] = true;
+            }
+        }
+
+    }
+    return directionVector;
+}
+
 void Graph::printPaths() const {
     for (const auto& pathInfo : paths) {
         int startEdge = std::get<0>(pathInfo);
@@ -1141,10 +1172,10 @@ void Graph::printPaths() const {
         std::cout << "Directions: ";
         int i = 0;
         for (bool dir : directions) {
-            if(i%3 == 0){
-                std::cout << "-";
+            if(i%3 == 0 && i != 0 && i != directions.size()){
+                std::cout << " - ";
             }
-            std::cout << dir << " ";
+            std::cout << dir;
             i++;
         }
         std::cout << std::endl << std::endl;
@@ -1246,6 +1277,7 @@ void Graph::reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, 
         std::cout << dir << " ";
     }
     */
+   
     
     //std::cout << std::endl;
     
@@ -1561,7 +1593,7 @@ double Graph::reconstructMulticut(){
 
         //reconstruct_edgeBits(std::get<0>(pathinfo), visited, std::get<1>(pathinfo), std::get<2>(pathinfo));
         
-        reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
+        //reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
         //break;
     }
 
@@ -1580,7 +1612,7 @@ double Graph::reconstructMulticut(){
     
     
     
-    std::cout << std::endl << "reconstruction for " << imagePath << " finished: " << (old_edgeBits01 == edgeBits01) << std::endl;
+    //std::cout << std::endl << "reconstruction for '" << imagePath.substr(imagePath.find_last_of("/\\") + 1) << "' finished: " << (old_edgeBits01 == edgeBits01) << std::endl;
 
     
     
