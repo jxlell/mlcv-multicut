@@ -1182,93 +1182,40 @@ void Graph::printPaths() const {
     }
 }
 
-void Graph::reconstruct_edgeBits(int currentEdge, std::vector<bool>& visited, Direction currentDir, std::vector<bool>& directionVector){
-    // starting from a starting point and starting direction
-    // takes direction bits to navigate through edgebits vector and set corresponding edge bits 
-    std::cout << "reconstruct from dfs: " << currentEdge << std::endl;
-
-    if(visited[currentEdge]){
-        return;
+std::vector<bool> Graph::reconstruct_edgeBits(int currentEdge, std::vector<bool>& visited, Direction currentDir, std::vector<bool>& directionVector){
+    std::vector<bool> reconstruction(edgeBits01.size(), false);
+    std::stack<std::pair<int, Direction>> pendingEdges;
+    std::queue<bool> directionQueue;
+    for (bool dir : directionVector){
+        directionQueue.push(dir);
     }
+    pendingEdges.push(std::make_pair(currentEdge, currentDir));
     
-    visited[currentEdge] = true;
-
-    std::vector<int> edgeOffsets;
-    int row = currentEdge/(2*cols-1) + 1;
-    int column = (currentEdge % (2*cols-1)) / 2;
-
-    //TODO: edge offsets berechnung auslagern 
-    switch (currentDir)
-    {
-    // offsets are in order of direction 3-bit-representation
-    case Direction::UP:
-        // last row case?
-        if(row==rows){
-            edgeOffsets = {-2*cols-2-column, -2*cols-1-column, -2*cols-column};
-        }else{
-            edgeOffsets = {-2*(cols-1)-2, -2*(cols-1)-1, -2*(cols-1)};
+    while(!pendingEdges.empty()){
+        std::tie(currentEdge, currentDir) = pendingEdges.top();
+        pendingEdges.pop();
+        reconstruction[currentEdge] = true;
+        bool left = directionQueue.front();
+        directionQueue.pop();
+        bool forward = directionQueue.front();
+        directionQueue.pop();
+        bool right = directionQueue.front();
+        directionQueue.pop();
+        if(!left && !forward && !right){
+            continue;
         }
-        break;
-    case Direction::DOWN:
-        // last row case?
-        if(row==rows-1){
-            //std::cout << "last row case for DOWN: " << currentEdge << std::endl;
-            edgeOffsets = {1,2*cols-1-column, -1};
-        }else{
-            edgeOffsets = {1,2*cols-1, -1};
+        if(right){
+            pendingEdges.push(std::make_pair(getNeighbor(currentEdge, currentDir, 2), nextDirection(currentDir)));
         }
-        break;
-    case Direction::LEFT:
-        // last row case?
-        if(row==rows-1){
-            //std::cout << "last row case for LEFT: " << currentEdge << std::endl;
-            edgeOffsets = {2*cols-2-column, -2, -1};
-            
-        }else{
-            edgeOffsets = {2*(cols-1), -2,-1};
+        if(forward){
+            pendingEdges.push(std::make_pair(getNeighbor(currentEdge, currentDir, 1), currentDir));
         }
-        break;
-    case Direction::RIGHT:
-        // last row case?
-        if(row==rows-1){
-            //std::cout << "last row case for RIGHT: " << currentEdge << ", column " << column << std::endl;
-            edgeOffsets = {1, 2, 2*cols-1-column};
+        if(left){
+            pendingEdges.push(std::make_pair(getNeighbor(currentEdge, currentDir, 0), previousDirection(currentDir)));
         }
-        else{
-            edgeOffsets = {1, 2, 2*(cols-1)+2};
-        }
-        break;
-    
-    default:
-        edgeOffsets = {1, 2, 2*(cols-1)+2};
-        break;
     }
 
-    // left direction
-    if(directionVector[directionIndex]){
-        edgeBits01[currentEdge] = true;
-        directionIndex += 3;
-        reconstruct_edgeBits(currentEdge + edgeOffsets[0], visited, previousDirection(currentDir), directionVector);
-    }
-    // forward direction
-    if(directionVector[directionIndex+1]){
-        //edgeBits01[] = true;
-        directionIndex += 3;
-        reconstruct_edgeBits(currentEdge + edgeOffsets[1], visited, currentDir, directionVector);
-    }
-    // right direction
-    if(directionVector[directionIndex+2]){
-        //edgeBits01[] = true;
-        directionIndex += 3;
-        reconstruct_edgeBits(currentEdge + edgeOffsets[2], visited, nextDirection(currentDir), directionVector);
-
-    }
-    
-    directionIndex += 3; 
-    //reconstruct_edgeBits();
-    
-
-    return;
+    return reconstruction;
 }
 
 void Graph::reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, std::vector<bool>& directionVector){
@@ -1421,6 +1368,8 @@ void Graph::reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, 
     return;
 }
 
+
+
 int Graph::getNeighbor(int currentEdge, Direction currentDir, int neighborIndex){
     std::vector<int> edgeOffsets;
 
@@ -1560,8 +1509,7 @@ double Graph::reconstructMulticut(){
     // reset visited vector for reconstruction dfs
     visited.assign(visited.size(), false);
 
-    std::vector<bool> old_edgeBits01 = edgeBits01;
-    edgeBits01.assign(edgeBits01.size(), false);
+    //edgeBits01.assign(edgeBits01.size(), false);
 
     /*
     std::cout << "edgeBits01 before reconstruction:" << std::endl;
@@ -1587,11 +1535,12 @@ double Graph::reconstructMulticut(){
     //std::cout << "init reconstruct" << std::endl;
     //std::cout << "UP - 1: " << directionToString(previousDirection(Direction::UP)) << std::endl;
 
+    std::vector<bool> reconstructed_edgeBits(edgeBits01.size(), false);
 
     for(PathInfo pathinfo : paths){
         //std::cout << directionToString(std::get<1>(pathinfo)) << std::endl;
 
-        //reconstruct_edgeBits(std::get<0>(pathinfo), visited, std::get<1>(pathinfo), std::get<2>(pathinfo));
+        reconstructed_edgeBits = logical_or_vectors(reconstructed_edgeBits,reconstruct_edgeBits(std::get<0>(pathinfo), visited, std::get<1>(pathinfo), std::get<2>(pathinfo)));
         
         //reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
         //break;
@@ -1612,7 +1561,7 @@ double Graph::reconstructMulticut(){
     
     
     
-    //std::cout << std::endl << "reconstruction for '" << imagePath.substr(imagePath.find_last_of("/\\") + 1) << "' finished: " << (old_edgeBits01 == edgeBits01) << std::endl;
+    std::cout << std::endl << "reconstruction for '" << imagePath.substr(imagePath.find_last_of("/\\") + 1) << "' finished: " << (reconstructed_edgeBits == edgeBits01) << std::endl;
 
     
     
@@ -1650,4 +1599,16 @@ double Graph::reconstructMulticut(){
     
     return static_cast<double>(3*8*cols*rows) / ((2*cols*rows-cols-rows) + regionColors.size()*3*8 );
 
+}
+
+std::vector<bool> Graph::logical_or_vectors(const std::vector<bool>& vec1, const std::vector<bool>& vec2) {
+    // Ensure the vectors are the same size
+    if (vec1.size() != vec2.size()) {
+        throw std::invalid_argument("Vectors must be the same size");
+    }
+
+    std::vector<bool> result(vec1.size());
+    std::transform(vec1.begin(), vec1.end(), vec2.begin(), result.begin(), [](bool a, bool b) { return a || b; });
+
+    return result;
 }
