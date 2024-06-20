@@ -68,7 +68,8 @@ public:
     std::vector<int> getVertexRegions();
     void unionFindMulticut();
     double reconstructMulticut();
-    andres::Partition<int> getRegions();
+    andres::Partition<int> getRegions(std::vector<bool>& edgeBitsVector);
+    andres::Partition<int> getRegionsFromImage();
     int getEdgeBitFromList(int v, int w) const;
     void labelRegions();
     bool isValidNeighbor(int neighbor) const;

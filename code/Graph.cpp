@@ -118,9 +118,10 @@ void Graph::printSize(){
     //std::cout << "size of RGB: " << sizeof(RGB) << std::endl;
     //std::cout << "size of uint: " << sizeof(uint8_t) << std::endl;
 
-    std::cout << "\n edgebits size: " << cols*rows << " bits\n";
-    std::cout << "regioncolors size: " << regionColors.size()*3*8 << " bits\n";
-    std::cout << "compression rate: " << static_cast<double>(3*8*cols*rows) / (cols*rows + regionColors.size()*3*8 ) << std::endl;
+    std::cout << "\n edgebits size: " << 2*cols*rows-cols-rows << " bits\n";
+    std::cout << "regioncolors size: " << regionColors.size() << "\n";
+
+    //std::cout << "compression rate: " << static_cast<double>(3*8*cols*rows) / (cols*rows + regionColors.size()*3*8 ) << std::endl;
 
 }
 
@@ -300,7 +301,7 @@ void Graph::setMulticut(){
     */
 
 
-    andres::Partition<int> multicutregion = getRegions();
+    andres::Partition<int> multicutregion = getRegionsFromImage();
     //for(int i = 0; i<25; i++){
     //    std::cout << "region of index " << i << ": " << multicutregion.find(i) << ", ";
     //}
@@ -756,7 +757,7 @@ bool Graph::isValidNeighbor(int neighbor) const {
     return neighbor >= 0 && neighbor < rows * cols;
 }
 
-andres::Partition<int> Graph::getRegions(){
+andres::Partition<int> Graph::getRegions(std::vector<bool>& edgeBitsVector){
     andres::Partition<int> region(rows*cols);
     for (int index = 0; index < rows * cols; ++index) {
         for (int offset : neighborsOffsets) {
@@ -766,6 +767,27 @@ andres::Partition<int> Graph::getRegions(){
                 // if no: merge 
 
                 if(getEdgeBitFromList(index, neighbor) == 0){
+                    region.merge(index, neighbor);
+                    //std::cout << reconstruction.find(index) << ", ";
+                }
+
+                
+            }
+        }
+    }
+    return region;
+}
+
+andres::Partition<int> Graph::getRegionsFromImage(){
+    andres::Partition<int> region(rows*cols);
+    for (int index = 0; index < rows * cols; ++index) {
+        for (int offset : neighborsOffsets) {
+            int neighbor = index + offset;
+            if (neighbor >= 0 && neighbor < getVertices() && ((neighbor / cols == index / cols) || (abs(neighbor - index) > 1))) {
+                // check if neighbours are separated by multicut 
+                // if no: merge 
+                //TODO: check WITHOUT edgeBits01
+                if(compareRGB(getVertexColor(index), getVertexColor(neighbor))){
                     region.merge(index, neighbor);
                     //std::cout << reconstruction.find(index) << ", ";
                 }
@@ -1306,7 +1328,18 @@ Direction Graph::previousDirection(Direction dir) {
 
 double Graph::reconstructMulticut(){
     cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
-    andres::Partition<int> reconstruction = getRegions();
+
+    std::vector<bool> reconstructed_edgeBits(edgeBits01.size(), false);
+    for(PathInfo pathinfo : paths){
+        //std::cout << directionToString(std::get<1>(pathinfo)) << std::endl;
+
+        reconstructed_edgeBits = logical_or_vectors(reconstructed_edgeBits,reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo)));
+        
+        //reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
+        //break;
+    }
+
+    andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits);
     std::map<int, int> representativeLabels;
     reconstruction.representativeLabeling(representativeLabels);
     //std::vector<int> reps;
@@ -1351,11 +1384,13 @@ double Graph::reconstructMulticut(){
     
     //printSize();
     
-    
+    /*
     cv::destroyAllWindows();
     cv::imshow("Original", img);
     cv::imshow("Reconstruction", image);
     cv::waitKey(0);
+    */
+    std::cout << "\nImages Are Identical: " << (areImagesIdentical(img, image) ? "YES" : "NO") << std::endl;
     
     
     // reset visited vector for reconstruction dfs
@@ -1387,16 +1422,7 @@ double Graph::reconstructMulticut(){
     //std::cout << "init reconstruct" << std::endl;
     //std::cout << "UP - 1: " << directionToString(previousDirection(Direction::UP)) << std::endl;
 
-    std::vector<bool> reconstructed_edgeBits(edgeBits01.size(), false);
-
-    for(PathInfo pathinfo : paths){
-        //std::cout << directionToString(std::get<1>(pathinfo)) << std::endl;
-
-        reconstructed_edgeBits = logical_or_vectors(reconstructed_edgeBits,reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo)));
-        
-        //reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
-        //break;
-    }
+    
 
     /*
     for(bool edge : old_edgeBits01){
@@ -1413,7 +1439,7 @@ double Graph::reconstructMulticut(){
     
     
     
-    std::cout << std::endl << "reconstruction for '" << imagePath.substr(imagePath.find_last_of("/\\") + 1) << "' finished: " << (reconstructed_edgeBits == edgeBits01) << std::endl;
+    //std::cout << std::endl << "reconstruction for '" << imagePath.substr(imagePath.find_last_of("/\\") + 1) << "' finished: " << (reconstructed_edgeBits == edgeBits01) << std::endl;
 
     
     
