@@ -79,11 +79,10 @@ public:
     std::vector<bool> dfs_paths_recursive(int currentEdge, std::vector<bool>& visited, Direction currentDir, std::vector<bool>& directionVector);
     std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std::vector<bool>& visited);
     std::string directionToString(Direction dir) const;
-    std::vector<bool> reconstruct_edgeBits(int currentedge, std::vector<bool>& visited, Direction currentDir, std::vector<bool>& directionVector);
     void printPaths() const;
     Direction nextDirection(Direction dir);
     Direction previousDirection(Direction dir);
-    void reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, std::vector<bool>& directionVector);
+    std::vector<bool> reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, std::vector<bool>& directionVector);
 
     int getNeighbor(int currentEdge, Direction currentDirection, int neighborIndex);
     std::vector<bool> logical_or_vectors(const std::vector<bool>& vec1, const std::vector<bool>& vec2);
