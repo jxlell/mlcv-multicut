@@ -70,7 +70,7 @@ public:
     double reconstructMulticut();
     andres::Partition<int> getRegions(std::vector<bool>& edgeBitsVector);
     andres::Partition<int> getRegionsFromImage();
-    int getEdgeBitFromList(int v, int w) const;
+    int getEdgeBitFromList(int v, int w, std::vector<bool>& edgeBitsVector) const;
     void labelRegions();
     bool isValidNeighbor(int neighbor) const;
     std::vector<std::vector<std::pair<int, uint8_t>>> extract_multicut_paths();
@@ -83,7 +83,7 @@ public:
     void printPaths() const;
     Direction nextDirection(Direction dir);
     Direction previousDirection(Direction dir);
-    std::vector<bool> reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, std::vector<bool>& directionVector);
+    void reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, std::vector<bool>& directionVector, std::vector<bool>& reconstructedEdgeBits);
 
     int getNeighbor(int currentEdge, Direction currentDirection, int neighborIndex);
     std::vector<bool> logical_or_vectors(const std::vector<bool>& vec1, const std::vector<bool>& vec2);
@@ -110,6 +110,7 @@ private:
     std::vector<bool> visited; 
     PathInfoVector paths;
     int directionIndex; 
+    int disconnectedComponents;
 };
 
 #endif // GRAPH_H

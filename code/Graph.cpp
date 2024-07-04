@@ -20,7 +20,8 @@ Graph::Graph(const std::string& imagePath) {
     }
     this->cols = img.cols;
     this->rows = img.rows;
-    this->neighborsOffsets = {-cols, -1, cols, 1};
+    //this->neighborsOffsets = {-cols, -1, cols, 1};
+    this->neighborsOffsets = {cols, 1};
     vertices = rows*cols;
 
 
@@ -96,7 +97,7 @@ void Graph::printEdgeBits(){
 
 void Graph::printColorRegions(){
     for (const auto& color : regionColors) {
-        std::cout << "RGB: " << color.red << ", " << color.green << ", " << color.blue << std::endl;
+        std::cout << "RGB: " << static_cast<int>(color.red) << ", " << static_cast<int>(color.green) << ", " << static_cast<int>(color.blue) << std::endl;
     }
     
 }
@@ -118,11 +119,13 @@ void Graph::printSize(){
     //std::cout << "size of RGB: " << sizeof(RGB) << std::endl;
     //std::cout << "size of uint: " << sizeof(uint8_t) << std::endl;
 
-    std::cout << "\n edgebits size: " << 2*cols*rows-cols-rows << " bits\n";
-    std::cout << "regioncolors size: " << regionColors.size() << "\n";
+    //std::cout << "\n edgebits size: " << 2*cols*rows-cols-rows << " bits\n";
+    //std::cout << "regioncolors size: " << regionColors.size() << "\n";
 
     //std::cout << "compression rate: " << static_cast<double>(3*8*cols*rows) / (cols*rows + regionColors.size()*3*8 ) << std::endl;
 
+    std::cout << "previous compression: " << static_cast<double>(3*8*cols*rows) / (2*cols*rows-cols-rows + regionColors.size()*3*8 ) << std::endl;
+    std::cout << "current compression: " << static_cast<double>(3*8*cols*rows) / (3*std::count(edgeBits01.begin(), edgeBits01.end(), true) + 8*disconnectedComponents + regionColors.size()*3*8 ) << std::endl;
 }
 
 // Setter method to set the RGB value for a vertex
@@ -202,18 +205,27 @@ bool Graph::getEdgeBit(int v, int w) const {
     }
 }
 
-int Graph::getEdgeBitFromList(int v, int w) const {
+int Graph::getEdgeBitFromList(int v, int w, std::vector<bool>& edgebitsvector) const {
     int index = std::min(v,w);
     int row = index / cols + 1;
+    int col = index % cols + 1;
     //std::cout << std::endl << "row: " << row << std::endl;
-    if(abs(v-w) == 1){
-        int rightBit = edgeBits01[index * 2 - (row - 2)];
+    //rechter nachbar?
+    //TODO: berechnung nicht richtig für last row case!!
+    if(abs(v-w) == 1 && row != rows){
+        int rightBit = edgebitsvector[index * 2 - (row - 2)];
         //std::cout << "rightBitIndex: " << index * 2 - (row - 2) << std::endl;
         return rightBit;
     }
+    if(abs(v-w) == 1 && row == rows){
+        int rightBit = edgebitsvector[index * 2 - (row - 2) - col];
+        //std::cout << "rightBitIndex: " << index * 2 - (row - 1) << std::endl;
+        return rightBit;
+    }
+    //sonst unterer nachbar
     else{
         int edgeI = index * 2 - (row - 1);
-        int downBit = edgeBits01[edgeI];
+        int downBit = edgebitsvector[edgeI];
         //std::cout << "downBitIndex: " << edgeI << std::endl;
         return downBit;
     }
@@ -286,7 +298,9 @@ void Graph::setMulticut(){
         //printProgressBar(v, getVertices());
     }
     
-
+    std::cout << "size edgebits01: " << edgeBits01.size() << std::endl;
+    std::cout << "True edgebits: " << std::count(edgeBits01.begin(), edgeBits01.end(), true) << std::endl;
+    std::cout << "percentage: " << 100*std::count(edgeBits01.begin(), edgeBits01.end(), true) / edgeBits01.size() << "%" << std::endl;
     /*
     std::cout << std::endl << "edge bits listed: ";
         for(bool edgebit : edgeBits01){
@@ -411,7 +425,7 @@ void Graph::setMulticut(){
     
     
     
-    
+    disconnectedComponents = dfsI;
     std::cout << "\nnumber of disconnected components: " << dfsI << std::endl;
     /*
     // DFS recursive
@@ -766,9 +780,10 @@ andres::Partition<int> Graph::getRegions(std::vector<bool>& edgeBitsVector){
                 // check if neighbours are separated by multicut 
                 // if no: merge 
 
-                if(getEdgeBitFromList(index, neighbor) == 0){
+                if(getEdgeBitFromList(index, neighbor, edgeBitsVector) == 0){
                     region.merge(index, neighbor);
                     //std::cout << reconstruction.find(index) << ", ";
+                    //std::cout << "merged " << index << " and " << neighbor << std::endl;
                 }
 
                 
@@ -1110,6 +1125,7 @@ std::vector<bool> Graph::dfs_paths_iterative(int currentEdge, Direction currentD
         front = false;
         right = false;
         std::tie(currentEdge, currentDir) = pendingEdges.top();
+        //visited[currentEdge] = true;
         pendingEdges.pop();
         //std::cout << "current edge: " << currentEdge << std::endl;
 
@@ -1201,11 +1217,12 @@ void Graph::printPaths() const {
             std::cout << dir;
             i++;
         }
-        std::cout << std::endl << std::endl;
+        std::cout << std::endl;
+        std::cout << "Path Length (/3): " << directions.size() / 3 << std::endl;
     }
 }
 
-std::vector<bool> Graph::reconstruct_edgeBits_iterative(int currentEdge, Direction currentDir, std::vector<bool>& directionVector){
+void Graph::reconstruct_edgeBits_iterative(int currentEdge, Direction currentDir, std::vector<bool>& directionVector, std::vector<bool>& reconstructedEdgeBits){
     std::vector<bool> reconstruction(edgeBits01.size(), false);
     std::stack<std::pair<int, Direction>> pendingEdges;
     std::queue<bool> directionQueue;
@@ -1217,7 +1234,7 @@ std::vector<bool> Graph::reconstruct_edgeBits_iterative(int currentEdge, Directi
     while(!pendingEdges.empty()){
         std::tie(currentEdge, currentDir) = pendingEdges.top();
         pendingEdges.pop();
-        reconstruction[currentEdge] = true;
+        reconstructedEdgeBits[currentEdge] = true;
         bool left = directionQueue.front();
         directionQueue.pop();
         bool forward = directionQueue.front();
@@ -1237,8 +1254,8 @@ std::vector<bool> Graph::reconstruct_edgeBits_iterative(int currentEdge, Directi
             pendingEdges.push(std::make_pair(getNeighbor(currentEdge, currentDir, 0), previousDirection(currentDir)));
         }
     }
-
-    return reconstruction;
+    return;
+    //return reconstruction;
 }
 
 
@@ -1328,18 +1345,32 @@ Direction Graph::previousDirection(Direction dir) {
 
 double Graph::reconstructMulticut(){
     cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
+    int directionBitsSize;
+    int numberOfPaths = paths.size();
 
     std::vector<bool> reconstructed_edgeBits(edgeBits01.size(), false);
+    int i;
     for(PathInfo pathinfo : paths){
         //std::cout << directionToString(std::get<1>(pathinfo)) << std::endl;
-
-        reconstructed_edgeBits = logical_or_vectors(reconstructed_edgeBits,reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo)));
-        
-        //reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
+        //printProgressBar(i , paths.size());
+        //reconstructed_edgeBits = logical_or_vectors(reconstructed_edgeBits,reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo)));
+        //reconstructed_edgeBits = reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
+        reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo), reconstructed_edgeBits);
+        directionBitsSize += std::get<2>(pathinfo).size();
         //break;
+        i++;
     }
 
+    std::cout << "size of directionbits: " << directionBitsSize << std::endl;
+
+    std::cout << "reconstruction same as original: " << (reconstructed_edgeBits == edgeBits01) << std::endl;
+
+    std::cout << "\nreconstruction for edgebits01 finished" << std::endl;
+
+    //reconstructed_edgeBits.assign(reconstructed_edgeBits.size(), false);
+
     andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits);
+    //printColorRegions();
     std::map<int, int> representativeLabels;
     reconstruction.representativeLabeling(representativeLabels);
     //std::vector<int> reps;
@@ -1382,7 +1413,7 @@ double Graph::reconstructMulticut(){
         image.at<cv::Vec3b>(y, x) = cv::Vec3b(col.blue, col.green, col.red);  
     }
     
-    //printSize();
+    printSize();
     
     /*
     cv::destroyAllWindows();
@@ -1390,6 +1421,10 @@ double Graph::reconstructMulticut(){
     cv::imshow("Reconstruction", image);
     cv::waitKey(0);
     */
+    
+    
+    
+    
     std::cout << "\nImages Are Identical: " << (areImagesIdentical(img, image) ? "YES" : "NO") << std::endl;
     
     
@@ -1474,8 +1509,10 @@ double Graph::reconstructMulticut(){
     std::cout << "size of regions array: " << regionColors.size() << std::endl;
     */
     
-    
-    return static_cast<double>(3*8*cols*rows) / ((2*cols*rows-cols-rows) + regionColors.size()*3*8 );
+    // compression rate for paths representation 
+    return static_cast<double>(3*8*cols*rows) / (directionBitsSize + numberOfPaths*(8 + 2) + regionColors.size()*3*8 );
+    // compression rate for edgebit representation
+    //return static_cast<double>(3*8*cols*rows) / ((2*cols*rows-cols-rows) + regionColors.size()*3*8 );
 
 }
 

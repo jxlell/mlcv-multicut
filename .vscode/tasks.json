@@ -7,6 +7,7 @@
             "command": "/usr/bin/clang++",
             "args": [
                 "-std=c++17",
+                "-O3",
                 "-g",
                 "-o",
                 "${workspaceFolder}/code/multicut",
