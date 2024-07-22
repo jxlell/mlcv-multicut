@@ -7,6 +7,7 @@
 #include "partition.hxx"
 #include <cstdlib>
 #include <queue>
+#include <chrono>
 
 Graph::Graph(const std::string& imagePath) {
     
@@ -103,27 +104,6 @@ void Graph::printColorRegions(){
 }
 
 void Graph::printSize(){
-    //std::cout << "size of regionColors " << "(" << regionColors.size() << " entries): " << sizeof(regionColors) * 8 << std::endl;
-    //std::cout << sizeof(getVertexColor(0))<< std::endl;
-    //std::cout << "size of regions vector: " << sizeof(regions) * 8 << std::endl;
-    //std::cout << "total: " << sizeof(regionColors) * 8 + sizeof(regions) * 8 << std::endl;
-    //std::cout << "size of one RGB value: " << sizeof(getVertexColor(0)) * 8 << std::endl;
-    //RGB test;
-    //std::cout << "size of one test RGB value: " << sizeof(test) * 8 << std::endl;
-    //std::cout << imagePath << ": " << std::endl;
-    //std::cout << "size of vertexRegions: " << vertexRegions.size() << std::endl;
-    //std::cout << "size of vertexRegions in kBit: " << vertexRegions.size() * sizeof(int) * 8 / 1024 << std::endl;
-    //std::cout << "size of regionColors in kBit: " << regionColors.size() * sizeof(RGB) * 8 / 1024 << std::endl;
-    //std::cout << "size of regionColors vector: " << regionColors.size() << std::endl;
-    //std::cout << "size of int: " << sizeof(int) << std::endl;
-    //std::cout << "size of RGB: " << sizeof(RGB) << std::endl;
-    //std::cout << "size of uint: " << sizeof(uint8_t) << std::endl;
-
-    //std::cout << "\n edgebits size: " << 2*cols*rows-cols-rows << " bits\n";
-    //std::cout << "regioncolors size: " << regionColors.size() << "\n";
-
-    //std::cout << "compression rate: " << static_cast<double>(3*8*cols*rows) / (cols*rows + regionColors.size()*3*8 ) << std::endl;
-
     std::cout << "previous compression: " << static_cast<double>(3*8*cols*rows) / (2*cols*rows-cols-rows + regionColors.size()*3*8 ) << std::endl;
     std::cout << "current compression: " << static_cast<double>(3*8*cols*rows) / (3*std::count(edgeBits01.begin(), edgeBits01.end(), true) + 8*disconnectedComponents + regionColors.size()*3*8 ) << std::endl;
 }
@@ -235,7 +215,8 @@ int Graph::getEdgeBitFromList(int v, int w, std::vector<bool>& edgebitsvector) c
 
 void Graph::setMulticut(){
     // Iterate through every pixel from top-left to bottom-right
-    std::cout << "setting multicut\n";
+    //std::cout << "setting multicut\n";
+    auto start = std::chrono::high_resolution_clock::now();
     int pixel_index = 0;
     for (int y = 0; y < rows; ++y) {
         for (int x = 0; x < cols; ++x) {
@@ -257,6 +238,11 @@ void Graph::setMulticut(){
         //printProgressBar(y, rows);
 
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "time to set vertex colors in ms: " << start_to_end << std::endl;
+
+    start = std::chrono::high_resolution_clock::now();
 
     //std::cout << "\nsetting multicut bits\n";
     int regionIndex = 0;
@@ -274,7 +260,7 @@ void Graph::setMulticut(){
         for (int offset : neighborsOffsets) {
             int neighbor = v + offset;
             if (neighbor >= 0 && neighbor < getVertices() && ((neighbor / cols == v / cols) || (abs(neighbor - v) > 1))) {
-                addEdge(neighbor, v);
+                //addEdge(neighbor, v);
                 if(offset == 1 || offset == cols){
                     //std::cout << edgeIndex << ", ";
                     edgeIndex++;
@@ -284,23 +270,20 @@ void Graph::setMulticut(){
                         //std::cout << "offset: " << offset << ", ";
                     }
                 }
-
-                //obsolete edgebit part 
-                //TODO: delete weil obsolete?
-                if(!compareRGB(currentColor, getVertexColor(neighbor))){
-                    //std::cout << "comparing: " << static_cast<int>(currentColor.red) << " " << static_cast<int>(currentColor.blue) <<  " " << static_cast<int>(currentColor.green) <<std::endl;
-                    //std::cout << "to: " << static_cast<int>(getVertexColor(neighbor).red) << " " << static_cast<int>(getVertexColor(neighbor).blue) << " " << static_cast<int>(getVertexColor(neighbor).green) << std::endl;
-                    // ###### add multicut bit 
-                    setEdgeBit(v,neighbor,1);
-                }
             }
         }
         //printProgressBar(v, getVertices());
     }
+    end = std::chrono::high_resolution_clock::now();
+    start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "time to set edge bits in ms: " << start_to_end << std::endl;
     
+    /*
     std::cout << "size edgebits01: " << edgeBits01.size() << std::endl;
     std::cout << "True edgebits: " << std::count(edgeBits01.begin(), edgeBits01.end(), true) << std::endl;
     std::cout << "percentage: " << 100*std::count(edgeBits01.begin(), edgeBits01.end(), true) / edgeBits01.size() << "%" << std::endl;
+    
+    */
     /*
     std::cout << std::endl << "edge bits listed: ";
         for(bool edgebit : edgeBits01){
@@ -314,6 +297,7 @@ void Graph::setMulticut(){
     int edgeBit01Index = 0;
     */
 
+   start = std::chrono::high_resolution_clock::now();
 
     andres::Partition<int> multicutregion = getRegionsFromImage();
     //for(int i = 0; i<25; i++){
@@ -329,6 +313,11 @@ void Graph::setMulticut(){
         //std::cout << static_cast<int>(repRGB.red) << ", ";
     }
     regionColors.resize(reps.size());
+
+    end = std::chrono::high_resolution_clock::now();
+    start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "time to set regions in ms: " << start_to_end << std::endl;
+
     /*
     for(RGB rgb : regionColors){
         std::cout << static_cast<int>(rgb.red) << " " << static_cast<int>(rgb.green) << " " << static_cast<int>(rgb.blue) << std::endl;
@@ -355,6 +344,8 @@ void Graph::setMulticut(){
     //visited.assign(visited.size(), false);
     int edgeI = 0;
     int dfsI = 0;
+
+    start = std::chrono::high_resolution_clock::now();
     
     for (bool edge : edgeBits01){
         // skip non-multicut edges or previously visited edges ||
@@ -363,7 +354,6 @@ void Graph::setMulticut(){
             continue;
             }
         if(visited[edgeI]){
-            //std::cout << "visited" << std::endl;
             edgeI++;
             continue;
         }
@@ -414,36 +404,18 @@ void Graph::setMulticut(){
         //std::cout << std::endl;
         edgeI++;
     }
+    //std::cout << "edgeI: " << edgeI << std::endl;
+    //std::cout << "number of edges: " << 2*rows*cols - cols - rows << std::endl;
+    end = std::chrono::high_resolution_clock::now();
+    start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "time to set paths in ms: " << start_to_end << std::endl;
 
     //printPaths();
     
-    /*
-    for (bool edge : edgeBits01){
-        std::cout << edge << " ";
-    }
-    */
-    
-    
     
     disconnectedComponents = dfsI;
-    std::cout << "\nnumber of disconnected components: " << dfsI << std::endl;
-    /*
-    // DFS recursive
-    Direction currentDir = Direction::RIGHT;
-    //std::vector<bool> visited;
-    //visited.resize(cols*rows, false);
-    std::vector<bool> directionVector; 
-    directionVector = dfs_paths_recursive(33841, visited, currentDir, directionVector);
-    std::cout << std::endl;
-    for(const auto& dir : directionVector){
-        std::cout << dir;
-    }    
-    std::cout << std::endl << directionVector.size() << std::endl;
-    
-    std::cout << "mc edges count: " << std::count(edgeBits01.begin(), edgeBits01.end(), true) << std::endl;
-    std::cout << "visited count: " << std::count(visited.begin(), visited.end(), true) << std::endl;
-    */
-    
+    //std::cout << "\nnumber of disconnected components: " << dfsI << std::endl;
+
     
 
 }
@@ -1114,9 +1086,7 @@ std::vector<bool> Graph::dfs_paths_iterative(int currentEdge, Direction currentD
     std::vector<bool> directionVector;
     //std::vector<bool> visited(edgeBits01.size(), false);
     std::stack<std::pair<int, Direction>> pendingEdges;
-    while(!pendingEdges.empty()){
-        pendingEdges.pop();
-    }
+
     pendingEdges.push(std::make_pair(currentEdge, currentDir));
     visited[currentEdge] = true;
     bool left, front, right;
@@ -1131,7 +1101,7 @@ std::vector<bool> Graph::dfs_paths_iterative(int currentEdge, Direction currentD
 
 
         //TODO: push 000 und continue falls nächste edges nicht multicut oder schon visited 
-        if(getNeighbor(currentEdge, currentDir, 0) == -1){
+        if(getNeighbor(currentEdge, currentDir, 0) == -1 || getNeighbor(currentEdge, currentDir, 1) == -1 || getNeighbor(currentEdge, currentDir, 2) == -1 || getNeighbor(currentEdge, currentDir, 0) >= edgeBits01.size() || getNeighbor(currentEdge, currentDir, 1) >= edgeBits01.size() || getNeighbor(currentEdge, currentDir, 2) >= edgeBits01.size()){
             directionVector.push_back(0);
             directionVector.push_back(0);
             directionVector.push_back(0);
@@ -1163,6 +1133,7 @@ std::vector<bool> Graph::dfs_paths_iterative(int currentEdge, Direction currentD
 
         //std::cout << left << front << right << std::endl;
 
+        
         bool lastThreeAllFalse = false;
         if (directionVector.size() >= 3) {
             lastThreeAllFalse = !directionVector[directionVector.size() - 1] &&
@@ -1176,6 +1147,8 @@ std::vector<bool> Graph::dfs_paths_iterative(int currentEdge, Direction currentD
             directionVector.push_back(0);
             continue;
         }
+        
+        
 
         if(right){
             if(!visited[getNeighbor(currentEdge, currentDir, 2)]){
@@ -1361,11 +1334,11 @@ double Graph::reconstructMulticut(){
         i++;
     }
 
-    std::cout << "size of directionbits: " << directionBitsSize << std::endl;
+    //std::cout << "size of directionbits: " << directionBitsSize << std::endl;
 
     std::cout << "reconstruction same as original: " << (reconstructed_edgeBits == edgeBits01) << std::endl;
 
-    std::cout << "\nreconstruction for edgebits01 finished" << std::endl;
+    //std::cout << "\nreconstruction for edgebits01 finished" << std::endl;
 
     //reconstructed_edgeBits.assign(reconstructed_edgeBits.size(), false);
 
@@ -1413,7 +1386,7 @@ double Graph::reconstructMulticut(){
         image.at<cv::Vec3b>(y, x) = cv::Vec3b(col.blue, col.green, col.red);  
     }
     
-    printSize();
+    //printSize();
     
     /*
     cv::destroyAllWindows();
@@ -1425,7 +1398,7 @@ double Graph::reconstructMulticut(){
     
     
     
-    std::cout << "\nImages Are Identical: " << (areImagesIdentical(img, image) ? "YES" : "NO") << std::endl;
+    //std::cout << "\nImages Are Identical: " << (areImagesIdentical(img, image) ? "YES" : "NO") << std::endl;
     
     
     // reset visited vector for reconstruction dfs
