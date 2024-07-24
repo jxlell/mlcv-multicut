@@ -35,11 +35,9 @@ using PathInfoVector = std::vector<PathInfo>;
 class Graph {
 public:
     Graph(const std::string& imagePath);
-    void addEdge(int v, int w);
     void addVertex();
     void printGraph();
     int getVertices() const;
-    std::vector<std::vector<int>> getAdjList() const;
     void setVertexColor(int v, int red, int green, int blue);
     RGB getVertexColor(int v) const;
     void setVertexValue(int v, int value);
@@ -50,7 +48,6 @@ public:
     bool getEdgeBit(int v, int w) const;
     std::string getImagePath() const;
     void setMulticut();
-    void setDualGraph();
     void printEdgeBits();
     void printColorRegions();
     std::vector<int> getConnectedPixels(int seed);
@@ -66,18 +63,12 @@ public:
     void assignRegions();
     std::vector<RGB> getRegionColors();
     std::vector<int> getVertexRegions();
-    void unionFindMulticut();
     double reconstructMulticut();
     andres::Partition<int> getRegions(std::vector<bool>& edgeBitsVector);
     andres::Partition<int> getRegionsFromImage();
     int getEdgeBitFromList(int v, int w, std::vector<bool>& edgeBitsVector) const;
     void labelRegions();
     bool isValidNeighbor(int neighbor) const;
-    std::vector<std::vector<std::pair<int, uint8_t>>> extract_multicut_paths();
-    void dfs_multicut_path(int v, std::vector<bool>& visited, std::vector<int>& path, std::vector<std::pair<int, uint8_t>>& pathDirections);
-    std::stringstream dfs_paths(int edge);
-    bool checkHorizontal(int current);
-    std::vector<bool> dfs_paths_recursive(int currentEdge, std::vector<bool>& visited, Direction currentDir, std::vector<bool>& directionVector);
     std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std::vector<bool>& visited);
     std::string directionToString(Direction dir) const;
     void printPaths() const;
@@ -86,7 +77,6 @@ public:
     void reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, std::vector<bool>& directionVector, std::vector<bool>& reconstructedEdgeBits);
 
     int getNeighbor(int currentEdge, Direction currentDirection, int neighborIndex);
-    std::vector<bool> logical_or_vectors(const std::vector<bool>& vec1, const std::vector<bool>& vec2);
     
 private:
     int vertices;
@@ -95,8 +85,6 @@ private:
     std::vector<std::vector<int>> adjList;
     std::vector<RGB> vertexColors;
     std::vector<int> vertexValues;
-    std::vector<std::bitset<1>> edgeBits;
-    std::vector<std::bitset<1>> edgeBitsRLE;
     std::vector<bool> edgeBits01;
     std::vector<int> regionRepresentatives;
     cv::Mat img;
@@ -106,7 +94,6 @@ private:
     std::vector<RGB> regionColors;
     std::vector<std::vector<int>> regions;
     std::vector<int> vertexRegions;
-    std::vector<bool> dualBits;
     std::vector<bool> visited; 
     PathInfoVector paths;
     int directionIndex; 

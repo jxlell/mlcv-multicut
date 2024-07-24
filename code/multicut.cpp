@@ -63,8 +63,6 @@ int main() {
         }
 
         Graph img_graph(dirEntry.path().string()); 
-        //cout << dirEntry.path().filename().string() << ", ";
-        //Graph img_graph("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV Project/code/images/photo_wikipedia/011.png");
 
         std::cout << dirEntry.path() << endl;
         auto startTime = std::chrono::high_resolution_clock::now();
@@ -74,39 +72,17 @@ int main() {
         auto end_set_multicut = std::chrono::high_resolution_clock::now();
         total_time_set_multicut += std::chrono::duration_cast<std::chrono::milliseconds>(end_set_multicut - startTime).count();
 
-        //img_graph.printGraph();
-        //img_graph.printEdgeBits();
 
-        //img_graph.findAllRegions();
-        //img_graph.assignRegions();
-
-
-        //img_graph.printColorRegions();
-        //img_graph.printSize();
-        //img_graph.reconstructImage();
-
-        //img_graph.unionFindMulticut();
         auto start_reconstruct_multicut = std::chrono::high_resolution_clock::now();
         compression_rates.push_back(img_graph.reconstructMulticut());
         auto end_reconstruct_multicut = std::chrono::high_resolution_clock::now();
         total_time_reconstruct_multicut += std::chrono::duration_cast<std::chrono::milliseconds>(end_reconstruct_multicut - start_reconstruct_multicut).count();
-        //cv::imshow("Image", img);
-        //cv::waitKey(3000);
-        //img_graph.printColorRegions();
-        //img_graph.printRegionVector();
-        //break;
 
-        //img_graph.printConnectedPixels(20);
         //img_graph.printProgressBar(i, count);
         ++i;
 
-        //std::vector<int> regions = img_graph.getVertexRegions();
-
-        //cout << "size in byte: " << sizeof(regions) * 8 << ", .size(): " << regions.size() * 8 << endl;
-
     }
     
-    //cout << "size of int: " << sizeof(int) * 8 << " bit" << endl;
 
     // WRITE COMPRESSION RATES TO FILE
     //writeToOutput(p1, compression_rates, i);
