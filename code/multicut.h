@@ -3,24 +3,41 @@
 
 #include <vector>
 #include <bitset>
+#include <opencv2/opencv.hpp> 
+#include "Image.h"
+#include "DirectionPath.h"
+#include "partition.hxx"
 
-struct RGB {
-    std::bitset<8> red;
-    std::bitset<8> green;
-    std::bitset<8> blue;
+class Multicut {
+    public:
+        Multicut(cv::Mat img);
+        int getEdgeBitFromList(int v, int w, const std::vector<std::vector<bool>>& edgeBits);
+        void findAllRegions();
+        void assignRegions();
+        void printRegionVector();
+        int findVectorIndex(const std::vector<std::vector<int>>& regions, int targetNumber);
+        void setVertexColor(int v, int red, int green, int blue);
+        RGB getVertexColor(int v) const;
+        int getVertices() const;
+        std::vector<bool> getEdgeBits01() const;
+        std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std::vector<bool>& visited);
+        Direction nextDirection(Direction dir);
+        Direction previousDirection(Direction dir);
+        int getNeighbor(int currentEdge, Direction currentDirection, int neighborIndex);
+        andres::Partition<int> getRegionsFromImage();
+        std::vector<bool> edgeBits01;
+        std::vector<RGB> vertexColors;
+        std::vector<int> vertexRegions;
+        int vertices;
+        std::vector<bool> visited; 
+        PathInfoVector paths;
+        int disconnectedComponents;
+        int cols;
+        int rows; 
+        std::vector<RGB> regionColors;
+        std::vector<int> neighborsOffsets;
 };
 
-class MulticutGraph {
-public:
-    MulticutGraph(int vertices);
-    void setEdgeBit(int v, int w, bool value);
-    bool getEdgeBit(int v, int w) const;
-    void setRGB(int v, const RGB& color);
-    RGB getRGB(int v) const;
 
-private:
-    std::vector<std::bitset<1>> edgeBits;
-    std::vector<RGB> vertexColors;
-};
 
 #endif // MULTICUT_H

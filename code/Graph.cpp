@@ -37,6 +37,8 @@ Graph::Graph(const std::string& imagePath) {
     regionRepresentatives.resize(cols*rows, -1);
 }
 
+
+//Graph
 int Graph::getVertices() const{
     return vertices;
 }
@@ -44,12 +46,13 @@ int Graph::getVertices() const{
 std::string Graph::getImagePath() const{
     return imagePath;
 }
+//Graph
 
 std::vector<int> Graph::getVertexRegions(){
     return vertexRegions;
 }
 
-
+//Graph
 // Function to add a vertex to the graph
 void Graph::addVertex() {
     vertices++;
@@ -57,6 +60,7 @@ void Graph::addVertex() {
 }
 
 
+//Regions
 void Graph::printColorRegions(){
     for (const auto& color : regionColors) {
         std::cout << "RGB: " << static_cast<int>(color.red) << ", " << static_cast<int>(color.green) << ", " << static_cast<int>(color.blue) << std::endl;
@@ -64,11 +68,13 @@ void Graph::printColorRegions(){
     
 }
 
+//Compression
 void Graph::printSize(){
     std::cout << "previous compression: " << static_cast<double>(3*8*cols*rows) / (2*cols*rows-cols-rows + regionColors.size()*3*8 ) << std::endl;
     std::cout << "current compression: " << static_cast<double>(3*8*cols*rows) / (3*std::count(edgeBits01.begin(), edgeBits01.end(), true) + 8*disconnectedComponents + regionColors.size()*3*8 ) << std::endl;
 }
 
+//Graph
 // Setter method to set the RGB value for a vertex
 void Graph::setVertexColor(int v, int red, int green, int blue) {
     if (v >= 0 && v < vertices) {
@@ -82,6 +88,7 @@ void Graph::setVertexColor(int v, int red, int green, int blue) {
     }
 }
 
+//Graph
 // Getter method to access the RGB value for a vertex
 RGB Graph::getVertexColor(int v) const {
     if (v >= 0 && v < vertices) {
@@ -93,6 +100,7 @@ RGB Graph::getVertexColor(int v) const {
 }
 
 
+//util
 /**
  * @brief Compare two RGB colors for equality.
  *
@@ -108,6 +116,7 @@ bool Graph::compareRGB(const RGB& color1, const RGB& color2) {
 
 
 
+//Graph
 int Graph::getEdgeBitFromList(int v, int w, std::vector<bool>& edgebitsvector) const {
     int index = std::min(v,w);
     int row = index / cols + 1;
@@ -136,6 +145,7 @@ int Graph::getEdgeBitFromList(int v, int w, std::vector<bool>& edgebitsvector) c
 }
 
 
+//Graph
 void Graph::setMulticut(){
     // Iterate through every pixel from top-left to bottom-right
     //std::cout << "setting multicut\n";
@@ -337,7 +347,7 @@ void Graph::setMulticut(){
     
     
     disconnectedComponents = dfsI;
-    //std::cout << "\nnumber of disconnected components: " << dfsI << std::endl;
+    std::cout << "\nnumber of disconnected components(old): " << dfsI << std::endl;
 
     
 

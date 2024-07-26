@@ -1,97 +1,261 @@
+#include "Multicut.h"
 #include <iostream>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include "Graph.h"
-#include <chrono>
-#include <filesystem> 
-#include <fstream>
-#include <numeric>
+#include <stack>
+#include <unordered_set>
+#include <cstdlib>
+#include "DirectionPath.h"
+#include "partition.hxx"
 
 
-using namespace std;
-
-// g++ -std=c++11 -o multicut multicut.cpp Graph.cpp $(pkg-config --cflags --libs opencv4); ./multicut
-
-void writeToOutput(std::filesystem::path p1, std::vector<double> compression_rates, int i){
-    std::ofstream outputFile("output_files/output" + p1.filename().string() + ".csv");
-
-    // Check if the file opened successfully
-    if (!outputFile.is_open()) {
-        std::cerr << "Error: Unable to open the file." << std::endl;
-        return;
-    }
-
-    for (size_t i = 0; i < compression_rates.size(); ++i) {
-        outputFile << compression_rates[i]; // Write the element
-
-        // Add a comma if it's not the last element
-        if (i != compression_rates.size() - 1) {
-            outputFile << ",";
-        }
-    }
-        
-    outputFile.close();
-
-    double total_compression_rates = std::accumulate(compression_rates.begin(), compression_rates.end(), 0.0);
-    double avg_compression_rate = total_compression_rates / i; 
-    std::cout << avg_compression_rate << endl;
-
-
+Multicut::Multicut(cv::Mat img) {
+    vertices = img.cols * img.rows;
+    vertexColors.resize(vertices);    
+    edgeBits01.resize((img.cols-1)*img.rows + img.cols*(img.rows-1));
+    vertexRegions.resize(vertices, -1);
+    visited.resize(edgeBits01.size(), false);
+    cols = img.cols;
+    rows = img.rows;
+    neighborsOffsets = {cols, 1};
 }
 
-int main() {
-    
-    string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example";
-    std::filesystem::path p1 { imgDir };
-    int count {};
-    int i = 0;
-
-    vector<double> compression_rates;
-    
-    
-    long long total_time_set_multicut = 0;
-    long long total_time_reconstruct_multicut = 0;
-    
-    for (auto& p : std::filesystem::directory_iterator(p1))
-    {
-        ++count;
+// Setter method to set the RGB value for a vertex
+void Multicut::setVertexColor(int v, int red, int green, int blue) {
+    if (v >= 0 && v < vertices) {
+        vertexColors[v].red = static_cast<std::uint8_t>(red);
+        vertexColors[v].green = static_cast<std::uint8_t>(green);
+        vertexColors[v].blue = static_cast<std::uint8_t>(blue);
+        //std::cout << static_cast<int>(vertexColors[v].red) << ", ";
+    } else {
+        std::cout << "Invalid vertex index." << std::endl;
     }
+}
 
-    for (const auto& dirEntry : std::filesystem::directory_iterator(imgDir)){
-        if(dirEntry.path().extension().string() != ".png"){
+// Getter method to access the RGB value for a vertex
+RGB Multicut::getVertexColor(int v) const {
+    if (v >= 0 && v < vertices) {
+        return vertexColors[v];
+    } else {
+        std::cout << "Invalid vertex index. Returning (0, 0, 0)." << std::endl;
+        return {0, 0, 0};
+    }
+}
+
+int Multicut::getVertices() const {
+    return vertices;
+}
+
+std::vector<bool> Multicut::dfs_paths_iterative(int currentEdge, Direction currentDir, std::vector<bool>& visited){
+    std::vector<bool> directionVector;
+    //std::vector<bool> visited(edgeBits01.size(), false);
+    std::stack<std::pair<int, Direction>> pendingEdges;
+    int vecIndex = 0;
+    pendingEdges.push(std::make_pair(currentEdge, currentDir));
+    visited[currentEdge] = true;
+    bool left, front, right;
+    while(!pendingEdges.empty()){
+        left = false;
+        front = false;
+        right = false;
+        std::tie(currentEdge, currentDir) = pendingEdges.top();
+        //visited[currentEdge] = true;
+        pendingEdges.pop();
+        //std::cout << "current edge: " << currentEdge << std::endl;
+
+        int neighborLeft = getNeighbor(currentEdge, currentDir, 0);
+        int neighborFront = getNeighbor(currentEdge, currentDir, 1);
+        int neighborRight = getNeighbor(currentEdge, currentDir, 2);
+
+
+        //TODO: push 000 und continue falls nächste edges nicht multicut oder schon visited 
+        if(neighborLeft == -1 || neighborFront == -1 || neighborRight == -1 || neighborLeft >= edgeBits01.size() || neighborFront >= edgeBits01.size() || neighborRight >= edgeBits01.size()){
+            directionVector.push_back(0);
+            directionVector.push_back(0);
+            directionVector.push_back(0);
+            //directionVector[vecIndex++] = 0;
+            //directionVector[vecIndex++] = 0;
+            //directionVector[vecIndex++] = 0;
+            //std::cout << "000" << std::endl;
             continue;
         }
 
-        Graph img_graph(dirEntry.path().string()); 
-
-        std::cout << dirEntry.path() << endl;
-        auto startTime = std::chrono::high_resolution_clock::now();
-
-        img_graph.setMulticut();
-
-        auto end_set_multicut = std::chrono::high_resolution_clock::now();
-        total_time_set_multicut += std::chrono::duration_cast<std::chrono::milliseconds>(end_set_multicut - startTime).count();
 
 
-        auto start_reconstruct_multicut = std::chrono::high_resolution_clock::now();
-        compression_rates.push_back(img_graph.reconstructMulticut());
-        auto end_reconstruct_multicut = std::chrono::high_resolution_clock::now();
-        total_time_reconstruct_multicut += std::chrono::duration_cast<std::chrono::milliseconds>(end_reconstruct_multicut - start_reconstruct_multicut).count();
 
-        //img_graph.printProgressBar(i, count);
-        ++i;
+        if(!visited[neighborLeft]){
+            left = edgeBits01[neighborLeft];
+            directionVector.push_back(left);
+            //directionVector[vecIndex++] = left;
+        }else{
+            directionVector.push_back(false);
+            //directionVector[vecIndex++] = false;
+        }
+        if(!visited[neighborFront]){
+            front = edgeBits01[neighborFront];
+            directionVector.push_back(front);
+            //directionVector[vecIndex++] = front;
+        }
+        else{
+            directionVector.push_back(false);
+            //directionVector[vecIndex++] = false;
+
+        }
+        if(!visited[neighborRight]){
+            right = edgeBits01[neighborRight];
+            directionVector.push_back(right);
+            //directionVector[vecIndex++] = right;
+
+        }
+        else{
+            directionVector.push_back(false);
+            //directionVector[vecIndex++] = false;
+        }
+
+        //std::cout << left << front << right << std::endl;
+
+        
+        bool lastThreeAllFalse = false;
+        if (directionVector.size() >= 3) {
+            lastThreeAllFalse = !directionVector[directionVector.size() - 1] &&
+                                !directionVector[directionVector.size() - 2] &&
+                                !directionVector[directionVector.size() - 3];
+        }
+
+        if(!left && !front && !right && !lastThreeAllFalse){
+            directionVector.push_back(0);
+            directionVector.push_back(0);
+            directionVector.push_back(0);
+            //directionVector[vecIndex++] = 0;
+            //directionVector[vecIndex++] = 0;
+            //directionVector[vecIndex++] = 0;
+            continue;
+        }
+        
+        
+
+        if(right){
+            if(!visited[neighborRight]){
+                pendingEdges.push(std::make_pair(neighborRight, nextDirection(currentDir)));
+                visited[neighborRight] = true;
+            }
+        }
+        if(front){
+            if(!visited[neighborFront]){
+                pendingEdges.push(std::make_pair(neighborFront, currentDir));
+                visited[neighborFront] = true;
+            }
+        }
+        if(left){
+            if(!visited[neighborLeft]){
+                pendingEdges.push(std::make_pair(neighborLeft, previousDirection(currentDir)));
+                visited[neighborLeft] = true;
+            }
+        }
 
     }
+    //directionVector.resize(vecIndex);
+    return directionVector;
+}
+
+int Multicut::getNeighbor(int currentEdge, Direction currentDir, int neighborIndex){
+    std::vector<int> edgeOffsets;
+
+    int row = currentEdge/(2*cols-1) + 1; // 25 for 6409
+    int column = (currentEdge % (2*cols-1)) / 2; // 0 for 6409
+    //std::cout << "row: " << row << std::endl;
+    //std::cout << "column: " << column << std::endl;
+
+    switch (currentDir)
+    {
+    // offsets are in order of direction 3-bit-representation
+    //TODO: row is never == 0?
+    case Direction::UP:
+        if(row == 0){
+            return -1;
+        }
+        // last row case?
+        else if(row==rows){
+            // calculate column in last row differently
+            column = currentEdge % (2*cols-1);
+            edgeOffsets = {-(2*cols-1)+column, -(2*cols-1)+column+1, -(2*cols-1)+column+2};
+        }else{
+            edgeOffsets = {-2*(cols-1)-2, -2*(cols-1)-1, -2*(cols-1)};
+        }
+        break;
+    case Direction::DOWN:
+        if(row == rows){
+            return -1;
+        }
+        // last row case?
+        if(row==rows-1){
+            //std::cout << "last row case for DOWN: " << currentEdge << std::endl;
+            edgeOffsets = {1,2*cols-2-column, -1};
+        }else{
+            edgeOffsets = {1,2*cols-1, -1};
+        }
+        break;
+    case Direction::LEFT:
+        if(column == 0){
+            return -1;
+        }
+        // last row case?
+        if(row==rows-1){
+            //std::cout << "last row case for LEFT: " << currentEdge << std::endl;
+            edgeOffsets = {2*cols-2-column, -2, -1};
+        }else{
+            edgeOffsets = {2*(cols-1), -2,-1};
+        }
+        break;
+    case Direction::RIGHT:
+        if(column == cols-1){
+            return -1;
+        }
+        // last row case?
+        if(row==rows-1){
+            //std::cout << "last row case for RIGHT: " << currentEdge << ", column " << column << std::endl;
+            edgeOffsets = {1, 2, 2*cols-1-column};
+        }
+        else{
+            edgeOffsets = {1, 2, 2*(cols-1)+2};
+        }
+        break;
     
-
-    // WRITE COMPRESSION RATES TO FILE
-    //writeToOutput(p1, compression_rates, i);
-
+    default:
+        edgeOffsets = {1, 2, 2*(cols-1)+2};
+        break;
+    }
     
+    //return edgeBits01[currentEdge + edgeOffsets[neighborIndex]];
+    return currentEdge + edgeOffsets[neighborIndex];
+}
 
-    //std::cout << total_time_set_multicut/i << endl;
-    //std::cout << total_time_reconstruct_multicut/i << endl;
-    
 
-    return 0;
+Direction Multicut::nextDirection(Direction dir) {
+    return static_cast<Direction>((static_cast<int>(dir) + 1) % 4);
+}
+
+Direction Multicut::previousDirection(Direction dir) {
+    int newDir = (static_cast<int>(dir) - 1) % 4;
+    if (newDir < 0) newDir += 4;  // Handle negative wrap-around
+    return static_cast<Direction>(newDir);
+}
+
+andres::Partition<int> Multicut::getRegionsFromImage(){
+    andres::Partition<int> region(rows*cols);
+    for (int index = 0; index < rows * cols; ++index) {
+        for (int offset : neighborsOffsets) {
+            int neighbor = index + offset;
+            if (neighbor >= 0 && neighbor < getVertices() && ((neighbor / cols == index / cols) || (abs(neighbor - index) > 1))) {
+                // check if neighbours are separated by multicut 
+                // if no: merge 
+                //TODO: check WITHOUT edgeBits01
+                if(compareRGB(getVertexColor(index), getVertexColor(neighbor))){
+                    region.merge(index, neighbor);
+                    //std::cout << reconstruction.find(index) << ", ";
+                }
+
+                
+            }
+        }
+    }
+    return region;
 }

@@ -7,29 +7,19 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include "partition.hxx"
+#include "Image.h"
+#include "DirectionPath.h"
 
 
-struct RGB {
-    /*
-    std::bitset<8> red;
-    std::bitset<8> green;
-    std::bitset<8> blue;
-    */
-   
-    std::uint8_t red;
-    std::uint8_t green;
-    std::uint8_t blue;
-    
-};
 
-enum class Direction { UP, RIGHT, DOWN, LEFT };
+//enum class Direction { UP, RIGHT, DOWN, LEFT };
 
 // Define the tuple type
 // startEdge, startDirection, directionVector
-using PathInfo = std::tuple<int, Direction, std::vector<bool>>;
+//using PathInfo = std::tuple<int, Direction, std::vector<bool>>;
 
 // Define the vector of tuples
-using PathInfoVector = std::vector<PathInfo>;
+//using PathInfoVector = std::vector<PathInfo>;
 
 
 class Graph {
