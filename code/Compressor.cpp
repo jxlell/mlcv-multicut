@@ -195,7 +195,7 @@ void Compressor::setPaths(){
     
     
     multicut.disconnectedComponents = dfsI;
-    std::cout << "number of disconnected components: " << dfsI << std::endl;
+    //std::cout << "number of disconnected components: " << dfsI << std::endl;
 
 }
 

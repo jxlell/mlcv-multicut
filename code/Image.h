@@ -2,6 +2,7 @@
 #define IMAGE_H
 
 #include <cstdint>
+#include <opencv2/opencv.hpp>
 
 struct RGB {
 
@@ -13,5 +14,6 @@ struct RGB {
 };
 
 bool compareRGB(const RGB& color1, const RGB& color2);
+bool areImagesIdentical(cv::Mat& image1, cv::Mat& image2);
 
 #endif // IMAGE_H

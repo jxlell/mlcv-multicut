@@ -16,6 +16,7 @@
                 "${workspaceFolder}/code/Image.cpp",
                 "${workspaceFolder}/code/Decompressor.cpp",
                 "${workspaceFolder}/code/Compressor.cpp",
+                "${workspaceFolder}/code/Util.cpp",
                 "${workspaceFolder}/code/main.cpp",
                 "-fcolor-diagnostics",
                 "-fansi-escape-codes",
