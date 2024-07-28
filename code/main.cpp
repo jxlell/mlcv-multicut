@@ -43,7 +43,7 @@ void writeToOutput(std::filesystem::path p1, std::vector<double> compression_rat
 
 int main() {
     
-    string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/AC3AC4Package/AC3/ac3_dbseg_images";
+    string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example";
     std::filesystem::path p1 { imgDir };
     int count {};
     int i = 0;
@@ -69,7 +69,7 @@ int main() {
         Compressor comp(dirEntry.path().string());
         std::pair<std::vector<RGB>, PathInfoVector> compressed_image = comp.compressImage();
         Decompressor decomp(compressed_image.first, compressed_image.second, comp.getMulticut().edgeBits01.size(), img.cols, img.rows, img);
-        decomp.reconstructMulticut();
+        decomp.reconstructImage();
         std::cout << dirEntry.path() << endl;
         auto startTime = std::chrono::high_resolution_clock::now();
 

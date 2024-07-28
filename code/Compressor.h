@@ -21,6 +21,7 @@ class Compressor {
         std::string imagePath;
         std::vector<int> neighborsOffsets;
         cv::Mat img;
+        std::vector<cv::Mat> volume; 
         Multicut multicut;
         int vertices;
 };

@@ -21,9 +21,9 @@ class Multicut {
         int getVertices() const;
         std::vector<bool> getEdgeBits01() const;
         std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std::vector<bool>& visited);
-        Direction nextDirection(Direction dir);
-        Direction previousDirection(Direction dir);
-        int getNeighbor(int currentEdge, Direction currentDirection, int neighborIndex);
+        //Direction nextDirection(Direction dir);
+        //Direction previousDirection(Direction dir);
+        //int getNeighbor(int currentEdge, Direction currentDirection, int neighborIndex);
         andres::Partition<int> getRegionsFromImage();
         std::vector<bool> edgeBits01;
         std::vector<RGB> vertexColors;

@@ -12,7 +12,7 @@ class Decompressor {
         Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, int edgeBitsSize, int rows, int cols, cv::Mat img);
         void reconstructImage();
         void reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, std::vector<bool>& directionVector, std::vector<bool>& reconstructedEdgeBits);
-        void reconstructMulticut();
+        //void reconstructMulticut();
     private:
         std::string imagePath;
         std::vector<int> neighborsOffsets;

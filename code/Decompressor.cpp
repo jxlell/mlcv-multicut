@@ -51,7 +51,7 @@ void Decompressor::reconstruct_edgeBits_iterative(int currentEdge, Direction cur
 }
 
 
-void Decompressor::reconstructMulticut(){
+void Decompressor::reconstructImage(){
     cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
     int directionBitsSize;
     int numberOfPaths = paths.size();
