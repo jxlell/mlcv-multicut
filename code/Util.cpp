@@ -1,6 +1,9 @@
 #include "Util.h"
 #include <iostream>
 #include "DirectionPath.h"
+#include <filesystem>
+#include <fstream>
+#include <numeric>
 
 int getNeighbor(int currentEdge, Direction currentDir, int neighborIndex, int cols, int rows){
     std::vector<int> edgeOffsets;
@@ -132,4 +135,31 @@ int getEdgeBitFromList(int v, int w, std::vector<bool>& edgebitsvector, int rows
         return downBit;
     }
     
+}
+
+void writeToOutput(std::filesystem::path p1, std::vector<double> compression_rates, int i){
+    std::ofstream outputFile("output_files/output" + p1.filename().string() + ".csv");
+
+    // Check if the file opened successfully
+    if (!outputFile.is_open()) {
+        std::cerr << "Error: Unable to open the file." << std::endl;
+        return;
+    }
+
+    for (size_t i = 0; i < compression_rates.size(); ++i) {
+        outputFile << compression_rates[i]; // Write the element
+
+        // Add a comma if it's not the last element
+        if (i != compression_rates.size() - 1) {
+            outputFile << ",";
+        }
+    }
+        
+    outputFile.close();
+
+    double total_compression_rates = std::accumulate(compression_rates.begin(), compression_rates.end(), 0.0);
+    double avg_compression_rate = total_compression_rates / i; 
+    //std::cout << avg_compression_rate << std::endl;
+
+
 }

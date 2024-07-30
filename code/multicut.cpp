@@ -8,6 +8,7 @@
 #include "Util.h"
 
 Multicut::Multicut(cv::Mat img) {
+    this->img = img;
     vertices = img.cols * img.rows;
     vertexColors.resize(vertices);    
     edgeBits01.resize((img.cols-1)*img.rows + img.cols*(img.rows-1));
@@ -33,7 +34,11 @@ void Multicut::setVertexColor(int v, int red, int green, int blue) {
 // Getter method to access the RGB value for a vertex
 RGB Multicut::getVertexColor(int v) const {
     if (v >= 0 && v < vertices) {
-        return vertexColors[v];
+        //return vertexColors[v];
+        int x = v % cols;
+        int y = v / cols;
+        cv::Vec3b pixel = img.at<cv::Vec3b>(y, x);
+        return {pixel[2], pixel[1], pixel[0]};
     } else {
         std::cout << "Invalid vertex index. Returning (0, 0, 0)." << std::endl;
         return {0, 0, 0};

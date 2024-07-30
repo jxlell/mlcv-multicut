@@ -7,21 +7,23 @@
 #include "partition.hxx"
 #include "DirectionPath.h"
 
-Compressor::Compressor(const std::string& imagePath) 
+Compressor::Compressor(const std::string& imagePath, const std::string& volumePath) 
     : imagePath(imagePath), 
       img(cv::imread(imagePath, cv::IMREAD_COLOR)), 
       multicut(img),  // Initialize multicut with img
       vertices(img.rows * img.cols) 
 {
+    std::cout << "image path: " << imagePath << std::endl;
     if (img.empty()) {
         std::cerr << "Error: Could not read the image: " << imagePath << std::endl;
     }
     neighborsOffsets = {img.cols, 1};
+    this->volumePath = volumePath;
 }
 
 std::pair<std::vector<RGB>, PathInfoVector> Compressor::compressImage(){
     auto start = std::chrono::high_resolution_clock::now();
-    setVertexColors();
+    //setVertexColors();
     auto end = std::chrono::high_resolution_clock::now();
     auto start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "time to set vertex colors in ms: " << start_to_end << std::endl;
@@ -201,4 +203,53 @@ void Compressor::setPaths(){
 
 Multicut Compressor::getMulticut(){
     return multicut;
+}
+
+
+void Compressor::compressVolume(){
+    if(volumePath.empty()){
+        std::cerr << "Error: Volume path is empty" << std::endl;
+    }
+    std::vector<Multicut> volume; // Vector to store the cv matrices of the images
+    
+    // Open the volume directory
+    cv::String pattern = volumePath + "/*.png";
+    std::vector<cv::String> fileNames;
+    cv::glob(pattern, fileNames);
+    
+    // Iterate through each file in the volume directory
+    for (const auto& fileName : fileNames) {
+        cv::Mat image = cv::imread(fileName, cv::IMREAD_COLOR);
+        if (image.empty()) {
+            std::cerr << "Error: Could not read the image: " << fileName << std::endl;
+        } else {
+            Multicut mc(image);
+            volume.push_back(mc);
+        }
+    }
+    
+    andres::Partition<int> regions = getRegionsFromVolume(volume);
+}
+
+
+andres::Partition<int> Compressor::getRegionsFromVolume(std::vector<Multicut> volume){
+    andres::Partition<int> region(img.rows*img.cols*volume.size());
+    std::vector<int> volumeOffsets = {img.cols, 1, img.cols*img.rows};
+    int slice_index;
+    int vertexI;
+    for (int index = 0; index < img.rows * img.cols * volume.size(); ++index) {
+        vertexI = index % (img.cols*img.rows);
+        if(index % img.cols * img.rows == 0){
+            slice_index++;
+        }
+        int neighbor = vertexI + 1;
+        if(neighbor >= 0 && neighbor < img.rows * img.cols * volume.size() && ((neighbor / img.cols == index / img.cols) || (abs(neighbor - index) > 1))) {
+            if(compareRGB(volume[slice_index-1].getVertexColor(vertexI), volume[slice_index-1].getVertexColor(neighbor))){
+                region.merge(index, neighbor);
+            }
+        neighbor = index + img.cols;
+        neighbor = index + img.cols*img.rows;
+        }
+    }
+    return region;
 }

@@ -11,6 +11,7 @@
 class Multicut {
     public:
         Multicut(cv::Mat img);
+        cv::Mat img;
         int getEdgeBitFromList(int v, int w, const std::vector<std::vector<bool>>& edgeBits);
         void findAllRegions();
         void assignRegions();
