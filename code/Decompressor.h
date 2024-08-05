@@ -13,6 +13,7 @@ class Decompressor {
         void reconstructImage();
         void reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, std::vector<bool>& directionVector, std::vector<bool>& reconstructedEdgeBits);
         //void reconstructMulticut();
+        long long getDecompressionTime() const;
     private:
         std::string imagePath;
         std::vector<int> neighborsOffsets;
@@ -23,6 +24,7 @@ class Decompressor {
         int rows;
         int cols;
         cv::Mat img;
+        long long decompressionTime;
 };
 
 #endif // DECOMPRESSOR_H

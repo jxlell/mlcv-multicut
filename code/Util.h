@@ -5,6 +5,9 @@
 #include "partition.hxx"
 #include "DirectionPath.h"
 #include <filesystem>
+#include <type_traits>
+#include <fstream>
+#include <iostream>
 
 
 andres::Partition<int> getRegions(std::vector<bool>& edgeBitsVector, int rows, int cols);
@@ -12,5 +15,5 @@ int getNeighbor(int currentEdge, Direction currentDirection, int neighborIndex, 
 Direction nextDirection(Direction dir);
 Direction previousDirection(Direction dir);
 int getEdgeBitFromList(int v, int w, std::vector<bool>& edgebitsvector, int rows, int cols);
-void writeToOutput(std::filesystem::path p1, std::vector<double> compression_rates, int i);
+void printProgressBar(int progress, int total);
 #endif // UTIL_H

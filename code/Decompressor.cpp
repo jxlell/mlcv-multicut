@@ -56,6 +56,8 @@ void Decompressor::reconstructImage(){
     int directionBitsSize;
     int numberOfPaths = paths.size();
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     std::vector<bool> reconstructed_edgeBits(edgeBitsSize, false);
     int i;
     for(PathInfo pathinfo : paths){
@@ -120,12 +122,18 @@ void Decompressor::reconstructImage(){
     }
     
     //printSize();
-    std::cout << "reconstruction and original identical: " << ((areImagesIdentical(img, image)) ? "YES" : "NO") << std::endl;
-    
+    //std::cout << "reconstruction and original identical: " << ((areImagesIdentical(img, image)) ? "YES" : "NO") << std::endl;
+    auto end = std::chrono::high_resolution_clock::now();
+    auto start_to_end = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    decompressionTime = static_cast<double>(start_to_end / 1000000);
     /*
     cv::destroyAllWindows();
     cv::imshow("Original", img);
     cv::imshow("Reconstruction", image);
     cv::waitKey(0);
     */
+}
+
+long long Decompressor::getDecompressionTime() const {
+    return decompressionTime;
 }

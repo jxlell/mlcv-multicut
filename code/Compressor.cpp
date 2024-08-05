@@ -13,7 +13,7 @@ Compressor::Compressor(const std::string& imagePath, const std::string& volumePa
       multicut(img),  // Initialize multicut with img
       vertices(img.rows * img.cols) 
 {
-    std::cout << "image path: " << imagePath << std::endl;
+    //std::cout << "image path: " << imagePath << std::endl;
     if (img.empty()) {
         std::cerr << "Error: Could not read the image: " << imagePath << std::endl;
     }
@@ -21,33 +21,35 @@ Compressor::Compressor(const std::string& imagePath, const std::string& volumePa
     this->volumePath = volumePath;
 }
 
-std::pair<std::vector<RGB>, PathInfoVector> Compressor::compressImage(){
+std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat> Compressor::compressImage(){
     auto start = std::chrono::high_resolution_clock::now();
     //setVertexColors();
-    auto end = std::chrono::high_resolution_clock::now();
-    auto start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    std::cout << "time to set vertex colors in ms: " << start_to_end << std::endl;
+    //auto end = std::chrono::high_resolution_clock::now();
+    //auto start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    //std::cout << "time to set vertex colors in ms: " << start_to_end << std::endl;
  
-    start = std::chrono::high_resolution_clock::now();
+    //start = std::chrono::high_resolution_clock::now();
     setEdgeBits();
-    end = std::chrono::high_resolution_clock::now();
-    start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    std::cout << "time to set edge bits in ms: " << start_to_end << std::endl;
+    //end = std::chrono::high_resolution_clock::now();
+    //start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    //std::cout << "time to set edge bits in ms: " << start_to_end << std::endl;
 
-    start = std::chrono::high_resolution_clock::now();
+    //start = std::chrono::high_resolution_clock::now();
     setRegions();
-    end = std::chrono::high_resolution_clock::now();
-    start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    std::cout << "time to set regions in ms: " << start_to_end << std::endl;
+    //end = std::chrono::high_resolution_clock::now();
+    //start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    //std::cout << "time to set regions in ms: " << start_to_end << std::endl;
 
 
-    start = std::chrono::high_resolution_clock::now();
+    //start = std::chrono::high_resolution_clock::now();
     setPaths();
-    end = std::chrono::high_resolution_clock::now();
-    start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    std::cout << "time to set paths in ms: " << start_to_end << std::endl;
-
-    return std::make_pair(multicut.regionColors, multicut.paths);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto start_to_end = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    //std::cout << "time to set paths in ms: " << start_to_end << std::endl;
+    std::string filename = imagePath.substr(imagePath.find_last_of("/\\") + 1);
+    //std::cout << "time to compress " << filename << ": " << start_to_end << " ms" << std::endl;
+    compressionTime = static_cast<double>(start_to_end / 1000000);
+    return std::make_tuple(multicut.regionColors, multicut.paths, img);
 }
 
 
@@ -252,4 +254,58 @@ andres::Partition<int> Compressor::getRegionsFromVolume(std::vector<Multicut> vo
         }
     }
     return region;
+}
+
+long long Compressor::getCompressionTime(){
+    return compressionTime;
+}
+
+double Compressor::getCompressionRate(){
+    double totalBits = 0;
+
+    // Calculate bits for color regions
+    totalBits += multicut.regionColors.size() * 3 * 8;
+    totalBits += 2; 
+    if(multicut.paths.size() == 0){
+            return 1;
+        }
+    for (const auto& path : multicut.paths) {
+        int edgeI;
+        Direction dir;
+        std::vector<bool> directionVector;
+
+        std::tie(edgeI, dir, directionVector) = path;
+
+        totalBits += 8; // 8 bits for starting point
+        totalBits += 4; // 4 bits for starting direction
+        totalBits += directionVector.size(); // Size of directionVector in bits
+    }
+    //std::cout << "total bits: " << totalBits << std::endl;
+    // Ensure that the calculation results in a double
+    double compressionRate = static_cast<double>(vertices) * 24.0 / totalBits;
+    
+    imgSize = totalBits;
+    return compressionRate;
+}
+
+
+
+double Compressor::getOldCompressionRates(){
+    double compRate = static_cast<double>(vertices) * 24.0 / 
+                      (static_cast<double>(multicut.edgeBits01.size()) + 
+                       static_cast<double>(multicut.regionColors.size()) * 3.0 * 8.0);
+    return compRate;
+}
+
+
+double Compressor::getMulticutPercentage(){
+    return 100*std::count(multicut.edgeBits01.begin(), multicut.edgeBits01.end(), true) / multicut.edgeBits01.size();
+}
+
+double Compressor::getDisconnectedComponents(){
+    return multicut.disconnectedComponents;
+}
+
+int Compressor::getImgSize(){
+    return imgSize;
 }
