@@ -44,11 +44,11 @@ std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat> Compressor::compressImage(
     //start = std::chrono::high_resolution_clock::now();
     setPaths();
     auto end = std::chrono::high_resolution_clock::now();
-    auto start_to_end = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    auto start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     //std::cout << "time to set paths in ms: " << start_to_end << std::endl;
     std::string filename = imagePath.substr(imagePath.find_last_of("/\\") + 1);
     //std::cout << "time to compress " << filename << ": " << start_to_end << " ms" << std::endl;
-    compressionTime = static_cast<double>(start_to_end / 1000000);
+    compressionTime = start_to_end;
     return std::make_tuple(multicut.regionColors, multicut.paths, img);
 }
 
@@ -308,4 +308,8 @@ double Compressor::getDisconnectedComponents(){
 
 int Compressor::getImgSize(){
     return imgSize;
+}
+
+int Compressor::getkBSize(){
+    return imgSize / 1024;
 }

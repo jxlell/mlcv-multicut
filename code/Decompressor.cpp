@@ -122,10 +122,10 @@ void Decompressor::reconstructImage(){
     }
     
     //printSize();
-    //std::cout << "reconstruction and original identical: " << ((areImagesIdentical(img, image)) ? "YES" : "NO") << std::endl;
+    std::cout << "reconstruction and original identical: " << ((areImagesIdentical(img, image)) ? "YES" : "NO") << std::endl;
     auto end = std::chrono::high_resolution_clock::now();
-    auto start_to_end = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-    decompressionTime = static_cast<double>(start_to_end / 1000000);
+    auto start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    decompressionTime = start_to_end;
     /*
     cv::destroyAllWindows();
     cv::imshow("Original", img);

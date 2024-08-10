@@ -25,6 +25,7 @@ class Compressor {
         double getMulticutPercentage();
         double getDisconnectedComponents();
         int getImgSize();
+        int getkBSize();
     private:
         std::string imagePath;
         std::vector<int> neighborsOffsets;

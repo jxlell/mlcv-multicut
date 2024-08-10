@@ -64,13 +64,19 @@ int main() {
     vector<int> disconnected_components;
     vector<int> pixel_sizes; 
 
-    vector<double> compression_rates_toal;
+    vector<double> compression_rates_total;
     vector<double> old_compression_rates_total; 
     vector<long long> compression_times_total;
     vector<long long> decompression_times_total;
     vector<double> multicut_percentages_total;
     vector<int> disconnected_components_total;
     vector<int> pixel_sizes_total; 
+
+    vector<string> filenames;
+    vector<string> categories;
+    vector<double> kBSizes;
+
+
     
     string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example";
     imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images/icon_512";
@@ -103,7 +109,7 @@ int main() {
     //Compressor volcomp("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example/tree5x5.png", imgDir);
     //volcomp.compressVolume();
     for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
-        if (!entry.is_directory() /*|| entry.path().filename().string() != "pngimg"*/) {
+        if (!entry.is_directory() || entry.path().filename().string() != "screenshot_web") {
             continue; 
         }
         for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
@@ -114,11 +120,18 @@ int main() {
             //cv::Mat img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
             Compressor comp(dirEntry.path().string());
             std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat> compressed_image = comp.compressImage();
+
+            std::string filename = dirEntry.path().filename().string();
+            // Remove comma if it exists in the filename
+            filename.erase(std::remove(filename.begin(), filename.end(), ','), filename.end());
+            filenames.push_back(filename);
+            categories.push_back(entry.path().filename().string());
+
             compression_times.push_back(comp.getCompressionTime());
             compression_times_total.push_back(comp.getCompressionTime());
 
             compression_rates.push_back(comp.getCompressionRate());
-            compression_rates_toal.push_back(comp.getCompressionRate());
+            compression_rates_total.push_back(comp.getCompressionRate());
 
             old_compression_rates.push_back(comp.getOldCompressionRates());
             old_compression_rates_total.push_back(comp.getOldCompressionRates());
@@ -132,6 +145,8 @@ int main() {
             pixel_sizes.push_back(comp.getMulticut().getVertices());
             pixel_sizes_total.push_back(comp.getMulticut().getVertices());
 
+            kBSizes.push_back(comp.getkBSize());
+
             cv::Mat img = std::get<2>(compressed_image);
             Decompressor decomp(std::get<0>(compressed_image), std::get<1>(compressed_image), comp.getMulticut().edgeBits01.size(), img.cols, img.rows, img);
             decomp.reconstructImage();
@@ -139,7 +154,7 @@ int main() {
             decompression_times_total.push_back(decomp.getDecompressionTime());
 
             progress++;
-            //printProgressBar(progress, imgCount);
+            printProgressBar(progress, imgCount);
             ++i;
 
         }
@@ -198,6 +213,25 @@ int main() {
     //std::cout << total_time_set_multicut/i << endl;
     //std::cout << total_time_reconstruct_multicut/i << endl;
     }
+
+    ofstream csvFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results.csv");
+    if (!csvFile.is_open()) {
+        cerr << "Error: Unable to open CSV file for writing." << endl;
+        return -1;
+    }
+
+    csvFile << "filename,category,pixel_size,encode_ms,decode_ms,size_kb,rate\n";
+    for (size_t i = 0; i < filenames.size(); ++i) {
+        csvFile << filenames[i] << ","
+                << categories[i] << ","
+                << pixel_sizes_total[i] << ","
+                << compression_times_total[i] << ","
+                << decompression_times_total[i] << ","
+                << kBSizes[i] << ","
+                << compression_rates_total[i] << "\n";
+    }
+
+    csvFile.close();
 
     return 0;
 }

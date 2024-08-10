@@ -34,7 +34,7 @@ for file_path in csv_files:
     remainder = 100 - mean_percentage
     
     # Extract the file name without extension to use as the bar label
-    bar_label = os.path.splitext(os.path.basename(file_path))[0]#.split('_')[1]
+    bar_label = os.path.splitext(os.path.basename(file_path))[0]#.split('_')[1:]
     
     # Append the values for plotting
     bars.append(bar_label)
@@ -51,18 +51,20 @@ remainder_values = [remainder_values[i] for i in sorted_indices]
 fig, ax = plt.subplots()
 
 # One bar for the mean percentage (red) and another for the remainder to 100% (green)
-ax.bar(bars, mean_values, label='multicut edges', color='#57A773')
-ax.bar(bars, remainder_values, bottom=mean_values, label='remaining edges', color='#EF3054')
+#color='#57A773'
+#color='#EF3054'
+ax.bar(bars, mean_values, label='multicut edges', color='red')
+ax.bar(bars, remainder_values, bottom=mean_values, label='remaining edges', color='grey')
 
 # Add a horizontal line at 50%
-ax.axhline(50, color='black', linewidth=1, linestyle='--', label='50%')
+ax.axhline(50, color='white', linewidth=1, linestyle='--', label='50%')
 
 ax.set_ylim(0, 100)
 ax.set_ylabel('Percentage of Multicut Edges')
-ax.set_title('Stacked Bar Chart of Mean Percentages')
+ax.set_title('Ratio of Edges Part of Multicut')
 ax.legend()
 
-plt.xticks(rotation=45, ha='right')
+plt.xticks(rotation=25, ha='right', fontsize=5)
 
 # Save the plot as an image file or display it
 #plt.savefig(os.path.join(directory_path, 'stacked_bar_chart.png'))

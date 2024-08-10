@@ -21,8 +21,12 @@ for i in range(len(lines)):
     image_match = image_path_regex.match(lines[i].strip())
     if image_match:
         category = image_match.group(1)
-        filename = image_match.group(2)
+        filename = image_match.group(2).replace(',', '')  # Remove commas from the filename
         dimensions = image_match.group(3)  # Extract the dimensions
+
+        # Calculate the pixel size
+        width, height = map(int, dimensions.split('x'))
+        pixel_size = width * height
 
         # Look for the 'libpng' compression data line within the next few lines
         for j in range(i + 1, i + 10):  # Assuming the libpng line is within the next 10 lines
@@ -33,15 +37,15 @@ for i in range(len(lines)):
                 decode_ms = compression_match.group(1)
                 encode_ms = compression_match.group(2)
                 size_kb = compression_match.group(3)
-                rate = compression_match.group(4)
-                extracted_data.append([filename, category, dimensions, encode_ms, decode_ms, size_kb, rate])
+                rate = round(100 / float(compression_match.group(4)), 2)
+                extracted_data.append([filename, category, pixel_size, encode_ms, decode_ms, size_kb, rate])
                 break
 
 # Write the extracted data to the CSV file
 with open(output_file_path, 'w', newline='') as csv_file:
     csv_writer = csv.writer(csv_file)
     # Write the header row
-    csv_writer.writerow(['filename', 'category', 'dimensions', 'encode_ms', 'decode_ms', 'size_kb', 'rate'])
+    csv_writer.writerow(['filename', 'category', 'pixel_size', 'encode_ms', 'decode_ms', 'size_kb', 'rate'])
     # Write the data rows
     csv_writer.writerows(extracted_data)
 

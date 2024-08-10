@@ -1,0 +1,15 @@
+filename,category,pixel_size,encode_ms,decode_ms,size_kb,rate
+microsoft.com.png,screenshot_web,4369664,260,216,19195,5.3352
+stripe.com.png,screenshot_web,8669739,382,275,11652,17.4387
+news.ycombinator.com.png,screenshot_web,1921250,75,49,2431,18.5221
+amazon.com.png,screenshot_web,8005361,624,528,58080,3.23044
+creativecommons.org.png,screenshot_web,6753054,608,514,59780,2.6476
+phoboslab.org.png,screenshot_web,27135771,1430,1084,51565,12.3338
+apple.com.png,screenshot_web,6243315,340,275,21957,6.66407
+reddit.com.png,screenshot_web,10514504,573,462,36369,6.77575
+nytimes.com.png,screenshot_web,7589140,440,346,30406,5.84983
+imdb.com.png,screenshot_web,8457033,418,338,27076,7.32042
+duckduckgo.com.png,screenshot_web,3773562,129,89,2821,31.341
+sublime.png,screenshot_web,9589104,374,245,12712,17.6797
+en.wikipedia.org.png,screenshot_web,3854968,222,161,13164,6.86321
+cnn.com.png,screenshot_web,6881433,370,293,25154,6.41166

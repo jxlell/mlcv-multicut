@@ -57,11 +57,11 @@ fig, ax = plt.subplots()
 bar_width = 0.35
 index = np.arange(len(methods))
 
-bar1 = ax.bar(index, compression_means, bar_width, label='Compression Time', color='#EF3054')
-bar2 = ax.bar(index + bar_width, decompression_means, bar_width, label='Decompression Time', color='#57A773')
+bar1 = ax.bar(index, compression_means, bar_width, label='Compression Time')
+bar2 = ax.bar(index + bar_width, decompression_means, bar_width, label='Decompression Time', color='gray')
 
 ax.set_xlabel('Methods')
-ax.set_ylabel('Time (units)')
+ax.set_ylabel('Time (ms)')
 ax.set_title('Average Compression and Decompression Times')
 ax.set_xticks(index + bar_width / 2)
 ax.set_xticklabels(methods)
