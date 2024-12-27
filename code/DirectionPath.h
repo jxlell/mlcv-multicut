@@ -8,7 +8,7 @@
 #include <tuple>
 
 // Enum class to define directions
-enum class Direction{
+enum class Direction : uint8_t{
     UP,
     RIGHT,
     DOWN,

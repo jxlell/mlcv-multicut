@@ -276,8 +276,8 @@ double Compressor::getCompressionRate(){
 
         std::tie(edgeI, dir, directionVector) = path;
 
-        totalBits += 8; // 8 bits for starting point
-        totalBits += 4; // 4 bits for starting direction
+        totalBits += 32; // 32 bits for starting point
+        totalBits += 8; // 8 bits for starting direction (smalles addressable unit)
         totalBits += directionVector.size(); // Size of directionVector in bits
     }
     //std::cout << "total bits: " << totalBits << std::endl;
