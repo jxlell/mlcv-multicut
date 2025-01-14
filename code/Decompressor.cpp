@@ -5,6 +5,10 @@
 #include <opencv2/opencv.hpp>
 #include "Image.h"
 
+/**
+ * @class Decompression module 
+ * TODO: klasse notwendig? 
+ */
 Decompressor::Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, int edgeBitsSize, int cols, int rows, cv::Mat img) {
     this->regionColors = regionColors;
     this->paths = paths; 
@@ -15,7 +19,13 @@ Decompressor::Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, 
     this->img = img;
 }
 
-
+/**
+ * @brief sets edge bits in vector based on the direction vector of one single path
+ * @param currentEdge starting edge of the current path 
+ * @param currentDir starting direction of the current path
+ * @param directionVector boolen direction sequence of the current path 
+ * @param reconstructedEdgeBits output edgebits vector which is to be filled with the reconstructed bits 
+ */
 void Decompressor::reconstruct_edgeBits_iterative(int currentEdge, Direction currentDir, std::vector<bool>& directionVector, std::vector<bool>& reconstructedEdgeBits){
     std::stack<std::pair<int, Direction>> pendingEdges;
     std::queue<bool> directionQueue;
@@ -50,7 +60,10 @@ void Decompressor::reconstruct_edgeBits_iterative(int currentEdge, Direction cur
     return;
 }
 
-
+/**
+ * @brief reconstructs edgebits vector based on the path information and in addition uses the color vector to reconstruct the whole image 
+ * @see Decompressor::reconstruct_edgeBits_iterative()
+ */
 void Decompressor::reconstructImage(){
     cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
     int directionBitsSize;
@@ -134,6 +147,9 @@ void Decompressor::reconstructImage(){
     */
 }
 
+/**
+ * @return decompression time in ms 
+ */
 long long Decompressor::getDecompressionTime() const {
     return decompressionTime;
 }

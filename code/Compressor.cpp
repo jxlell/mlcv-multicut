@@ -7,6 +7,12 @@
 #include "partition.hxx"
 #include "DirectionPath.h"
 
+
+/**
+ * @class Compressor
+ * @brief Compressor module handling the 
+ * TODO: als klasse notwendig? 
+ */
 Compressor::Compressor(const std::string& imagePath, const std::string& volumePath) 
     : imagePath(imagePath), 
       img(cv::imread(imagePath, cv::IMREAD_COLOR)), 
@@ -21,6 +27,11 @@ Compressor::Compressor(const std::string& imagePath, const std::string& volumePa
     this->volumePath = volumePath;
 }
 
+
+/**
+ * @brief controlling the compression procedure 
+ * @return tuple containing compressed image information in form of the color vector, path information as well as the original image for comparison
+ */
 std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat> Compressor::compressImage(){
     auto start = std::chrono::high_resolution_clock::now();
     //setVertexColors();
@@ -52,7 +63,10 @@ std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat> Compressor::compressImage(
     return std::make_tuple(multicut.regionColors, multicut.paths, img);
 }
 
-
+/**
+ * @brief sets values of the vertex colors vector based on the image content
+ * @see Multicut::setVertexColor(int v, int red, int green, int blue)
+ */
 void Compressor::setVertexColors(){
     // Iterate through every pixel from top-left to bottom-right
     int pixel_index = 0;
@@ -79,6 +93,10 @@ void Compressor::setVertexColors(){
     }
 }
 
+/**
+ * @brief sets the edgebits vector in the multicut object based on the vertex colors from the 
+ * multicut object 
+ */
 void Compressor::setEdgeBits(){
     //std::cout << "\nsetting multicut bits\n";
     int regionIndex = 0;
@@ -112,6 +130,10 @@ void Compressor::setEdgeBits(){
     }
 }
 
+/**
+ * @brief creates color partition object and obtains a continuous labeling for the region indices 
+ * @see Multicut::getRegionsFromImage()
+ */
 void Compressor::setRegions(){
     andres::Partition<int> multicutregion = multicut.getRegionsFromImage();
     //for(int i = 0; i<25; i++){
@@ -129,6 +151,10 @@ void Compressor::setRegions(){
     multicut.regionColors.resize(reps.size());
 }
 
+/**
+ * @brief iterates every edge in the image and starts depth first search to obtain path vectors 
+ * @see Multicut::dfs_paths_iterative(int currentEdge, Direction currentDir, std::vector<bool>& visited)
+ */
 void Compressor::setPaths(){
     int edgeI = 0;
     int dfsI = 0;
@@ -203,11 +229,19 @@ void Compressor::setPaths(){
 
 }
 
+/**
+ * @brief returns multicut object 
+ * @see Multicut::Multicut(cv::Mat img)
+ * @return multicut object
+ */
 Multicut Compressor::getMulticut(){
     return multicut;
 }
 
-
+/**
+ * @brief obtains color pixel partitions from multiple image slices
+ * @see Compressor::getRegionsFromVolume(std::vector<Multicut> volume)
+ */
 void Compressor::compressVolume(){
     if(volumePath.empty()){
         std::cerr << "Error: Volume path is empty" << std::endl;
@@ -233,7 +267,10 @@ void Compressor::compressVolume(){
     andres::Partition<int> regions = getRegionsFromVolume(volume);
 }
 
-
+/**
+ * @brief get color pixel partitions from multiple multicut objects 
+ * @param volume Vector of multicut objects / image slices  
+ */
 andres::Partition<int> Compressor::getRegionsFromVolume(std::vector<Multicut> volume){
     andres::Partition<int> region(img.rows*img.cols*volume.size());
     std::vector<int> volumeOffsets = {img.cols, 1, img.cols*img.rows};
@@ -256,10 +293,20 @@ andres::Partition<int> Compressor::getRegionsFromVolume(std::vector<Multicut> vo
     return region;
 }
 
+/**
+ * @brief returns total time for compression
+ * @return compression time in ms 
+ */
 long long Compressor::getCompressionTime(){
     return compressionTime;
 }
 
+
+/**
+ * @brief calculates compression rate based on the bits needed for storing the path vector
+ * as well as the color vector, compares to storing color for every pixel individually
+ * @return factor of compression 
+ */
 double Compressor::getCompressionRate(){
     double totalBits = 0;
 
@@ -289,7 +336,10 @@ double Compressor::getCompressionRate(){
 }
 
 
-
+/**
+ * @brief compression rate of method without multicut paths 
+ * @return factor of compression
+ */
 double Compressor::getOldCompressionRates(){
     double compRate = static_cast<double>(vertices) * 24.0 / 
                       (static_cast<double>(multicut.edgeBits01.size()) + 
@@ -297,19 +347,30 @@ double Compressor::getOldCompressionRates(){
     return compRate;
 }
 
-
+/**
+ * @return percentage of edges connecting two different-colored pixels 
+ */
 double Compressor::getMulticutPercentage(){
     return 100*std::count(multicut.edgeBits01.begin(), multicut.edgeBits01.end(), true) / multicut.edgeBits01.size();
 }
 
+/**
+ * @return number of disconnected paths
+ */
 double Compressor::getDisconnectedComponents(){
     return multicut.disconnectedComponents;
 }
 
+/**
+ * @return size of the image in bits 
+ */
 int Compressor::getImgSize(){
     return imgSize;
 }
 
+/**
+ * @return size of the image in kilobits
+ */
 int Compressor::getkBSize(){
     return imgSize / 1024;
 }

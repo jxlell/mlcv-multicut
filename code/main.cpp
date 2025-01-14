@@ -15,6 +15,12 @@ using namespace std;
 
 // g++ -std=c++11 -o multicut multicut.cpp Graph.cpp $(pkg-config --cflags --libs opencv4); ./multicut
 
+/**
+ * @brief writes values of arbitrary type into a csv file 
+ * @param p1 filepath
+ * @param values values to be added to the file comma-separated 
+ * @param category image category for allocating the correct output folder 
+ */
 template<typename T>
 void writeToOutput(const std::filesystem::path& p1, const std::vector<T>& values, const std::string category) {
     // Create the output file path using the provided path p1
@@ -40,6 +46,11 @@ void writeToOutput(const std::filesystem::path& p1, const std::vector<T>& values
     outputFile.close();
 }
 
+/**
+ * @brief counts number of JPG and PNG files in a directory 
+ * @param parentDir directory path 
+ * @return number of images (.jpg and .png)
+ */
 int countImgFiles(const std::filesystem::path& parentDir) {
     int count = 0;
     for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
@@ -55,6 +66,10 @@ int countImgFiles(const std::filesystem::path& parentDir) {
     return count;
 }
 
+/**
+ * @brief main function loading image files and controlling compression and decompression procedure 
+ * 
+ */
 int main() {
     vector<double> compression_rates;
     vector<double> old_compression_rates; 

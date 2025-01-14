@@ -19,7 +19,13 @@ Multicut::Multicut(cv::Mat img) {
     neighborsOffsets = {cols, 1};
 }
 
-// Setter method to set the RGB value for a vertex
+/**
+ * @brief sets the RGB value for a vertex
+ * @param v vertex index
+ * @param red red RGB value
+ * @param g green RGB value
+ * @param b blue RGB value
+ */
 void Multicut::setVertexColor(int v, int red, int green, int blue) {
     if (v >= 0 && v < vertices) {
         vertexColors[v].red = static_cast<std::uint8_t>(red);
@@ -31,7 +37,10 @@ void Multicut::setVertexColor(int v, int red, int green, int blue) {
     }
 }
 
-// Getter method to access the RGB value for a vertex
+/**
+ * @brief gets the RGB value for a vertex
+ * @param v vertex index
+ */
 RGB Multicut::getVertexColor(int v) const {
     if (v >= 0 && v < vertices) {
         //return vertexColors[v];
@@ -45,10 +54,22 @@ RGB Multicut::getVertexColor(int v) const {
     }
 }
 
+/**
+ * @return number of vertices in the image graph 
+ */
 int Multicut::getVertices() const {
     return vertices;
 }
 
+/**
+ * @brief iterative depth first search assembling path vectors 
+ * @details works on a stack of pending edges, initialized with the edge index this function is initially called on
+ * * iterative depth first search approach
+ * * pushes three bits for left, center, right as directions based on the current direction end edge
+ * * set bits indicate that the corresponding edge is part of the multicut 
+ * * 0 0 0 when path ends (at image boundary or on a already handled edge)
+ * @see getNeighbor function from util.h
+ */
 std::vector<bool> Multicut::dfs_paths_iterative(int currentEdge, Direction currentDir, std::vector<bool>& visited){
     std::vector<bool> directionVector;
     //std::vector<bool> visited(edgeBits01.size(), false);
@@ -161,6 +182,11 @@ std::vector<bool> Multicut::dfs_paths_iterative(int currentEdge, Direction curre
     return directionVector;
 }
 
+/**
+ * @brief creates disjoint sets from the amount of pixels/vertices based on matching color values
+ * 
+ * @return partition object containing merged color regions 
+ */
 andres::Partition<int> Multicut::getRegionsFromImage(){
     andres::Partition<int> region(rows*cols);
     for (int index = 0; index < rows * cols; ++index) {
