@@ -96,7 +96,7 @@ int main() {
     string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example";
     imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images/icon_512";
     std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
-    //parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code";
+    parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code";
     int imgCount = countImgFiles(parentDir);
     int progress = 0;
 
@@ -125,11 +125,11 @@ int main() {
     //Compressor volcomp("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example/tree5x5.png", imgDir);
     //volcomp.compressVolume();
     for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
-        if (!entry.is_directory() || entry.path().filename().string() != "photo_kodak") {
+        if (!entry.is_directory() || entry.path().filename().string() != "test_img") {
             continue; 
         }
         for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
-            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "kodim08.png"
+            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "A_House_in_California.png"
             ){
                 continue;
             }
@@ -137,7 +137,7 @@ int main() {
             //cv::Mat img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
             Compressor comp(dirEntry.path().string());
             //returning color vector, path vector, original image
-            std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat> compressed_image = comp.compressImage();
+            std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector> compressed_image = comp.compressImage();
 
             std::string filename = dirEntry.path().filename().string();
             // Remove comma if it exists in the filename
@@ -169,7 +169,7 @@ int main() {
             
             cv::Mat img;// = std::get<2>(compressed_image);
             img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
-            Decompressor decomp(std::get<0>(compressed_image), std::get<1>(compressed_image), comp.getMulticut().edgeBits01.size(), img.cols, img.rows, img);
+            Decompressor decomp(std::get<0>(compressed_image), std::get<1>(compressed_image), comp.getMulticut().edgeBits01.size(), img.cols, img.rows, img, std::get<3>(compressed_image));
             decomp.reconstructImage();
             decompression_times.push_back(decomp.getDecompressionTime());
             decompression_times_total.push_back(decomp.getDecompressionTime());

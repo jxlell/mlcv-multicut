@@ -9,9 +9,10 @@
  * @class Decompression module 
  * TODO: klasse notwendig? 
  */
-Decompressor::Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, int edgeBitsSize, int cols, int rows, cv::Mat img) {
+Decompressor::Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, int edgeBitsSize, int cols, int rows, cv::Mat img, PathInfoVector paths_2bit) {
     this->regionColors = regionColors;
     this->paths = paths; 
+    this->paths_2bit = paths_2bit;
     this->edgeBitsSize = edgeBitsSize;
     this->reconstructed_edgeBits = std::vector<bool>(edgeBitsSize, false);
     this->cols = cols;
@@ -63,21 +64,31 @@ void Decompressor::reconstruct_edgeBits_iterative(int currentEdge, Direction cur
 std::vector<bool> Decompressor::reconstruct_edgeBits2bits(PathInfoVector paths){
     std::vector<bool> reconstructed_edgeBits(edgeBitsSize, false);
     for(PathInfo pathinfo : paths){
+        int startEdge = std::get<0>(pathinfo);
+        // Direction startDirection = std::get<1>(pathinfo);
+        Direction startDirection = getDirectionFromIndex(startEdge, rows, cols);
         std::vector<bool> directionVector = std::get<2>(pathinfo);
         reconstructed_edgeBits[std::get<0>(pathinfo)] = true;
+        reconstructed_edgeBits[startEdge] = true;
+        int currentEdge = startEdge;
+        Direction currentDir = startDirection;
         for (size_t i = 0; i<directionVector.size(); i+=2){
-            //TODO: überprüfen (copilot)
-            // 11
-            if(directionVector[i] && directionVector[i+1]){
-                reconstructed_edgeBits[getNeighbor(std::get<0>(pathinfo), getDirectionFromIndex(std::get<0>(pathinfo), rows, cols), 2, cols, rows)] = true;
+            if(directionVector[i] == 1 && directionVector[i+1] == 1){
+                currentEdge = getNeighbor(currentEdge, currentDir, 1, cols, rows);
+                reconstructed_edgeBits[currentEdge] = true;
+                continue;
             }
-            // 10
-            if(directionVector[i] && !directionVector[i+1]){
-                reconstructed_edgeBits[getNeighbor(std::get<0>(pathinfo), getDirectionFromIndex(std::get<0>(pathinfo), rows, cols), 1, cols, rows)] = true;
+            if(directionVector[i] == 1 && directionVector[i+1] == 0){
+                currentEdge = getNeighbor(currentEdge, currentDir, 0, cols, rows);
+                currentDir = previousDirection(currentDir);
+                reconstructed_edgeBits[currentEdge] = true;
+                continue;
             }
-            // 01
-            if(!directionVector[i] && directionVector[i+1]){
-                reconstructed_edgeBits[getNeighbor(std::get<0>(pathinfo), getDirectionFromIndex(std::get<0>(pathinfo), rows, cols), 0, cols, rows)] = true;
+            if(directionVector[i] == 0 && directionVector[i+1] == 1){
+                currentEdge = getNeighbor(currentEdge, currentDir, 2, cols, rows);
+                currentDir = nextDirection(currentDir);
+                reconstructed_edgeBits[currentEdge] = true;
+                continue;
             }
         }
     }
@@ -101,11 +112,18 @@ void Decompressor::reconstructImage(){
         //std::cout << directionToString(std::get<1>(pathinfo)) << std::endl;
         //printProgressBar(i , paths.size());
         //reconstructed_edgeBits = reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
-        reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo), reconstructed_edgeBits);
+        
+        //Direction calculated just based on the index, no need to pass it as an argument
+        Direction currentDir = getDirectionFromIndex(std::get<0>(pathinfo), rows, cols);
+        reconstruct_edgeBits_iterative(std::get<0>(pathinfo), currentDir, std::get<2>(pathinfo), reconstructed_edgeBits);
         directionBitsSize += std::get<2>(pathinfo).size();
         //break;
         i++;
     }
+
+    // reconstruct from 2-bit paths
+    //reconstructed_edgeBits = reconstruct_edgeBits2bits(paths_2bit);
+        
 
 
     //std::cout << "size of directionbits: " << directionBitsSize << std::endl;

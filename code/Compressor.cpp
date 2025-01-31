@@ -34,7 +34,7 @@ Compressor::Compressor(const std::string& imagePath, const std::string& volumePa
  * @brief controlling the compression procedure 
  * @return tuple containing compressed image information in form of the color vector, path information as well as the original image for comparison
  */
-std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat> Compressor::compressImage(){
+std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector> Compressor::compressImage(){
     auto start = std::chrono::high_resolution_clock::now();
     //setVertexColors();
     //auto end = std::chrono::high_resolution_clock::now();
@@ -69,7 +69,7 @@ std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat> Compressor::compressImage(
     }
     */
     set2BitPaths();
-    return std::make_tuple(multicut.regionColors, multicut.paths, img);
+    return std::make_tuple(multicut.regionColors, multicut.paths, img, multicut.paths_2bit);
 }
 
 /**
@@ -261,7 +261,10 @@ void Compressor::set2BitPaths(){
         //std::cout << "pass if\n";
         // get current direction (either down or right) from current index 
         std::vector<bool> directions2bits; 
-        Direction currentDir = getDirectionFromIndex(edgeI, img.rows, img.cols);
+        Direction startDir;
+        Direction currentDir;
+        startDir = getDirectionFromIndex(edgeI, img.rows, img.cols);
+        currentDir = startDir;
         int currentEdge = edgeI;
         int left = 0;
         int front = 0;
@@ -321,7 +324,7 @@ void Compressor::set2BitPaths(){
                 break;
             }
         }
-        multicut.paths_2bit.emplace_back(edgeI, currentDir, directions2bits);
+        multicut.paths_2bit.emplace_back(edgeI, startDir, directions2bits);
     }
 
     // Calculate storage space for the paths vector
