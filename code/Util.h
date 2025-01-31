@@ -16,4 +16,6 @@ Direction nextDirection(Direction dir);
 Direction previousDirection(Direction dir);
 int getEdgeBitFromList(int v, int w, std::vector<bool>& edgebitsvector, int rows, int cols);
 void printProgressBar(int progress, int total);
+Direction getDirectionFromIndex(int index, int row, int col);
+std::string directionToString(Direction dir);
 #endif // UTIL_H

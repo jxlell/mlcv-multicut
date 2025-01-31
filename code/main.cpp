@@ -96,6 +96,7 @@ int main() {
     string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example";
     imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images/icon_512";
     std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
+    //parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code";
     int imgCount = countImgFiles(parentDir);
     int progress = 0;
 
@@ -124,16 +125,18 @@ int main() {
     //Compressor volcomp("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example/tree5x5.png", imgDir);
     //volcomp.compressVolume();
     for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
-        if (!entry.is_directory() || entry.path().filename().string() != "screenshot_game") {
+        if (!entry.is_directory() || entry.path().filename().string() != "photo_kodak") {
             continue; 
         }
         for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
-            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "Sopwith-screenshot.png"){
+            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "kodim08.png"
+            ){
                 continue;
             }
 
             //cv::Mat img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
             Compressor comp(dirEntry.path().string());
+            //returning color vector, path vector, original image
             std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat> compressed_image = comp.compressImage();
 
             std::string filename = dirEntry.path().filename().string();
@@ -153,25 +156,28 @@ int main() {
 
             multicut_percentages.push_back(comp.getMulticutPercentage());
             multicut_percentages_total.push_back(comp.getMulticutPercentage());
-            std::cout << "Multicut Percentage: " << comp.getMulticutPercentage() << std::endl;
+            //std::cout << "Multicut Percentage: " << comp.getMulticutPercentage() << std::endl;
             
             disconnected_components.push_back(comp.getDisconnectedComponents());
             disconnected_components_total.push_back(comp.getDisconnectedComponents());
-            std::cout << "Disconnected Components: " << comp.getDisconnectedComponents() << std::endl;
+            //std::cout << "Disconnected Components: " << comp.getDisconnectedComponents() << std::endl;
 
             pixel_sizes.push_back(comp.getMulticut().getVertices());
             pixel_sizes_total.push_back(comp.getMulticut().getVertices());
 
             kBSizes.push_back(comp.getkBSize());
-
-            cv::Mat img = std::get<2>(compressed_image);
+            
+            cv::Mat img;// = std::get<2>(compressed_image);
+            img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
             Decompressor decomp(std::get<0>(compressed_image), std::get<1>(compressed_image), comp.getMulticut().edgeBits01.size(), img.cols, img.rows, img);
             decomp.reconstructImage();
             decompression_times.push_back(decomp.getDecompressionTime());
             decompression_times_total.push_back(decomp.getDecompressionTime());
+            
+        
 
             progress++;
-            printProgressBar(progress, imgCount);
+            //printProgressBar(progress, imgCount);
             ++i;
 
         }

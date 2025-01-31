@@ -77,6 +77,10 @@
         "numeric": "cpp",
         "algorithm": "cpp",
         "filesystem": "cpp",
-        "charconv": "cpp"
-    }
+        "charconv": "cpp",
+        "execution": "cpp",
+        "forward_list": "cpp",
+        "print": "cpp"
+    },
+    "C_Cpp.default.compilerPath": "/usr/bin/clang++"
 }

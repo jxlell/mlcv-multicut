@@ -37,6 +37,10 @@ void Multicut::setVertexColor(int v, int red, int green, int blue) {
     }
 }
 
+int Multicut::getEdges(){
+    return edgeBits01.size();
+}
+
 /**
  * @brief gets the RGB value for a vertex
  * @param v vertex index

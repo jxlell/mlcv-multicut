@@ -16,6 +16,7 @@ class Compressor {
         void setEdgeBits();
         void setRegions();
         void setPaths();
+        void set2BitPaths();
         andres::Partition<int> getRegionsFromVolume(std::vector<Multicut> volume);
         Multicut getMulticut();
         void compressVolume();
@@ -26,6 +27,7 @@ class Compressor {
         double getDisconnectedComponents();
         int getImgSize();
         int getkBSize();
+        void print2bitpaths(PathInfoVector paths);
     private:
         std::string imagePath;
         std::vector<int> neighborsOffsets;

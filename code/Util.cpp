@@ -154,4 +154,49 @@ void printProgressBar(int progress, int total) {
     std::cout.flush();
 }
 
+Direction getDirectionFromIndex(int index, int rows, int cols){
+    Direction horizontalDir = Direction::DOWN;
+    Direction verticalDir = Direction::RIGHT;
 
+    int row = index / (2*cols-1);
+    int col = index % (2*cols-1);
+
+    if(index>2*cols*rows-cols-rows-cols){
+        verticalDir = Direction::UP;
+    }else{
+        verticalDir = Direction::DOWN;
+    }
+    if((index+1) % (2*cols-1) == 0){
+        horizontalDir = Direction::LEFT;
+    }else{
+        horizontalDir = Direction::RIGHT;
+    }
+
+    
+    Direction currentDir = (row % 2 == 0) ? 
+        ((index % 2 == 0) ? horizontalDir : verticalDir) : 
+        ((index % 2 == 0) ? verticalDir : horizontalDir);
+
+    return currentDir;
+}
+
+std::string directionToString(Direction dir){
+    switch (dir)
+    {
+    case Direction::UP:
+        return "UP";
+        break;
+    case Direction::DOWN:
+        return "DOWN";
+        break;
+    case Direction::LEFT:
+        return "LEFT";
+        break;
+    case Direction::RIGHT:
+        return "RIGHT";
+        break;
+    default:
+        return "UNKNOWN";
+        break;
+    }
+}

@@ -60,6 +60,30 @@ void Decompressor::reconstruct_edgeBits_iterative(int currentEdge, Direction cur
     return;
 }
 
+std::vector<bool> Decompressor::reconstruct_edgeBits2bits(PathInfoVector paths){
+    std::vector<bool> reconstructed_edgeBits(edgeBitsSize, false);
+    for(PathInfo pathinfo : paths){
+        std::vector<bool> directionVector = std::get<2>(pathinfo);
+        reconstructed_edgeBits[std::get<0>(pathinfo)] = true;
+        for (size_t i = 0; i<directionVector.size(); i+=2){
+            //TODO: überprüfen (copilot)
+            // 11
+            if(directionVector[i] && directionVector[i+1]){
+                reconstructed_edgeBits[getNeighbor(std::get<0>(pathinfo), getDirectionFromIndex(std::get<0>(pathinfo), rows, cols), 2, cols, rows)] = true;
+            }
+            // 10
+            if(directionVector[i] && !directionVector[i+1]){
+                reconstructed_edgeBits[getNeighbor(std::get<0>(pathinfo), getDirectionFromIndex(std::get<0>(pathinfo), rows, cols), 1, cols, rows)] = true;
+            }
+            // 01
+            if(!directionVector[i] && directionVector[i+1]){
+                reconstructed_edgeBits[getNeighbor(std::get<0>(pathinfo), getDirectionFromIndex(std::get<0>(pathinfo), rows, cols), 0, cols, rows)] = true;
+            }
+        }
+    }
+    return reconstructed_edgeBits;
+}
+
 /**
  * @brief reconstructs edgebits vector based on the path information and in addition uses the color vector to reconstruct the whole image 
  * @see Decompressor::reconstruct_edgeBits_iterative()
@@ -82,6 +106,7 @@ void Decompressor::reconstructImage(){
         //break;
         i++;
     }
+
 
     //std::cout << "size of directionbits: " << directionBitsSize << std::endl;
 
@@ -139,12 +164,12 @@ void Decompressor::reconstructImage(){
     auto end = std::chrono::high_resolution_clock::now();
     auto start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     decompressionTime = start_to_end;
-    /*
-    cv::destroyAllWindows();
-    cv::imshow("Original", img);
-    cv::imshow("Reconstruction", image);
-    cv::waitKey(0);
-    */
+    
+    // cv::destroyAllWindows();
+    // cv::imshow("Original", img);
+    // cv::imshow("Reconstruction", image);
+    // cv::waitKey(0);
+    
 }
 
 /**

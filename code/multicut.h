@@ -32,11 +32,13 @@ class Multicut {
         int vertices;
         std::vector<bool> visited; 
         PathInfoVector paths;
+        PathInfoVector paths_2bit;
         int disconnectedComponents;
         int cols;
         int rows; 
         std::vector<RGB> regionColors;
         std::vector<int> neighborsOffsets;
+        int getEdges();
 };
 
 

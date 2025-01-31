@@ -6,12 +6,14 @@
 #include <chrono>
 #include "partition.hxx"
 #include "DirectionPath.h"
+#include "Util.h"
 
 
 /**
  * @class Compressor
  * @brief Compressor module handling the 
  * TODO: als klasse notwendig? 
+ * 
  */
 Compressor::Compressor(const std::string& imagePath, const std::string& volumePath) 
     : imagePath(imagePath), 
@@ -51,7 +53,6 @@ std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat> Compressor::compressImage(
     //start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     //std::cout << "time to set regions in ms: " << start_to_end << std::endl;
 
-
     //start = std::chrono::high_resolution_clock::now();
     setPaths();
     auto end = std::chrono::high_resolution_clock::now();
@@ -60,6 +61,14 @@ std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat> Compressor::compressImage(
     std::string filename = imagePath.substr(imagePath.find_last_of("/\\") + 1);
     //std::cout << "time to compress " << filename << ": " << start_to_end << " ms" << std::endl;
     compressionTime = start_to_end;
+    
+    //FIXME: print
+    /*
+    for (bool a : std::get<2>(multicut.paths[0])){
+        std::cout << a;
+    }
+    */
+    set2BitPaths();
     return std::make_tuple(multicut.regionColors, multicut.paths, img);
 }
 
@@ -174,26 +183,8 @@ void Compressor::setPaths(){
         //std::cout << std::endl << edgeI;
 
         // dir rausfinden
-        Direction horizontalDir = Direction::DOWN;
-        Direction verticalDir = Direction::RIGHT;
-
-        int row = edgeI / (2*img.cols-1);
-        int col = edgeI % (2*img.cols-1);
-
-        if(edgeI>2*img.cols*img.rows-img.cols-img.rows-img.cols){
-            verticalDir = Direction::UP;
-        }else{
-            verticalDir = Direction::DOWN;
-        }
-        if((edgeI+1) % (2*img.cols-1) == 0){
-            horizontalDir = Direction::LEFT;
-        }else{
-            horizontalDir = Direction::RIGHT;
-        }
-
-        Direction currentDir = (row % 2 == 0) ? 
-            ((edgeI % 2 == 0) ? horizontalDir : verticalDir) : 
-            ((edgeI % 2 == 0) ? verticalDir : horizontalDir);
+        // get current direction (either down or right) from current index 
+        Direction currentDir = getDirectionFromIndex(edgeI, img.rows, img.cols);
 
         // dfs starten
         /*
@@ -222,12 +213,242 @@ void Compressor::setPaths(){
     //std::cout << "number of edges: " << 2*rows*cols - cols - rows << std::endl;
 
     //printPaths();
-    
+
+    // Calculate storage space for the path vector
+    double totalBitsPathVector = 0;
+    for (const auto& path : multicut.paths) {
+        int edgeI;
+        Direction dir;
+        std::vector<bool> directionVector;
+
+        std::tie(edgeI, dir, directionVector) = path;
+
+        totalBitsPathVector += 32; // 32 bits for starting point
+        //totalBitsPathVector += ceil(log2(2 * img.rows * img.cols - img.rows - img.cols)); // 32 bits for starting point
+        if(!directionVector.empty()){
+            totalBitsPathVector += 8;  // 8 bits for starting direction (smallest addressable unit)
+            totalBitsPathVector += directionVector.size(); // Size of directionVector in bits
+        }
+    }
+
+    std::cout << "Total bits for path vector: " << totalBitsPathVector << std::endl;
+    //std::cout << "bits needed per start point: " << ceil(log2(2 * img.rows * img.cols - img.rows - img.cols)) << std::endl;
     
     multicut.disconnectedComponents = dfsI;
     //std::cout << "number of disconnected components: " << dfsI << std::endl;
 
 }
+
+//TODO: 2bit paths 
+// FIXME: vervollständigen 
+
+void Compressor::set2BitPaths(){
+    //TODO: beide vektoren als bitset? größe ja vorher bekannt 
+    std::vector<bool> edgeBits01 = multicut.edgeBits01;
+    //TODO: initialisiern mit größe, anstatt edgebits von multicut zu nehmen 
+    std::vector<bool> visited(multicut.getEdges(), false);
+    //visited.resize(multicut.getEdges(), false);
+    //std::cout << imagePath << std::endl;
+
+    for (int edgeI = 0; edgeI < multicut.getEdges(); edgeI++){
+        int iter_i = 0;
+        if(visited[edgeI]){continue;}
+        if(!multicut.edgeBits01[edgeI]){
+            visited[edgeI] = true;
+            continue;
+        }
+        visited[edgeI] = true;
+        //std::cout << "pass if\n";
+        // get current direction (either down or right) from current index 
+        std::vector<bool> directions2bits; 
+        Direction currentDir = getDirectionFromIndex(edgeI, img.rows, img.cols);
+        int currentEdge = edgeI;
+        int left = 0;
+        int front = 0;
+        int right = 0;
+        while(true){
+            //std::cout << "iter: " << iter_i++ << std::endl;
+            //FIXME: manchmal endlosschleife (gradient.png)
+            left = getNeighbor(currentEdge, currentDir, 0, img.cols, img.rows);
+            front = getNeighbor(currentEdge, currentDir, 1, img.cols, img.rows);
+            right = getNeighbor(currentEdge, currentDir, 2, img.cols, img.rows);
+
+            // edge out of bounds 
+            if(left == -1 || front == -1 || right == -1 || 
+            left >= edgeBits01.size() || front >= edgeBits01.size() || right >= edgeBits01.size()){
+                visited[currentEdge] = true;
+                break; 
+            }
+
+            // check if all neighbors are visited
+            //TODO: wird eigentlich auch noch von den folgenden ifs abgefangen
+            if(visited[left] && visited[front] && visited[right]){
+                visited[currentEdge] = true;
+                break;
+            }
+
+            //front
+            if(edgeBits01[front] && !visited[front]){
+                currentEdge = getNeighbor(currentEdge, currentDir, 1, img.cols, img.rows);
+                directions2bits.push_back(1);
+                directions2bits.push_back(1);
+                visited[currentEdge] = true;
+                continue;
+            }
+
+            //left
+            if(edgeBits01[left] && !visited[left]){
+                currentEdge = getNeighbor(currentEdge, currentDir, 0, img.cols, img.rows);
+                currentDir = previousDirection(currentDir);
+                directions2bits.push_back(1);
+                directions2bits.push_back(0);
+                visited[currentEdge] = true;
+                continue;
+            }
+            
+            //right
+            if(edgeBits01[right] && !visited[right]){
+                currentEdge = getNeighbor(currentEdge, currentDir, 2, img.cols, img.rows);
+                currentDir = nextDirection(currentDir);
+                directions2bits.push_back(0);
+                directions2bits.push_back(1);
+                visited[currentEdge] = true;
+                continue;
+            }else{
+                //std::cout << edgeBits01[front] << std::endl;
+                //std::cerr << "Warning: No valid path found from edge " << currentEdge << std::endl;
+                visited[currentEdge] = true;
+                break;
+            }
+        }
+        multicut.paths_2bit.emplace_back(edgeI, currentDir, directions2bits);
+    }
+
+    // Calculate storage space for the paths vector
+    double totalBits2BitPaths = 0;
+    int emptyPathsCount = 0;
+    for (const auto& path : multicut.paths_2bit) {
+        int edgeI;
+        Direction dir;
+        std::vector<bool> directions2bits;
+
+        std::tie(edgeI, dir, directions2bits) = path;
+
+        totalBits2BitPaths += 32; // 32 bits for starting point
+        //totalBits2BitPaths += ceil(log2(2 * img.rows * img.cols - img.rows - img.cols)); // 32 bits for starting point
+        
+        //totalBits2BitPaths += 8;  // 8 bits for starting direction (smallest addressable unit)
+        if(!directions2bits.empty()){
+            totalBits2BitPaths += 8; // only store direction if there is a path following
+            totalBits2BitPaths += directions2bits.size(); // Size of directions2bits in bits
+        }
+        else {
+            emptyPathsCount++;
+        }
+    }
+    std::cout << "Number of 2-bit paths: " << multicut.paths_2bit.size() << std::endl;
+    std::cout << "Total bits for 2-bit paths: " << totalBits2BitPaths << std::endl;
+    std::cout << "Number of empty paths: " << emptyPathsCount << std::endl;
+
+    // Identify the longest run of ones in the direction vectors
+    int longestRun = 0;
+    for (const auto& path : multicut.paths_2bit) {
+        int edgeI;
+        Direction dir;
+        std::vector<bool> directions2bits;
+
+        std::tie(edgeI, dir, directions2bits) = path;
+
+        int currentRun = 0;
+        for (bool bit : directions2bits) {
+            if (bit) {
+                currentRun++;
+                if (currentRun > longestRun) {
+                    longestRun = currentRun;
+                }
+            } else {
+                currentRun = 0;
+            }
+        }
+    }
+    std::cout << "Longest run of ones in direction vectors: " << longestRun << std::endl;
+
+    // Calculate bits needed for run length encoding
+    double totalBitsRLE = 0;
+    for (const auto& path : multicut.paths_2bit) {
+        int edgeI;
+        Direction dir;
+        std::vector<bool> directions2bits;
+
+        std::tie(edgeI, dir, directions2bits) = path;
+
+        totalBitsRLE += 32; // 32 bits for starting point 
+        //totalBitsRLE += ceil(log2(2 * img.rows * img.cols - img.rows - img.cols)); // 32 bits for starting point
+        if(!directions2bits.empty()){
+            totalBitsRLE += 8; // only store direction if there is a path following
+        }
+        //totalBitsRLE += 8;  // 8 bits for starting direction (smallest addressable unit)
+
+        int currentRun = 0;
+        for (size_t i = 0; i < directions2bits.size(); ++i) {
+            if (!directions2bits[i]) {
+            totalBitsRLE += 16; // for length of 1s
+            totalBitsRLE += 1; // for lengths of 0s (0 for length 1, 1 for length 2)
+            // Skip the next bit if it is also 0
+            if (i + 1 < directions2bits.size() && !directions2bits[i + 1]) {
+                ++i;
+            }
+            }
+        }
+    }
+    std::cout << "Total bits for run length encoding: " << totalBitsRLE << std::endl;
+
+
+    // Count the runs of 0s in the 2-bit paths
+    int totalRunsOfZeros = 0;
+    for (const auto& path : multicut.paths_2bit) {
+        int edgeI;
+        Direction dir;
+        std::vector<bool> directions2bits;
+
+        std::tie(edgeI, dir, directions2bits) = path;
+
+        bool inRun = false;
+        for (bool bit : directions2bits) {
+            if (!bit) {
+                if (!inRun) {
+                    inRun = true;
+                    totalRunsOfZeros++;
+                }
+            } else {
+                inRun = false;
+            }
+        }
+    }
+    //std::cout << "Total runs of 0s in 2-bit paths: " << totalRunsOfZeros << std::endl;
+
+    // print 2-bit paths
+    //print2bitpaths(multicut.paths_2bit);
+    return;
+}
+
+void Compressor::print2bitpaths(PathInfoVector paths){
+    for (const auto& path : paths) {
+        int edgeI;
+        Direction dir;
+        std::vector<bool> directions2bits;
+
+        std::tie(edgeI, dir, directions2bits) = path;
+
+        std::cout << "Start Edge: " << edgeI << ", Direction: " << directionToString(dir) << ", Path: ";
+        for (bool bit : directions2bits) {
+            std::cout << bit;
+        }
+        std::cout << std::endl;
+    }
+}
+
+
 
 /**
  * @brief returns multicut object 

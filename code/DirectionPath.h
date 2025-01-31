@@ -8,6 +8,7 @@
 #include <tuple>
 
 // Enum class to define directions
+//TODO: auf 2 bits reduzieren 
 enum class Direction : uint8_t{
     UP,
     RIGHT,

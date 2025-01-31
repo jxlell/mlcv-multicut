@@ -14,6 +14,7 @@ class Decompressor {
         void reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, std::vector<bool>& directionVector, std::vector<bool>& reconstructedEdgeBits);
         //void reconstructMulticut();
         long long getDecompressionTime() const;
+        std::vector<bool> reconstruct_edgeBits2bits(PathInfoVector paths);
     private:
         std::string imagePath;
         std::vector<int> neighborsOffsets;
