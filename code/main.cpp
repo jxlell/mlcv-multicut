@@ -91,12 +91,14 @@ int main() {
     vector<string> categories;
     vector<double> kBSizes;
 
+    //auto rle_result = getRLE({false,true, true, true, true, true, true , true, true, true, false, false, true, false});
+    //auto reconstructed = reconstructRLE(std::get<0>(rle_result), std::get<1>(rle_result), std::get<2>(rle_result));
 
     
     string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example";
     imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images/icon_512";
     std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
-    parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code";
+    //parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code";
     int imgCount = countImgFiles(parentDir);
     int progress = 0;
 
@@ -125,11 +127,11 @@ int main() {
     //Compressor volcomp("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example/tree5x5.png", imgDir);
     //volcomp.compressVolume();
     for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
-        if (!entry.is_directory() || entry.path().filename().string() != "test_img") {
+        if (!entry.is_directory() || entry.path().filename().string() != "photo_tecnick") {
             continue; 
         }
         for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
-            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "A_House_in_California.png"
+            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "RGB_OR_1200x1200_021.png"
             ){
                 continue;
             }

@@ -226,7 +226,8 @@ void Compressor::setPaths(){
         totalBitsPathVector += 32; // 32 bits for starting point
         //totalBitsPathVector += ceil(log2(2 * img.rows * img.cols - img.rows - img.cols)); // 32 bits for starting point
         if(!directionVector.empty()){
-            totalBitsPathVector += 8;  // 8 bits for starting direction (smallest addressable unit)
+            //direction wird berechnet und nicht mehr gespeichert
+            //totalBitsPathVector += 8;  // 8 bits for starting direction (smallest addressable unit)
             totalBitsPathVector += directionVector.size(); // Size of directionVector in bits
         }
     }
@@ -342,7 +343,8 @@ void Compressor::set2BitPaths(){
         
         //totalBits2BitPaths += 8;  // 8 bits for starting direction (smallest addressable unit)
         if(!directions2bits.empty()){
-            totalBits2BitPaths += 8; // only store direction if there is a path following
+            //direction wird berechnet und nicht mehr gespeichert
+            //totalBits2BitPaths += 8; // only store direction if there is a path following
             totalBits2BitPaths += directions2bits.size(); // Size of directions2bits in bits
         }
         else {

@@ -200,3 +200,72 @@ std::string directionToString(Direction dir){
         break;
     }
 }
+
+std::tuple<std::vector<bool>, std::vector<uint16_t>, bool> getRLE(std::vector<bool> bits){
+    bool start = bits[0];
+    std::vector<uint16_t> ones_rle;
+    std::vector<bool> zeros_rle;
+    for(int i = 0; i < bits.size(); i++){
+        if(i > 0 && bits[i] == 0 && bits[i-1] == 0){
+            continue;
+        }
+        if(bits[i] == 0){
+            if(bits[i+1] == 0 && i+1 < bits.size()){
+                zeros_rle.push_back(1);
+            }else{
+                zeros_rle.push_back(0);
+            }
+            continue;
+        }
+        if(bits[i] == 1){
+            int count = 1;
+            while(i+1 < bits.size() && bits[i+1] == 1){
+                count++;
+                i++;
+            }
+            ones_rle.push_back(count);
+        }
+
+    }
+
+
+    return std::make_tuple(zeros_rle, ones_rle, start);
+}
+
+
+std::vector<bool> reconstructRLE(std::vector<bool> zeros_rle, std::vector<uint16_t> ones_rle, bool start){
+    std::vector<bool> reconstructed;
+    if(!start){
+        for(size_t i = 0; i<zeros_rle.size(); i++){
+            if(zeros_rle[i] == 1){
+                reconstructed.push_back(false);
+                reconstructed.push_back(false);
+            }else{
+                reconstructed.push_back(false);
+            }
+            if(i < ones_rle.size()){
+                int count = ones_rle[i];
+                while(count > 0){
+                    reconstructed.push_back(true);
+                    count--;
+                }
+            }
+        }
+    }else{
+        for(size_t i = 0; i<ones_rle.size(); i++){
+            int count = ones_rle[i];
+            while(count > 0){
+                reconstructed.push_back(true);
+                count--;
+            }
+            if(zeros_rle[i] == 1 && i < zeros_rle.size()){
+                reconstructed.push_back(false);
+                reconstructed.push_back(false);
+            }else if(i < zeros_rle.size()){
+                reconstructed.push_back(false);
+            }
+        }
+    }
+    
+    return reconstructed;
+}

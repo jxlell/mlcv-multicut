@@ -18,4 +18,6 @@ int getEdgeBitFromList(int v, int w, std::vector<bool>& edgebitsvector, int rows
 void printProgressBar(int progress, int total);
 Direction getDirectionFromIndex(int index, int row, int col);
 std::string directionToString(Direction dir);
+std::tuple<std::vector<bool>, std::vector<uint16_t>, bool> getRLE(std::vector<bool> bits);
+std::vector<bool> reconstructRLE(std::vector<bool> zeros_rle, std::vector<uint16_t> ones_rle, bool start);
 #endif // UTIL_H
