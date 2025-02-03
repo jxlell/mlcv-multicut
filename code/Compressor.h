@@ -11,7 +11,7 @@
 class Compressor {
     public:
         Compressor(const std::string& imagePath, const std::string& volumePath = "");
-        std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector> compressImage();
+        std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector> compressImage();
         void setVertexColors();
         void setEdgeBits();
         void setRegions();
@@ -23,6 +23,7 @@ class Compressor {
         long long getCompressionTime();
         double getCompressionRate();
         double getOldCompressionRates();
+        double getRLECompressionRate();
         double getMulticutPercentage();
         double getDisconnectedComponents();
         int getImgSize();
@@ -38,6 +39,7 @@ class Compressor {
         std::string volumePath;
         long long compressionTime;
         int imgSize;
+        RLEVector rle_paths;
 };
 
 #endif // COMPRESSOR_H

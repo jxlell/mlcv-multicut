@@ -9,7 +9,7 @@
  * @class Decompression module 
  * TODO: klasse notwendig? 
  */
-Decompressor::Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, int edgeBitsSize, int cols, int rows, cv::Mat img, PathInfoVector paths_2bit) {
+Decompressor::Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, int edgeBitsSize, int cols, int rows, cv::Mat img, PathInfoVector paths_2bit, RLEVector rle_paths) {
     this->regionColors = regionColors;
     this->paths = paths; 
     this->paths_2bit = paths_2bit;
@@ -18,6 +18,7 @@ Decompressor::Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, 
     this->cols = cols;
     this->rows = rows;
     this->img = img;
+    this->rle_paths = rle_paths;
 }
 
 /**
@@ -102,6 +103,19 @@ std::vector<bool> Decompressor::reconstruct_edgeBits2bits(PathInfoVector paths){
 void Decompressor::reconstructImage(){
     cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
     int directionBitsSize;
+
+    // convert from rle_paths to paths_2bit
+    std::vector<PathInfo> paths_2bit;
+    for (auto rle : rle_paths) {
+        int edgeI;
+        std::vector<bool> zeros_rle;
+        std::vector<uint16_t> ones_rle;
+        bool start;
+        std::tie(edgeI, zeros_rle, ones_rle, start) = rle;
+        std::vector<bool> directions2bits = reconstructRLE(zeros_rle, ones_rle, start);
+        paths_2bit.emplace_back(edgeI, getDirectionFromIndex(edgeI, rows, cols), directions2bits);
+    }
+
     int numberOfPaths = paths.size();
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -122,7 +136,7 @@ void Decompressor::reconstructImage(){
     }
 
     // reconstruct from 2-bit paths
-    //reconstructed_edgeBits = reconstruct_edgeBits2bits(paths_2bit);
+    reconstructed_edgeBits = reconstruct_edgeBits2bits(paths_2bit);
         
 
 

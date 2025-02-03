@@ -258,7 +258,7 @@ std::vector<bool> reconstructRLE(std::vector<bool> zeros_rle, std::vector<uint16
                 reconstructed.push_back(true);
                 count--;
             }
-            if(zeros_rle[i] == 1 && i < zeros_rle.size()){
+            if(i < zeros_rle.size() && zeros_rle[i] == 1){
                 reconstructed.push_back(false);
                 reconstructed.push_back(false);
             }else if(i < zeros_rle.size()){

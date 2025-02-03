@@ -73,6 +73,7 @@ int countImgFiles(const std::filesystem::path& parentDir) {
 int main() {
     vector<double> compression_rates;
     vector<double> old_compression_rates; 
+    vector<double> rle_compression_rates;
     vector<long long> compression_times;
     vector<long long> decompression_times;
     vector<double> multicut_percentages;
@@ -91,8 +92,14 @@ int main() {
     vector<string> categories;
     vector<double> kBSizes;
 
-    //auto rle_result = getRLE({false,true, true, true, true, true, true , true, true, true, false, false, true, false});
-    //auto reconstructed = reconstructRLE(std::get<0>(rle_result), std::get<1>(rle_result), std::get<2>(rle_result));
+    // auto rle_result = getRLE({true, true, true, true, true, true , true, true});
+    // if(std::get<0>(rle_result).empty()) {
+    //     std::cerr << "Error: The result at tuple index 0 is empty." << std::endl;
+    // }
+    // if (std::get<1>(rle_result).empty()) {
+    //     std::cerr << "Error: The result at tuple index 1 is empty." << std::endl;
+    // }
+    // auto reconstructed = reconstructRLE(std::get<0>(rle_result), std::get<1>(rle_result), std::get<2>(rle_result));
 
     
     string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example";
@@ -127,11 +134,11 @@ int main() {
     //Compressor volcomp("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example/tree5x5.png", imgDir);
     //volcomp.compressVolume();
     for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
-        if (!entry.is_directory() || entry.path().filename().string() != "photo_tecnick") {
+        if (!entry.is_directory() || entry.path().filename().string() != "icon_64") {
             continue; 
         }
         for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
-            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "RGB_OR_1200x1200_021.png"
+            if(dirEntry.path().extension().string() != ".png" //|| dirEntry.path().filename().string() != "A_House_in_California.png"
             ){
                 continue;
             }
@@ -139,7 +146,7 @@ int main() {
             //cv::Mat img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
             Compressor comp(dirEntry.path().string());
             //returning color vector, path vector, original image
-            std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector> compressed_image = comp.compressImage();
+            std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector> compressed_image = comp.compressImage();
 
             std::string filename = dirEntry.path().filename().string();
             // Remove comma if it exists in the filename
@@ -156,6 +163,8 @@ int main() {
             old_compression_rates.push_back(comp.getOldCompressionRates());
             old_compression_rates_total.push_back(comp.getOldCompressionRates());
 
+            rle_compression_rates.push_back(comp.getRLECompressionRate());
+
             multicut_percentages.push_back(comp.getMulticutPercentage());
             multicut_percentages_total.push_back(comp.getMulticutPercentage());
             //std::cout << "Multicut Percentage: " << comp.getMulticutPercentage() << std::endl;
@@ -171,7 +180,7 @@ int main() {
             
             cv::Mat img;// = std::get<2>(compressed_image);
             img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
-            Decompressor decomp(std::get<0>(compressed_image), std::get<1>(compressed_image), comp.getMulticut().edgeBits01.size(), img.cols, img.rows, img, std::get<3>(compressed_image));
+            Decompressor decomp(std::get<0>(compressed_image), std::get<1>(compressed_image), comp.getMulticut().edgeBits01.size(), img.cols, img.rows, img, std::get<3>(compressed_image), std::get<4>(compressed_image));
             decomp.reconstructImage();
             decompression_times.push_back(decomp.getDecompressionTime());
             decompression_times_total.push_back(decomp.getDecompressionTime());
@@ -209,6 +218,7 @@ int main() {
     //writeToOutput(entry, multicut_percentages, "multicut_percentages");
     //writeToOutput(entry, disconnected_components, "disconnected_components");
     //writeToOutput(entry, pixel_sizes, "pixel_sizes");
+    writeToOutput(entry, rle_compression_rates, "rle_compression_rates");
 
     compression_rates.clear();
     old_compression_rates.clear();

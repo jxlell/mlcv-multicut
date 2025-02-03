@@ -34,7 +34,7 @@ Compressor::Compressor(const std::string& imagePath, const std::string& volumePa
  * @brief controlling the compression procedure 
  * @return tuple containing compressed image information in form of the color vector, path information as well as the original image for comparison
  */
-std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector> Compressor::compressImage(){
+std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector> Compressor::compressImage(){
     auto start = std::chrono::high_resolution_clock::now();
     //setVertexColors();
     //auto end = std::chrono::high_resolution_clock::now();
@@ -69,7 +69,7 @@ std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector> Compressor
     }
     */
     set2BitPaths();
-    return std::make_tuple(multicut.regionColors, multicut.paths, img, multicut.paths_2bit);
+    return std::make_tuple(multicut.regionColors, multicut.paths, img, multicut.paths_2bit, rle_paths);
 }
 
 /**
@@ -325,6 +325,17 @@ void Compressor::set2BitPaths(){
                 break;
             }
         }
+        // std::cout << "edgeI: " << edgeI << std::endl;
+        // for (bool bit : directions2bits) {
+        //     std::cout << bit;
+        // }
+        if(directions2bits.empty()){
+            // std::cout << "empty path" << std::endl;
+            rle_paths.emplace_back(edgeI, std::vector<bool>(), std::vector<uint16_t>(), false);
+        }else{
+            std::tuple<std::vector<bool>, std::vector<uint16_t>, bool> rle = getRLE(directions2bits);
+            rle_paths.emplace_back(edgeI, std::get<0>(rle), std::get<1>(rle), std::get<2>(rle));
+        }
         multicut.paths_2bit.emplace_back(edgeI, startDir, directions2bits);
     }
 
@@ -550,7 +561,8 @@ double Compressor::getCompressionRate(){
         std::tie(edgeI, dir, directionVector) = path;
 
         totalBits += 32; // 32 bits for starting point
-        totalBits += 8; // 8 bits for starting direction (smalles addressable unit)
+        // starting direction is calculated and not stored
+        //totalBits += 8; // 8 bits for starting direction (smalles addressable unit)
         totalBits += directionVector.size(); // Size of directionVector in bits
     }
     //std::cout << "total bits: " << totalBits << std::endl;
@@ -559,6 +571,26 @@ double Compressor::getCompressionRate(){
     
     imgSize = totalBits;
     return compressionRate;
+}
+
+double Compressor::getRLECompressionRate(){
+    double totalBitsRLE = 0;
+    // Calculate bits for color regions
+    totalBitsRLE += multicut.regionColors.size() * 3 * 8;
+
+    // Calculate bits for the paths vector
+    for (const auto& path : rle_paths) {
+        std::tuple <int, std::vector<bool>, std::vector<uint16_t>, bool> rle = path;
+        totalBitsRLE += 32; // 32 bits for starting point
+        totalBitsRLE += std::get<1>(rle).size(); // Size of zeros_rle in bits
+        totalBitsRLE += std::get<2>(rle).size() * 16; // Size of ones_rle in bits
+        totalBitsRLE++; // 1 bit indicates which run starts the sequence 
+    }
+    std::cout << "Total bits for RLE: " << totalBitsRLE << std::endl;
+    if(static_cast<double>(vertices) * 24.0 / totalBitsRLE  > 1000){
+        std::cout << "high rate: " << imagePath << std::endl;
+    }
+    return static_cast<double>(vertices) * 24.0 / totalBitsRLE;
 }
 
 

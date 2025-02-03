@@ -23,4 +23,6 @@ using PathInfo = std::tuple<int, Direction, std::vector<bool>>;
 // Define the vector of tuples to hold path information
 using PathInfoVector = std::vector<PathInfo>;
 
+using RLEVector = std::vector<std::tuple<int, std::vector<bool>, std::vector<uint16_t>, bool>>;
+
 #endif // DIRECTION_PATH_H
