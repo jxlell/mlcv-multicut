@@ -269,3 +269,27 @@ std::vector<bool> reconstructRLE(std::vector<bool> zeros_rle, std::vector<uint16
     
     return reconstructed;
 }
+
+std::vector<bool> intToBoolVector(int num) {
+    std::vector<bool> binary;
+    if (num == 0) {
+        binary.push_back(false); // Special case for 0
+        return binary;
+    }
+    
+    while (num > 0) {
+        binary.push_back(num & 1); // Extract LSB
+        num >>= 1; // Right shift
+    }
+    
+    std::reverse(binary.begin(), binary.end()); // Reverse to get MSB first
+    return binary;
+}
+
+int boolVectorToInt(const std::vector<bool>& binary) {
+    int num = 0;
+    for (bool bit : binary) {
+        num = (num << 1) | bit; // Shift left and OR with bit
+    }
+    return num;
+}

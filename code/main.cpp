@@ -79,6 +79,7 @@ int main() {
     vector<double> multicut_percentages;
     vector<int> disconnected_components;
     vector<int> pixel_sizes; 
+    vector<int> twobit_paths_amounts;
 
     vector<double> compression_rates_total;
     vector<double> old_compression_rates_total; 
@@ -134,11 +135,11 @@ int main() {
     //Compressor volcomp("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example/tree5x5.png", imgDir);
     //volcomp.compressVolume();
     for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
-        if (!entry.is_directory() || entry.path().filename().string() != "icon_64") {
+        if (!entry.is_directory() || entry.path().filename().string() != "photo_wikipedia") {
             continue; 
         }
         for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
-            if(dirEntry.path().extension().string() != ".png" //|| dirEntry.path().filename().string() != "A_House_in_California.png"
+            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "001.png"
             ){
                 continue;
             }
@@ -177,6 +178,9 @@ int main() {
             pixel_sizes_total.push_back(comp.getMulticut().getVertices());
 
             kBSizes.push_back(comp.getkBSize());
+
+            // get the number of the 2-bit paths 
+            twobit_paths_amounts.push_back(std::get<4>(compressed_image).size());
             
             cv::Mat img;// = std::get<2>(compressed_image);
             img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
@@ -218,7 +222,8 @@ int main() {
     //writeToOutput(entry, multicut_percentages, "multicut_percentages");
     //writeToOutput(entry, disconnected_components, "disconnected_components");
     //writeToOutput(entry, pixel_sizes, "pixel_sizes");
-    writeToOutput(entry, rle_compression_rates, "rle_compression_rates");
+    //writeToOutput(entry, rle_compression_rates, "rle_compression_rates");
+    //writeToOutput(entry, twobit_paths_amounts, "twobit_paths_amounts");
 
     compression_rates.clear();
     old_compression_rates.clear();
