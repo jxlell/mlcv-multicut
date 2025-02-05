@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import csv
 
-category = 'icon_512'
+category = 'screenshot_web'
 data = pd.read_csv('/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/2ndoutput/path_vs_rle/path_vs_rle_' + category + '.csv', header=None)
 
 percentages = data.iloc[0]

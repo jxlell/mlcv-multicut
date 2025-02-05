@@ -108,10 +108,14 @@ void Decompressor::reconstructImage(){
     for (auto rle : rle_paths) {
         std::vector<bool> edgeI;
         std::vector<bool> zeros_rle;
-        std::vector<uint16_t> ones_rle;
+        std::vector<std::vector<bool>> ones_rle;
+        std::vector<uint16_t> ones_rle_16;
         bool start;
         std::tie(edgeI, zeros_rle, ones_rle, start) = rle;
-        std::vector<bool> directions2bits = reconstructRLE(zeros_rle, ones_rle, start);
+        for (std::vector<bool> vec: ones_rle) {
+            ones_rle_16.push_back(boolVectorToInt(vec));
+        }
+        std::vector<bool> directions2bits = reconstructRLE(zeros_rle, ones_rle_16, start);
         paths_2bit.emplace_back(edgeI, getDirectionFromIndex(boolVectorToInt(edgeI), rows, cols), directions2bits);
     }
 

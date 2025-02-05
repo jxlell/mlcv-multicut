@@ -332,10 +332,14 @@ void Compressor::set2BitPaths(){
         // }
         if(directions2bits.empty()){
             // std::cout << "empty path" << std::endl;
-            rle_paths.emplace_back(intToBool(edgeI), std::vector<bool>(), std::vector<uint16_t>(), false);
+            rle_paths.emplace_back(intToBool(edgeI), std::vector<bool>(), std::vector<std::vector<bool>>(), false);
         }else{
             std::tuple<std::vector<bool>, std::vector<uint16_t>, bool> rle = getRLE(directions2bits);
-            rle_paths.emplace_back(intToBool(edgeI), std::get<0>(rle), std::get<1>(rle), std::get<2>(rle));
+            std::vector<std::vector<bool>> rle_directions;
+            for(uint16_t run : std::get<1>(rle)){
+                rle_directions.push_back(intToBool(run));
+            }
+            rle_paths.emplace_back(intToBool(edgeI), std::get<0>(rle), rle_directions, std::get<2>(rle));
         }
         multicut.paths_2bit.emplace_back(intToBool(edgeI), startDir, directions2bits);
     }
@@ -584,11 +588,14 @@ double Compressor::getRLECompressionRate(){
 
     // Calculate bits for the paths vector
     for (const auto& path : rle_paths) {
-        std::tuple <std::vector<bool>, std::vector<bool>, std::vector<uint16_t>, bool> rle = path;
+        std::tuple <std::vector<bool>, std::vector<bool>, std::vector<std::vector<bool>>, bool> rle = path;
         //totalBitsRLE += 32; // 32 bits for starting point
         totalBitsRLE += std::get<0>(rle).size(); // Size of edgeI in bits
         totalBitsRLE += std::get<1>(rle).size(); // Size of zeros_rle in bits
-        totalBitsRLE += std::get<2>(rle).size() * 16; // Size of ones_rle in bits
+        //totalBitsRLE += std::get<2>(rle).size() * 16; // Size of ones_rle in bits
+        for (std::vector<bool> vec : std::get<2>(rle)){
+            totalBitsRLE += vec.size();
+        }
         totalBitsRLE++; // 1 bit indicates which run starts the sequence 
     }
     std::cout << "Total bits for RLE: " << totalBitsRLE << std::endl;
