@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <queue>
 #include <chrono>
+#include "Util.h"
 
 Graph::Graph(const std::string& imagePath) {
     
@@ -807,7 +808,7 @@ std::vector<bool> Graph::dfs_paths_iterative(int currentEdge, Direction currentD
 
 void Graph::printPaths() const {
     for (const auto& pathInfo : paths) {
-        int startEdge = std::get<0>(pathInfo);
+        int startEdge = boolVectorToInt(std::get<0>(pathInfo));
         Direction startDir = std::get<1>(pathInfo);
         const std::vector<bool>& directions = std::get<2>(pathInfo);
 
@@ -959,7 +960,8 @@ double Graph::reconstructMulticut(){
         //std::cout << directionToString(std::get<1>(pathinfo)) << std::endl;
         //printProgressBar(i , paths.size());
         //reconstructed_edgeBits = reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
-        reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo), reconstructed_edgeBits);
+        int currentEdge = boolVectorToInt(std::get<0>(pathinfo));
+        reconstruct_edgeBits_iterative(currentEdge, std::get<1>(pathinfo), std::get<2>(pathinfo), reconstructed_edgeBits);
         directionBitsSize += std::get<2>(pathinfo).size();
         //break;
         i++;

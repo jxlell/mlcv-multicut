@@ -34,7 +34,7 @@ def main(file1, file2, output_file):
     
 
 if __name__ == "__main__":
-    category = 'photo_wikipedia'
+    category = 'icon_512'
     file1 = '/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/2ndoutput/compression_rates/output_' + category + '.csv'
     file2 = '/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/2ndoutput/rle_compression_rates/output_' + category + '.csv'
     output_file = '/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/2ndoutput/path_vs_rle/path_vs_rle_' + category +'.csv'

@@ -65,11 +65,10 @@ void Decompressor::reconstruct_edgeBits_iterative(int currentEdge, Direction cur
 std::vector<bool> Decompressor::reconstruct_edgeBits2bits(PathInfoVector paths){
     std::vector<bool> reconstructed_edgeBits(edgeBitsSize, false);
     for(PathInfo pathinfo : paths){
-        int startEdge = std::get<0>(pathinfo);
+        int startEdge = boolVectorToInt(std::get<0>(pathinfo));
         // Direction startDirection = std::get<1>(pathinfo);
         Direction startDirection = getDirectionFromIndex(startEdge, rows, cols);
         std::vector<bool> directionVector = std::get<2>(pathinfo);
-        reconstructed_edgeBits[std::get<0>(pathinfo)] = true;
         reconstructed_edgeBits[startEdge] = true;
         int currentEdge = startEdge;
         Direction currentDir = startDirection;
@@ -107,13 +106,13 @@ void Decompressor::reconstructImage(){
     // convert from rle_paths to paths_2bit
     std::vector<PathInfo> paths_2bit;
     for (auto rle : rle_paths) {
-        int edgeI;
+        std::vector<bool> edgeI;
         std::vector<bool> zeros_rle;
         std::vector<uint16_t> ones_rle;
         bool start;
         std::tie(edgeI, zeros_rle, ones_rle, start) = rle;
         std::vector<bool> directions2bits = reconstructRLE(zeros_rle, ones_rle, start);
-        paths_2bit.emplace_back(edgeI, getDirectionFromIndex(edgeI, rows, cols), directions2bits);
+        paths_2bit.emplace_back(edgeI, getDirectionFromIndex(boolVectorToInt(edgeI), rows, cols), directions2bits);
     }
 
     int numberOfPaths = paths.size();
@@ -126,10 +125,10 @@ void Decompressor::reconstructImage(){
         //std::cout << directionToString(std::get<1>(pathinfo)) << std::endl;
         //printProgressBar(i , paths.size());
         //reconstructed_edgeBits = reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
-        
+        int startEdge = boolVectorToInt(std::get<0>(pathinfo));
         //Direction calculated just based on the index, no need to pass it as an argument
-        Direction currentDir = getDirectionFromIndex(std::get<0>(pathinfo), rows, cols);
-        reconstruct_edgeBits_iterative(std::get<0>(pathinfo), currentDir, std::get<2>(pathinfo), reconstructed_edgeBits);
+        Direction currentDir = getDirectionFromIndex(startEdge, rows, cols);
+        reconstruct_edgeBits_iterative(startEdge, currentDir, std::get<2>(pathinfo), reconstructed_edgeBits);
         directionBitsSize += std::get<2>(pathinfo).size();
         //break;
         i++;

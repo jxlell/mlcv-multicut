@@ -135,11 +135,11 @@ int main() {
     //Compressor volcomp("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example/tree5x5.png", imgDir);
     //volcomp.compressVolume();
     for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
-        if (!entry.is_directory() || entry.path().filename().string() != "photo_wikipedia") {
+        if (!entry.is_directory() || entry.path().filename().string() != "icon_512") {
             continue; 
         }
         for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
-            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "001.png"
+            if(dirEntry.path().extension().string() != ".png" //|| dirEntry.path().filename().string() != "001.png"
             ){
                 continue;
             }
@@ -217,12 +217,12 @@ int main() {
     // WRITE COMPRESSION RATES TO FILE
     //writeToOutput(entry, compression_rates, "compression_rates");
     //writeToOutput(entry, old_compression_rates, "old_compression_rates");
-    //writeToOutput(entry, compression_times, "compression_times");
+    writeToOutput(entry, compression_times, "compression_times");
     //writeToOutput(entry, decompression_times, "decompression_times");
     //writeToOutput(entry, multicut_percentages, "multicut_percentages");
     //writeToOutput(entry, disconnected_components, "disconnected_components");
     //writeToOutput(entry, pixel_sizes, "pixel_sizes");
-    //writeToOutput(entry, rle_compression_rates, "rle_compression_rates");
+    writeToOutput(entry, rle_compression_rates, "rle_compression_rates");
     //writeToOutput(entry, twobit_paths_amounts, "twobit_paths_amounts");
 
     compression_rates.clear();

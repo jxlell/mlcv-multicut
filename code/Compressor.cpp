@@ -199,7 +199,7 @@ void Compressor::setPaths(){
         std::vector<bool> directionVector;
         //directionVector = dfs_paths_recursive(edgeI, visited, currentDir, directionVector);
         directionVector = multicut.dfs_paths_iterative(edgeI, currentDir, multicut.visited);
-        multicut.paths.emplace_back(edgeI, currentDir, directionVector);
+        multicut.paths.emplace_back(intToBool(edgeI), currentDir, directionVector);
         //std::cout << "path size: " << directionVector.size() << std::endl;
         
         //std::cout << std::endl;
@@ -217,13 +217,14 @@ void Compressor::setPaths(){
     // Calculate storage space for the path vector
     double totalBitsPathVector = 0;
     for (const auto& path : multicut.paths) {
-        int edgeI;
+        std::vector<bool> edgeI;
         Direction dir;
         std::vector<bool> directionVector;
 
         std::tie(edgeI, dir, directionVector) = path;
-
-        totalBitsPathVector += 32; // 32 bits for starting point
+        totalBitsPathVector += edgeI.size();
+        
+        //totalBitsPathVector += 32; // 32 bits for starting point
         //totalBitsPathVector += ceil(log2(2 * img.rows * img.cols - img.rows - img.cols)); // 32 bits for starting point
         if(!directionVector.empty()){
             //direction wird berechnet und nicht mehr gespeichert
@@ -331,25 +332,26 @@ void Compressor::set2BitPaths(){
         // }
         if(directions2bits.empty()){
             // std::cout << "empty path" << std::endl;
-            rle_paths.emplace_back(edgeI, std::vector<bool>(), std::vector<uint16_t>(), false);
+            rle_paths.emplace_back(intToBool(edgeI), std::vector<bool>(), std::vector<uint16_t>(), false);
         }else{
             std::tuple<std::vector<bool>, std::vector<uint16_t>, bool> rle = getRLE(directions2bits);
-            rle_paths.emplace_back(edgeI, std::get<0>(rle), std::get<1>(rle), std::get<2>(rle));
+            rle_paths.emplace_back(intToBool(edgeI), std::get<0>(rle), std::get<1>(rle), std::get<2>(rle));
         }
-        multicut.paths_2bit.emplace_back(edgeI, startDir, directions2bits);
+        multicut.paths_2bit.emplace_back(intToBool(edgeI), startDir, directions2bits);
     }
 
     // Calculate storage space for the paths vector
     double totalBits2BitPaths = 0;
     int emptyPathsCount = 0;
     for (const auto& path : multicut.paths_2bit) {
-        int edgeI;
+        std::vector<bool> edgeI;
         Direction dir;
         std::vector<bool> directions2bits;
 
         std::tie(edgeI, dir, directions2bits) = path;
 
-        totalBits2BitPaths += 32; // 32 bits for starting point
+        totalBits2BitPaths += edgeI.size();
+        //totalBits2BitPaths += 32; // 32 bits for starting point
         //totalBits2BitPaths += ceil(log2(2 * img.rows * img.cols - img.rows - img.cols)); // 32 bits for starting point
         
         //totalBits2BitPaths += 8;  // 8 bits for starting direction (smallest addressable unit)
@@ -369,7 +371,7 @@ void Compressor::set2BitPaths(){
     // Identify the longest run of ones in the direction vectors
     int longestRun = 0;
     for (const auto& path : multicut.paths_2bit) {
-        int edgeI;
+        std::vector<bool> edgeI;
         Direction dir;
         std::vector<bool> directions2bits;
 
@@ -392,13 +394,14 @@ void Compressor::set2BitPaths(){
     // Calculate bits needed for run length encoding
     double totalBitsRLE = 0;
     for (const auto& path : multicut.paths_2bit) {
-        int edgeI;
+        std::vector<bool> edgeI;
         Direction dir;
         std::vector<bool> directions2bits;
 
         std::tie(edgeI, dir, directions2bits) = path;
 
-        totalBitsRLE += 32; // 32 bits for starting point 
+        totalBitsRLE += edgeI.size();
+        //totalBitsRLE += 32; // 32 bits for starting point 
         //totalBitsRLE += ceil(log2(2 * img.rows * img.cols - img.rows - img.cols)); // 32 bits for starting point
         if(!directions2bits.empty()){
             totalBitsRLE += 8; // only store direction if there is a path following
@@ -423,7 +426,7 @@ void Compressor::set2BitPaths(){
     // Count the runs of 0s in the 2-bit paths
     int totalRunsOfZeros = 0;
     for (const auto& path : multicut.paths_2bit) {
-        int edgeI;
+        std::vector<bool> edgeI;
         Direction dir;
         std::vector<bool> directions2bits;
 
@@ -450,13 +453,13 @@ void Compressor::set2BitPaths(){
 
 void Compressor::print2bitpaths(PathInfoVector paths){
     for (const auto& path : paths) {
-        int edgeI;
+        std::vector<bool> edgeI;
         Direction dir;
         std::vector<bool> directions2bits;
 
         std::tie(edgeI, dir, directions2bits) = path;
 
-        std::cout << "Start Edge: " << edgeI << ", Direction: " << directionToString(dir) << ", Path: ";
+        std::cout << "Start Edge: " << boolVectorToInt(edgeI) << ", Direction: " << directionToString(dir) << ", Path: ";
         for (bool bit : directions2bits) {
             std::cout << bit;
         }
@@ -554,13 +557,14 @@ double Compressor::getCompressionRate(){
             return 1;
         }
     for (const auto& path : multicut.paths) {
-        int edgeI;
+        std::vector<bool> edgeI;
         Direction dir;
         std::vector<bool> directionVector;
 
         std::tie(edgeI, dir, directionVector) = path;
 
-        totalBits += 32; // 32 bits for starting point
+        totalBits += edgeI.size();
+        //totalBits += 32; // 32 bits for starting point
         // starting direction is calculated and not stored
         //totalBits += 8; // 8 bits for starting direction (smalles addressable unit)
         totalBits += directionVector.size(); // Size of directionVector in bits
@@ -580,8 +584,9 @@ double Compressor::getRLECompressionRate(){
 
     // Calculate bits for the paths vector
     for (const auto& path : rle_paths) {
-        std::tuple <int, std::vector<bool>, std::vector<uint16_t>, bool> rle = path;
-        totalBitsRLE += 32; // 32 bits for starting point
+        std::tuple <std::vector<bool>, std::vector<bool>, std::vector<uint16_t>, bool> rle = path;
+        //totalBitsRLE += 32; // 32 bits for starting point
+        totalBitsRLE += std::get<0>(rle).size(); // Size of edgeI in bits
         totalBitsRLE += std::get<1>(rle).size(); // Size of zeros_rle in bits
         totalBitsRLE += std::get<2>(rle).size() * 16; // Size of ones_rle in bits
         totalBitsRLE++; // 1 bit indicates which run starts the sequence 

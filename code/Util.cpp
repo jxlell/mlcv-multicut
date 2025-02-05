@@ -270,7 +270,7 @@ std::vector<bool> reconstructRLE(std::vector<bool> zeros_rle, std::vector<uint16
     return reconstructed;
 }
 
-std::vector<bool> intToBoolVector(int num) {
+std::vector<bool> intToBool(int num) {
     std::vector<bool> binary;
     if (num == 0) {
         binary.push_back(false); // Special case for 0
