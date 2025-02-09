@@ -74,6 +74,7 @@ int main() {
     vector<double> compression_rates;
     vector<double> old_compression_rates; 
     vector<double> rle_compression_rates;
+    vector<double> straights_compress_rates;
     vector<long long> compression_times;
     vector<long long> decompression_times;
     vector<double> multicut_percentages;
@@ -135,19 +136,20 @@ int main() {
     //Compressor volcomp("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example/tree5x5.png", imgDir);
     //volcomp.compressVolume();
     for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
-        if (!entry.is_directory() || entry.path().filename().string() != "screenshot_web") {
+        if (!entry.is_directory() || entry.path().filename().string() != "screenshot_game") {
             continue; 
         }
         for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
-            if(dirEntry.path().extension().string() != ".png" //|| dirEntry.path().filename().string() != "001.png"
+            if(dirEntry.path().extension().string() != ".png" //|| dirEntry.path().filename().string() != "A_House_in_California.png"
             ){
                 continue;
             }
 
             //cv::Mat img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
             Compressor comp(dirEntry.path().string());
+            //std::cout << "Compressing: " << dirEntry.path().filename().string() << std::endl;
             //returning color vector, path vector, original image
-            std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector> compressed_image = comp.compressImage();
+            std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights> compressed_image = comp.compressImage();
 
             std::string filename = dirEntry.path().filename().string();
             // Remove comma if it exists in the filename
@@ -165,6 +167,7 @@ int main() {
             old_compression_rates_total.push_back(comp.getOldCompressionRates());
 
             rle_compression_rates.push_back(comp.getRLECompressionRate());
+            straights_compress_rates.push_back(comp.getStraightsCompressionRate());
 
             multicut_percentages.push_back(comp.getMulticutPercentage());
             multicut_percentages_total.push_back(comp.getMulticutPercentage());
@@ -184,7 +187,7 @@ int main() {
             
             cv::Mat img;// = std::get<2>(compressed_image);
             img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
-            Decompressor decomp(std::get<0>(compressed_image), std::get<1>(compressed_image), comp.getMulticut().edgeBits01.size(), img.cols, img.rows, img, std::get<3>(compressed_image), std::get<4>(compressed_image));
+            Decompressor decomp(std::get<0>(compressed_image), std::get<1>(compressed_image), comp.getMulticut().edgeBits01.size(), img.cols, img.rows, img, std::get<3>(compressed_image), std::get<4>(compressed_image), std::get<5>(compressed_image));
             decomp.reconstructImage();
             decompression_times.push_back(decomp.getDecompressionTime());
             decompression_times_total.push_back(decomp.getDecompressionTime());
@@ -224,6 +227,7 @@ int main() {
     //writeToOutput(entry, pixel_sizes, "pixel_sizes");
     writeToOutput(entry, rle_compression_rates, "rle_compression_rates");
     writeToOutput(entry, twobit_paths_amounts, "twobit_paths_amounts");
+    writeToOutput(entry, straights_compress_rates, "straights_compress_rates");
 
     compression_rates.clear();
     old_compression_rates.clear();

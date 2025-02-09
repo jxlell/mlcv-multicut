@@ -9,7 +9,7 @@
  * @class Decompression module 
  * TODO: klasse notwendig? 
  */
-Decompressor::Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, int edgeBitsSize, int cols, int rows, cv::Mat img, PathInfoVector paths_2bit, RLEVector rle_paths) {
+Decompressor::Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, int edgeBitsSize, int cols, int rows, cv::Mat img, PathInfoVector paths_2bit, RLEVector rle_paths, Straights straights) {
     this->regionColors = regionColors;
     this->paths = paths; 
     this->paths_2bit = paths_2bit;
@@ -19,6 +19,7 @@ Decompressor::Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, 
     this->rows = rows;
     this->img = img;
     this->rle_paths = rle_paths;
+    this->straights = straights;
 }
 
 /**
@@ -63,36 +64,54 @@ void Decompressor::reconstruct_edgeBits_iterative(int currentEdge, Direction cur
 }
 
 std::vector<bool> Decompressor::reconstruct_edgeBits2bits(PathInfoVector paths){
-    std::vector<bool> reconstructed_edgeBits(edgeBitsSize, false);
+    std::vector<bool> reconstructed_edgeBits_2bits(edgeBitsSize, false);
     for(PathInfo pathinfo : paths){
         int startEdge = boolVectorToInt(std::get<0>(pathinfo));
         // Direction startDirection = std::get<1>(pathinfo);
         Direction startDirection = getDirectionFromIndex(startEdge, rows, cols);
         std::vector<bool> directionVector = std::get<2>(pathinfo);
-        reconstructed_edgeBits[startEdge] = true;
+        reconstructed_edgeBits_2bits[startEdge] = true;
         int currentEdge = startEdge;
         Direction currentDir = startDirection;
         for (size_t i = 0; i<directionVector.size(); i+=2){
             if(directionVector[i] == 1 && directionVector[i+1] == 1){
                 currentEdge = getNeighbor(currentEdge, currentDir, 1, cols, rows);
-                reconstructed_edgeBits[currentEdge] = true;
+                reconstructed_edgeBits_2bits[currentEdge] = true;
                 continue;
             }
             if(directionVector[i] == 1 && directionVector[i+1] == 0){
                 currentEdge = getNeighbor(currentEdge, currentDir, 0, cols, rows);
                 currentDir = previousDirection(currentDir);
-                reconstructed_edgeBits[currentEdge] = true;
+                reconstructed_edgeBits_2bits[currentEdge] = true;
                 continue;
             }
             if(directionVector[i] == 0 && directionVector[i+1] == 1){
                 currentEdge = getNeighbor(currentEdge, currentDir, 2, cols, rows);
                 currentDir = nextDirection(currentDir);
-                reconstructed_edgeBits[currentEdge] = true;
+                reconstructed_edgeBits_2bits[currentEdge] = true;
                 continue;
             }
         }
     }
-    return reconstructed_edgeBits;
+    return reconstructed_edgeBits_2bits;
+}
+
+std::vector<bool> Decompressor::reconstructStraights(Straights straights){
+    std::vector<bool> reconstructed_edgeBits_straights(edgeBitsSize, false);
+    //TODO: prüfen (copilot)
+    for(auto straight : straights){
+        int startEdge = boolVectorToInt(std::get<0>(straight));
+        int count = boolVectorToInt(std::get<1>(straight));
+        Direction startDirection = getDirectionFromIndex(startEdge, rows, cols);
+        reconstructed_edgeBits_straights[startEdge] = true;
+        int currentEdge = startEdge;
+        Direction currentDir = startDirection;
+        for (int i = 0; i<count; i++){
+            currentEdge = getNeighbor(currentEdge, currentDir, 1, cols, rows);
+            reconstructed_edgeBits_straights[currentEdge] = true;
+        }
+    }
+    return reconstructed_edgeBits_straights;
 }
 
 /**
@@ -139,8 +158,13 @@ void Decompressor::reconstructImage(){
     }
 
     // reconstruct from 2-bit paths
-    reconstructed_edgeBits = reconstruct_edgeBits2bits(paths_2bit);
-        
+    std::vector<bool> reconstructed_edgeBits_2bits = reconstruct_edgeBits2bits(paths_2bit);
+
+    // reconstruct from straights
+    std::vector<bool> reconstructed_edgeBits_straights = reconstructStraights(straights);
+
+    // empty reconstruction
+    std::vector<bool> empty_reconstruction = std::vector<bool>(edgeBitsSize, true);
 
 
     //std::cout << "size of directionbits: " << directionBitsSize << std::endl;
@@ -150,7 +174,7 @@ void Decompressor::reconstructImage(){
 
     //reconstructed_edgeBits.assign(reconstructed_edgeBits.size(), false);
 
-    andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits, rows, cols);
+    andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits_straights, rows, cols);
     //printColorRegions();
     std::map<int, int> representativeLabels;
     reconstruction.representativeLabeling(representativeLabels);

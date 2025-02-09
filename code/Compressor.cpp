@@ -34,7 +34,7 @@ Compressor::Compressor(const std::string& imagePath, const std::string& volumePa
  * @brief controlling the compression procedure 
  * @return tuple containing compressed image information in form of the color vector, path information as well as the original image for comparison
  */
-std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector> Compressor::compressImage(){
+std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights> Compressor::compressImage(){
     auto start = std::chrono::high_resolution_clock::now();
     //setVertexColors();
     //auto end = std::chrono::high_resolution_clock::now();
@@ -69,7 +69,8 @@ std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector>
     }
     */
     set2BitPaths();
-    return std::make_tuple(multicut.regionColors, multicut.paths, img, multicut.paths_2bit, rle_paths);
+    Straights ret_straights = setStraights();
+    return std::make_tuple(multicut.regionColors, multicut.paths, img, multicut.paths_2bit, rle_paths, ret_straights);
 }
 
 /**
@@ -233,7 +234,7 @@ void Compressor::setPaths(){
         }
     }
 
-    std::cout << "Total bits for path vector: " << totalBitsPathVector << std::endl;
+    //std::cout << "Total bits for path vector: " << totalBitsPathVector << std::endl;
     //std::cout << "bits needed per start point: " << ceil(log2(2 * img.rows * img.cols - img.rows - img.cols)) << std::endl;
     
     multicut.disconnectedComponents = dfsI;
@@ -368,9 +369,9 @@ void Compressor::set2BitPaths(){
             emptyPathsCount++;
         }
     }
-    std::cout << "Number of 2-bit paths: " << multicut.paths_2bit.size() << std::endl;
-    std::cout << "Total bits for 2-bit paths: " << totalBits2BitPaths << std::endl;
-    std::cout << "Number of empty paths: " << emptyPathsCount << std::endl;
+    // std::cout << "Number of 2-bit paths: " << multicut.paths_2bit.size() << std::endl;
+    // std::cout << "Total bits for 2-bit paths: " << totalBits2BitPaths << std::endl;
+    // std::cout << "Number of empty paths: " << emptyPathsCount << std::endl;
 
     // Identify the longest run of ones in the direction vectors
     int longestRun = 0;
@@ -393,7 +394,7 @@ void Compressor::set2BitPaths(){
             }
         }
     }
-    std::cout << "Longest run of ones in direction vectors: " << longestRun << std::endl;
+    //std::cout << "Longest run of ones in direction vectors: " << longestRun << std::endl;
 
     // Calculate bits needed for run length encoding
     double totalBitsRLE = 0;
@@ -424,7 +425,7 @@ void Compressor::set2BitPaths(){
             }
         }
     }
-    std::cout << "Total bits for run length encoding: " << totalBitsRLE << std::endl;
+    // std::cout << "Total bits for run length encoding: " << totalBitsRLE << std::endl;
 
 
     // Count the runs of 0s in the 2-bit paths
@@ -471,7 +472,48 @@ void Compressor::print2bitpaths(PathInfoVector paths){
     }
 }
 
+Straights Compressor::setStraights(){
+    std::vector<bool>& edgeBits01 = multicut.edgeBits01;
+    Straights returned_straights;
+    std::vector<bool> visited(multicut.getEdges(), false);
+    for(int edgeI=0; edgeI < multicut.getEdges(); edgeI++){
+        if(visited[edgeI]){continue;}
+        if(multicut.edgeBits01[edgeI]){
+            int count = 0;
+            Direction currentDir = getDirectionFromIndex(edgeI, img.rows, img.cols);
+            int currentEdge = edgeI;
+            visited[currentEdge] = true;
+            while (true) {
+                int nextEdge = getNeighbor(currentEdge, currentDir, 1, img.cols, img.rows);
 
+                // Ensure nextEdge is valid before accessing edgeBits01
+                if (nextEdge == -1 || nextEdge >= edgeBits01.size() || !edgeBits01[nextEdge]) {
+                    break;
+                }
+
+                count++;
+                currentEdge = nextEdge;
+                visited[currentEdge] = true;
+            }
+            returned_straights.push_back(std::make_tuple(intToBool(edgeI), intToBool(count)));
+        }
+    }
+    return returned_straights;
+}
+
+double Compressor::getStraightsCompressionRate(){
+    double totalBitsStraights = 0;
+    totalBitsStraights += multicut.regionColors.size() * 3 * 8;
+    for (const auto& straight : straights) {
+        std::vector<bool> startEdge;
+        std::vector<bool> count;
+        std::tie(startEdge, count) = straight;
+        totalBitsStraights += startEdge.size();
+        totalBitsStraights += count.size();
+    }
+    return static_cast<double>(vertices) * 24.0 / totalBitsStraights;
+
+}
 
 /**
  * @brief returns multicut object 
@@ -598,10 +640,10 @@ double Compressor::getRLECompressionRate(){
         }
         totalBitsRLE++; // 1 bit indicates which run starts the sequence 
     }
-    std::cout << "Total bits for RLE: " << totalBitsRLE << std::endl;
-    if(static_cast<double>(vertices) * 24.0 / totalBitsRLE  > 1000){
-        std::cout << "high rate: " << imagePath << std::endl;
-    }
+    // std::cout << "Total bits for RLE: " << totalBitsRLE << std::endl;
+    // if(static_cast<double>(vertices) * 24.0 / totalBitsRLE  > 1000){
+    //     std::cout << "high rate: " << imagePath << std::endl;
+    // }
     return static_cast<double>(vertices) * 24.0 / totalBitsRLE;
 }
 

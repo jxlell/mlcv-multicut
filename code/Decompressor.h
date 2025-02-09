@@ -9,12 +9,13 @@
 
 class Decompressor {
     public:
-        Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, int edgeBitsSize, int rows, int cols, cv::Mat img, PathInfoVector paths_2bit, RLEVector rle_paths);
+        Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, int edgeBitsSize, int rows, int cols, cv::Mat img, PathInfoVector paths_2bit, RLEVector rle_paths, Straights straights);
         void reconstructImage();
         void reconstruct_edgeBits_iterative(int startEdge, Direction currentDir, std::vector<bool>& directionVector, std::vector<bool>& reconstructedEdgeBits);
         //void reconstructMulticut();
         long long getDecompressionTime() const;
         std::vector<bool> reconstruct_edgeBits2bits(PathInfoVector paths);
+        std::vector<bool> reconstructStraights(Straights straights);
     private:
         std::string imagePath;
         std::vector<int> neighborsOffsets;
@@ -22,6 +23,7 @@ class Decompressor {
         PathInfoVector paths;
         PathInfoVector paths_2bit;
         RLEVector rle_paths;
+        Straights straights;
         std::vector<bool> reconstructed_edgeBits;
         int edgeBitsSize;
         int rows;

@@ -24,5 +24,7 @@ using PathInfo = std::tuple<std::vector<bool>, Direction, std::vector<bool>>;
 using PathInfoVector = std::vector<PathInfo>;
 
 using RLEVector = std::vector<std::tuple<std::vector<bool>, std::vector<bool>, std::vector<std::vector<bool>>, bool>>;
+// start edge in binary, length of straight edges
+using Straights = std::vector<std::tuple<std::vector<bool>, std::vector<bool>>>;
 
 #endif // DIRECTION_PATH_H
