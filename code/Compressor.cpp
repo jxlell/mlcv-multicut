@@ -70,6 +70,7 @@ std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector,
     */
     set2BitPaths();
     Straights ret_straights = setStraights();
+    straights = ret_straights;
     return std::make_tuple(multicut.regionColors, multicut.paths, img, multicut.paths_2bit, rle_paths, ret_straights);
 }
 
@@ -486,7 +487,7 @@ Straights Compressor::setStraights(){
             while (true) {
                 int nextEdge = getNeighbor(currentEdge, currentDir, 1, img.cols, img.rows);
 
-                // Ensure nextEdge is valid before accessing edgeBits01
+                // ensure next edge is in the scope of the edgebits vector 
                 if (nextEdge == -1 || nextEdge >= edgeBits01.size() || !edgeBits01[nextEdge]) {
                     break;
                 }

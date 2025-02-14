@@ -66,6 +66,16 @@ int countImgFiles(const std::filesystem::path& parentDir) {
     return count;
 }
 
+int countDirectImgFiles(const std::filesystem::path& parentDir) {
+    int count = 0;
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(parentDir)) {
+        if (entry.path().extension() == ".png" || entry.path().extension() == ".jpg") {
+            ++count;
+        }
+    }
+    return count;
+}
+
 /**
  * @brief main function loading image files and controlling compression and decompression procedure 
  * 
@@ -103,6 +113,16 @@ int main() {
     // }
     // auto reconstructed = reconstructRLE(std::get<0>(rle_result), std::get<1>(rle_result), std::get<2>(rle_result));
 
+
+    cv::Mat milk_img = cv::imread("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images/pngimg/macaron_PNG35.png", cv::IMREAD_UNCHANGED);
+    if (milk_img.empty()) {
+        std::cerr << "Error: Unable to load image." << std::endl;
+        return -1;
+    }
+    cv::namedWindow("Milk Image", cv::WINDOW_AUTOSIZE);
+    cv::imshow("Milk Image", milk_img);
+    cv::waitKey(0);
+
     
     string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example";
     imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images/icon_512";
@@ -135,19 +155,24 @@ int main() {
 
     //Compressor volcomp("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example/tree5x5.png", imgDir);
     //volcomp.compressVolume();
+
+    std::filesystem::path category = "pngimg";
+    std::filesystem::path categoryPath = parentDir / category;
+    imgCount = countDirectImgFiles(categoryPath);
+
     for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
-        if (!entry.is_directory() || entry.path().filename().string() != "screenshot_game") {
+        if (!entry.is_directory() || entry.path().filename().string() != category.string()) {
             continue; 
         }
         for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
-            if(dirEntry.path().extension().string() != ".png" //|| dirEntry.path().filename().string() != "A_House_in_California.png"
+            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "macaron_PNG35.png"
             ){
                 continue;
             }
 
             //cv::Mat img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
             Compressor comp(dirEntry.path().string());
-            //std::cout << "Compressing: " << dirEntry.path().filename().string() << std::endl;
+            std::cout << "Compressing: " << dirEntry.path().filename().string() << std::endl;
             //returning color vector, path vector, original image
             std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights> compressed_image = comp.compressImage();
 
@@ -160,14 +185,21 @@ int main() {
             compression_times.push_back(comp.getCompressionTime());
             compression_times_total.push_back(comp.getCompressionTime());
 
-            compression_rates.push_back(comp.getCompressionRate());
+            double compression_rate = comp.getCompressionRate();
+            //std::cout << "Compression Rate: " << compression_rate << std::endl;
+            compression_rates.push_back(compression_rate);
             compression_rates_total.push_back(comp.getCompressionRate());
             
             old_compression_rates.push_back(comp.getOldCompressionRates());
             old_compression_rates_total.push_back(comp.getOldCompressionRates());
 
-            rle_compression_rates.push_back(comp.getRLECompressionRate());
-            straights_compress_rates.push_back(comp.getStraightsCompressionRate());
+            double rle_comp_rate = comp.getRLECompressionRate();
+            //std::cout << "RLE Compression Rate: " << rle_comp_rate << std::endl;
+            rle_compression_rates.push_back(rle_comp_rate);
+
+            double straights_comp_rate = comp.getStraightsCompressionRate();
+            std::cout << "Straights Compression Rate: " << straights_comp_rate << std::endl;
+            straights_compress_rates.push_back(straights_comp_rate);
 
             multicut_percentages.push_back(comp.getMulticutPercentage());
             multicut_percentages_total.push_back(comp.getMulticutPercentage());
@@ -195,6 +227,7 @@ int main() {
         
 
             progress++;
+            //std::cout << progress << "/" << imgCount << std::endl;
             //printProgressBar(progress, imgCount);
             ++i;
 
@@ -218,7 +251,7 @@ int main() {
     */ 
 
     // WRITE COMPRESSION RATES TO FILE
-    //writeToOutput(entry, compression_rates, "compression_rates");
+    writeToOutput(entry, compression_rates, "compression_rates");
     //writeToOutput(entry, old_compression_rates, "old_compression_rates");
     writeToOutput(entry, compression_times, "compression_times");
     //writeToOutput(entry, decompression_times, "decompression_times");

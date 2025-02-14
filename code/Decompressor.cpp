@@ -224,10 +224,10 @@ void Decompressor::reconstructImage(){
     auto start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     decompressionTime = start_to_end;
     
-    // cv::destroyAllWindows();
-    // cv::imshow("Original", img);
-    // cv::imshow("Reconstruction", image);
-    // cv::waitKey(0);
+    cv::destroyAllWindows();
+    cv::imshow("Original", img);
+    cv::imshow("Reconstruction", image);
+    cv::waitKey(0);
     
 }
 
