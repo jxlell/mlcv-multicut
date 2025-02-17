@@ -7,7 +7,7 @@
 #include "partition.hxx"
 #include "DirectionPath.h"
 #include "Util.h"
-
+#include "huffman.h"
 
 /**
  * @class Compressor
@@ -34,7 +34,7 @@ Compressor::Compressor(const std::string& imagePath, const std::string& volumePa
  * @brief controlling the compression procedure 
  * @return tuple containing compressed image information in form of the color vector, path information as well as the original image for comparison
  */
-std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights> Compressor::compressImage(){
+std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights, std::vector<bool>> Compressor::compressImage(){
     auto start = std::chrono::high_resolution_clock::now();
     //setVertexColors();
     //auto end = std::chrono::high_resolution_clock::now();
@@ -71,7 +71,10 @@ std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector,
     set2BitPaths();
     Straights ret_straights = setStraights();
     straights = ret_straights;
-    return std::make_tuple(multicut.regionColors, multicut.paths, img, multicut.paths_2bit, rle_paths, ret_straights);
+
+    std::vector<bool> regionColorBitString = boolVectorFromRGBVector(multicut.regionColors);
+
+    return std::make_tuple(multicut.regionColors, multicut.paths, img, multicut.paths_2bit, rle_paths, ret_straights, regionColorBitString);
 }
 
 /**
@@ -499,6 +502,41 @@ Straights Compressor::setStraights(){
             returned_straights.push_back(std::make_tuple(intToBool(edgeI), intToBool(count)));
         }
     }
+
+    // create histogram of straight lengths
+    //std::vector<int> straightLengths(std::max(img.cols+1, img.rows+1), 0);
+    std::map<int, int> straightLengths;
+    for (const auto& straight : returned_straights) {
+        std::vector<bool> startEdge;
+        std::vector<bool> count;
+        std::tie(startEdge, count) = straight;
+        straightLengths[boolVectorToInt(count)]++;
+    }
+    std::cout << "Histogram:\n";
+    if (!straightLengths.empty()) {
+        straightLengths.erase(straightLengths.begin());
+    }
+    for (const auto& pair : straightLengths) {
+        std::cout << pair.first << ": " << pair.second << std::endl;
+    }
+
+    // build and store huffman codes
+    map<int, string> straightsHuffmanCodes = buildCodes(straightLengths);
+    std::vector<bool> straightsHuffmanCodesBitString;
+    std::vector<uint16_t> straightsHuffmanCodesStartPoints;
+    for (auto it = straightsHuffmanCodes.begin(); it != straightsHuffmanCodes.end(); ++it){
+        straightsHuffmanCodesStartPoints.push_back(it->first);
+        for (char c : it->second){
+            straightsHuffmanCodesBitString.push_back(c == '1');
+        }
+    }
+    std::cout << "Huffman codes:\n";
+    // for (const auto& pair : straightsHuffmanCodes) {
+    //     std::cout << pair.first << ": " << pair.second << std::endl;
+    // }
+   
+
+
     return returned_straights;
 }
 

@@ -11,7 +11,7 @@
 class Compressor {
     public:
         Compressor(const std::string& imagePath, const std::string& volumePath = "");
-        std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights> compressImage();
+        std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights, std::vector<bool>> compressImage();
         void setVertexColors();
         void setEdgeBits();
         void setRegions();

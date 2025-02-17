@@ -293,3 +293,34 @@ int boolVectorToInt(const std::vector<bool>& binary) {
     }
     return num;
 }
+
+std::vector<bool> boolVectorFromRGBVector(std::vector<RGB>& regionColors){
+    std::vector<bool> boolVector;
+    boolVector.reserve(regionColors.size() * 24); // Each RGB has 24 bits
+
+    for (const auto& color : regionColors) {
+        for (int i = 7; i >= 0; --i) { // Extract bits for red
+            boolVector.push_back((color.red >> i) & 1);
+        }
+        for (int i = 7; i >= 0; --i) { // Extract bits for green
+            boolVector.push_back((color.green >> i) & 1);
+        }
+        for (int i = 7; i >= 0; --i) { // Extract bits for blue
+            boolVector.push_back((color.blue >> i) & 1);
+        }
+    }
+
+    return boolVector;
+}
+
+std::vector<RGB> colorBitStringToRGBVector(std::vector<bool>& bitString){
+    std::vector<RGB> regionColors;
+    for (size_t i = 0; i < bitString.size(); i+=24) {
+        RGB color;
+        color.red = boolVectorToInt(std::vector<bool>(bitString.begin() + i, bitString.begin() + i + 8));
+        color.green = boolVectorToInt(std::vector<bool>(bitString.begin() + i + 8, bitString.begin() + i + 16));
+        color.blue = boolVectorToInt(std::vector<bool>(bitString.begin() + i + 16, bitString.begin() + i + 24));
+        regionColors.push_back(color);
+    }
+    return regionColors;
+}

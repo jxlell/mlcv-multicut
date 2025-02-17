@@ -114,14 +114,14 @@ int main() {
     // auto reconstructed = reconstructRLE(std::get<0>(rle_result), std::get<1>(rle_result), std::get<2>(rle_result));
 
 
-    cv::Mat milk_img = cv::imread("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images/pngimg/macaron_PNG35.png", cv::IMREAD_UNCHANGED);
-    if (milk_img.empty()) {
-        std::cerr << "Error: Unable to load image." << std::endl;
-        return -1;
-    }
-    cv::namedWindow("Milk Image", cv::WINDOW_AUTOSIZE);
-    cv::imshow("Milk Image", milk_img);
-    cv::waitKey(0);
+    // cv::Mat milk_img = cv::imread("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images/pngimg/macaron_PNG35.png", cv::IMREAD_UNCHANGED);
+    // if (milk_img.empty()) {
+    //     std::cerr << "Error: Unable to load image." << std::endl;
+    //     return -1;
+    // }
+    // cv::namedWindow("Milk Image", cv::WINDOW_AUTOSIZE);
+    // cv::imshow("Milk Image", milk_img);
+    // cv::waitKey(0);
 
     
     string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example";
@@ -156,7 +156,7 @@ int main() {
     //Compressor volcomp("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example/tree5x5.png", imgDir);
     //volcomp.compressVolume();
 
-    std::filesystem::path category = "pngimg";
+    std::filesystem::path category = "screenshot_game";
     std::filesystem::path categoryPath = parentDir / category;
     imgCount = countDirectImgFiles(categoryPath);
 
@@ -165,7 +165,7 @@ int main() {
             continue; 
         }
         for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
-            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "macaron_PNG35.png"
+            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "A_House_in_California.png"
             ){
                 continue;
             }
@@ -174,7 +174,7 @@ int main() {
             Compressor comp(dirEntry.path().string());
             std::cout << "Compressing: " << dirEntry.path().filename().string() << std::endl;
             //returning color vector, path vector, original image
-            std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights> compressed_image = comp.compressImage();
+            std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights, std::vector<bool>> compressed_image = comp.compressImage();
 
             std::string filename = dirEntry.path().filename().string();
             // Remove comma if it exists in the filename
@@ -219,7 +219,7 @@ int main() {
             
             cv::Mat img;// = std::get<2>(compressed_image);
             img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
-            Decompressor decomp(std::get<0>(compressed_image), std::get<1>(compressed_image), comp.getMulticut().edgeBits01.size(), img.cols, img.rows, img, std::get<3>(compressed_image), std::get<4>(compressed_image), std::get<5>(compressed_image));
+            Decompressor decomp(std::get<0>(compressed_image), std::get<1>(compressed_image), comp.getMulticut().edgeBits01.size(), img.cols, img.rows, img, std::get<3>(compressed_image), std::get<4>(compressed_image), std::get<5>(compressed_image), std::get<6>(compressed_image));
             decomp.reconstructImage();
             decompression_times.push_back(decomp.getDecompressionTime());
             decompression_times_total.push_back(decomp.getDecompressionTime());

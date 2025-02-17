@@ -9,7 +9,8 @@
  * @class Decompression module 
  * TODO: klasse notwendig? 
  */
-Decompressor::Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, int edgeBitsSize, int cols, int rows, cv::Mat img, PathInfoVector paths_2bit, RLEVector rle_paths, Straights straights) {
+Decompressor::Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, int edgeBitsSize, int cols, int rows, cv::Mat img, 
+    PathInfoVector paths_2bit, RLEVector rle_paths, Straights straights, std::vector<bool> regionColorBitString) {
     this->regionColors = regionColors;
     this->paths = paths; 
     this->paths_2bit = paths_2bit;
@@ -20,6 +21,7 @@ Decompressor::Decompressor(std::vector<RGB> regionColors, PathInfoVector paths, 
     this->img = img;
     this->rle_paths = rle_paths;
     this->straights = straights;
+    this->regionColorBitString = regionColorBitString;
 }
 
 /**
@@ -166,6 +168,8 @@ void Decompressor::reconstructImage(){
     // empty reconstruction
     std::vector<bool> empty_reconstruction = std::vector<bool>(edgeBitsSize, true);
 
+    std::vector<RGB> regionColorsFromBitString = colorBitStringToRGBVector(regionColorBitString);
+
 
     //std::cout << "size of directionbits: " << directionBitsSize << std::endl;
 
@@ -209,7 +213,7 @@ void Decompressor::reconstructImage(){
         
 
         //RGB col = regionColors[indexInReps];
-        RGB col = regionColors[continuousLabel];
+        RGB col = regionColorsFromBitString[continuousLabel];
 
 
         //RGB col = getVertexColor(0);
@@ -224,10 +228,10 @@ void Decompressor::reconstructImage(){
     auto start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     decompressionTime = start_to_end;
     
-    cv::destroyAllWindows();
-    cv::imshow("Original", img);
-    cv::imshow("Reconstruction", image);
-    cv::waitKey(0);
+    // cv::destroyAllWindows();
+    // cv::imshow("Original", img);
+    // cv::imshow("Reconstruction", image);
+    // cv::waitKey(0);
     
 }
 

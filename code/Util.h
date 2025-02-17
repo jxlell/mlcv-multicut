@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <fstream>
 #include <iostream>
+#include "Image.h"
 
 
 andres::Partition<int> getRegions(std::vector<bool>& edgeBitsVector, int rows, int cols);
@@ -22,4 +23,6 @@ std::tuple<std::vector<bool>, std::vector<uint16_t>, bool> getRLE(std::vector<bo
 std::vector<bool> reconstructRLE(std::vector<bool> zeros_rle, std::vector<uint16_t> ones_rle, bool start);
 std::vector<bool> intToBool(int num);
 int boolVectorToInt(const std::vector<bool>& binary);
+std::vector<bool> boolVectorFromRGBVector(std::vector<RGB>& regionColors);
+std::vector<RGB> colorBitStringToRGBVector(std::vector<bool>& bitString);
 #endif // UTIL_H

@@ -17,6 +17,7 @@
                 "${workspaceFolder}/code/Compressor.cpp",
                 "${workspaceFolder}/code/Util.cpp",
                 "${workspaceFolder}/code/main.cpp",
+                "${workspaceFolder}/code/huffman.cpp",
                 "-fcolor-diagnostics",
                 "-fansi-escape-codes",
                 "`pkg-config",
