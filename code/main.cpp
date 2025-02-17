@@ -9,6 +9,7 @@
 #include "Compressor.h"
 #include "Decompressor.h"
 #include "Util.h"
+#include "compress.h"
 
 
 using namespace std;
@@ -75,6 +76,17 @@ int countDirectImgFiles(const std::filesystem::path& parentDir) {
     }
     return count;
 }
+
+
+struct CompressedImage{
+    std::vector<RGB> colorVector;
+    PathInfoVector paths;
+    cv::Mat originalImage;
+    PathInfoVector pathInfoVector2bit;
+    RLEVector rleVector;
+    Straights straights;
+    std::vector<bool> regionColorBitString;
+};
 
 /**
  * @brief main function loading image files and controlling compression and decompression procedure 
@@ -170,11 +182,25 @@ int main() {
                 continue;
             }
 
-            //cv::Mat img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
             Compressor comp(dirEntry.path().string());
             std::cout << "Compressing: " << dirEntry.path().filename().string() << std::endl;
             //returning color vector, path vector, original image
-            std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights, std::vector<bool>> compressed_image = comp.compressImage();
+
+            //stateful approach
+            //auto compressed_image = comp.compressImage();
+
+            //stateless approach
+            auto compressed_image = compress(dirEntry.path().string());
+            CompressedImage compImg {
+                std::get<0>(compressed_image), // color vector
+                std::get<1>(compressed_image), // path vector
+                std::get<2>(compressed_image), // original image
+                std::get<3>(compressed_image), // path vector 2bit
+                std::get<4>(compressed_image), // rle vector
+                std::get<5>(compressed_image), // straights
+                std::get<6>(compressed_image)  // region color bit string
+            };
+
 
             std::string filename = dirEntry.path().filename().string();
             // Remove comma if it exists in the filename
@@ -185,28 +211,36 @@ int main() {
             compression_times.push_back(comp.getCompressionTime());
             compression_times_total.push_back(comp.getCompressionTime());
 
-            double compression_rate = comp.getCompressionRate();
+            double compression_rate = getCompressionRate(compImg.colorVector, compImg.paths, compImg.originalImage);
             //std::cout << "Compression Rate: " << compression_rate << std::endl;
             compression_rates.push_back(compression_rate);
-            compression_rates_total.push_back(comp.getCompressionRate());
-            
-            old_compression_rates.push_back(comp.getOldCompressionRates());
-            old_compression_rates_total.push_back(comp.getOldCompressionRates());
+            compression_rates_total.push_back(compression_rate);
 
-            double rle_comp_rate = comp.getRLECompressionRate();
+
+            //double old_compression_rate = getOldCompressionRate(compImg.originalImage, compImg.colorVector);            
+            //old_compression_rates.push_back(old_compression_rate);
+            //old_compression_rates_total.push_back(old_compression_rate);
+
+            //double rle_comp_rate = comp.getRLECompressionRate();
+            //double rle_comp_rate = getRLECompressionRate(compImg.colorVector, compImg.rleVector, compImg.originalImage);
             //std::cout << "RLE Compression Rate: " << rle_comp_rate << std::endl;
-            rle_compression_rates.push_back(rle_comp_rate);
+            //rle_compression_rates.push_back(rle_comp_rate);
 
-            double straights_comp_rate = comp.getStraightsCompressionRate();
-            std::cout << "Straights Compression Rate: " << straights_comp_rate << std::endl;
-            straights_compress_rates.push_back(straights_comp_rate);
+            //double straights_comp_rate = comp.getStraightsCompressionRate();
+            //double straights_comp_rate = getStraightsCompressionRate(compImg.colorVector, compImg.straights, compImg.originalImage);
+            //std::cout << "Straights Compression Rate: " << straights_comp_rate << std::endl;
+            //straights_compress_rates.push_back(straights_comp_rate);
 
-            multicut_percentages.push_back(comp.getMulticutPercentage());
-            multicut_percentages_total.push_back(comp.getMulticutPercentage());
+            std::vector<bool> edgeBits01;
+            //TODO: edgeBits01 is being computed again 
+            //double multicut_percentage = getMulticutPercentage(setEdgeBits(compImg.originalImage, edgeBits01,{compImg.originalImage.cols,1}));
+            //multicut_percentages.push_back(multicut_percentage);
+            //multicut_percentages_total.push_back(multicut_percentage);
             //std::cout << "Multicut Percentage: " << comp.getMulticutPercentage() << std::endl;
             
-            disconnected_components.push_back(comp.getDisconnectedComponents());
-            disconnected_components_total.push_back(comp.getDisconnectedComponents());
+
+            //disconnected_components.push_back(comp.getDisconnectedComponents());
+            //disconnected_components_total.push_back(comp.getDisconnectedComponents());
             //std::cout << "Disconnected Components: " << comp.getDisconnectedComponents() << std::endl;
 
             pixel_sizes.push_back(comp.getMulticut().getVertices());
