@@ -14,7 +14,7 @@
 
 
 
-std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights, std::vector<bool>> compress(const std::string& imagePath){
+CompressedImage compress(const std::string& imagePath){
     cv::Mat img = cv::imread(imagePath, cv::IMREAD_COLOR);
     std::vector<bool> edgeBits01((img.cols-1)*img.rows + img.cols*(img.rows-1), false);
     std::vector<int> neighborsOffsets = {img.cols, 1};

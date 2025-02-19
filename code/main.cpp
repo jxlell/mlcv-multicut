@@ -10,6 +10,7 @@
 #include "Decompressor.h"
 #include "Util.h"
 #include "compress.h"
+#include "decompress.h"
 
 
 using namespace std;
@@ -78,15 +79,7 @@ int countDirectImgFiles(const std::filesystem::path& parentDir) {
 }
 
 
-struct CompressedImage{
-    std::vector<RGB> colorVector;
-    PathInfoVector paths;
-    cv::Mat originalImage;
-    PathInfoVector pathInfoVector2bit;
-    RLEVector rleVector;
-    Straights straights;
-    std::vector<bool> regionColorBitString;
-};
+
 
 /**
  * @brief main function loading image files and controlling compression and decompression procedure 
@@ -190,16 +183,16 @@ int main() {
             //auto compressed_image = comp.compressImage();
 
             //stateless approach
-            auto compressed_image = compress(dirEntry.path().string());
-            CompressedImage compImg {
-                std::get<0>(compressed_image), // color vector
-                std::get<1>(compressed_image), // path vector
-                std::get<2>(compressed_image), // original image
-                std::get<3>(compressed_image), // path vector 2bit
-                std::get<4>(compressed_image), // rle vector
-                std::get<5>(compressed_image), // straights
-                std::get<6>(compressed_image)  // region color bit string
-            };
+            auto compImg = compress(dirEntry.path().string());
+            // CompressedImage compImg {
+            //     std::get<0>(compressed_image), // color vector
+            //     std::get<1>(compressed_image), // path vector
+            //     std::get<2>(compressed_image), // original image
+            //     std::get<3>(compressed_image), // path vector 2bit
+            //     std::get<4>(compressed_image), // rle vector
+            //     std::get<5>(compressed_image), // straights
+            //     std::get<6>(compressed_image)  // region color bit string
+            // };
 
 
             std::string filename = dirEntry.path().filename().string();
@@ -249,15 +242,18 @@ int main() {
             kBSizes.push_back(comp.getkBSize());
 
             // get the number of the 2-bit paths 
-            twobit_paths_amounts.push_back(std::get<4>(compressed_image).size());
+            //twobit_paths_amounts.push_back(std::get<4>(compressed_image).size());
             
             cv::Mat img;// = std::get<2>(compressed_image);
             img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
-            Decompressor decomp(std::get<0>(compressed_image), std::get<1>(compressed_image), comp.getMulticut().edgeBits01.size(), img.cols, img.rows, img, std::get<3>(compressed_image), std::get<4>(compressed_image), std::get<5>(compressed_image), std::get<6>(compressed_image));
-            decomp.reconstructImage();
-            decompression_times.push_back(decomp.getDecompressionTime());
-            decompression_times_total.push_back(decomp.getDecompressionTime());
+            //Decompressor decomp(std::get<0>(compressed_image), std::get<1>(compressed_image), comp.getMulticut().edgeBits01.size(), img.cols, img.rows, img, std::get<3>(compressed_image), std::get<4>(compressed_image), std::get<5>(compressed_image), std::get<6>(compressed_image));
+            //decomp.reconstructImage();
+            //decompression_times.push_back(decomp.getDecompressionTime());
+            //decompression_times_total.push_back(decomp.getDecompressionTime());
             
+
+            //stateless approach
+            reconstructImage(img.rows, img.cols, compImg.rleVector, compImg.paths, compImg.regionColorBitString, compImg.straights, img);
         
 
             progress++;
