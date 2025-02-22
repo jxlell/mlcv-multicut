@@ -23,22 +23,30 @@ CompressedImage compress(const std::string& imagePath){
     PathInfoVector paths_2bit; 
     RLEVector rle_paths;
     Straights straights;
-
+    std::vector<bool> straightsHuffmanCodesBitString;
+    std::vector<uint32_t> straightsHuffmanCodesStartPoints;
+    HuffmanNode* root; 
+    std::vector<uint16_t> straightLengthsList;
+    std::vector<uint16_t> straightLengthFrequencies;
     edgeBits01 = setEdgeBits(img, edgeBits01, neighborsOffsets);
 
     regionColors = setRegions(img, neighborsOffsets, img.cols * img.rows);
 
     paths = setPaths(edgeBits01, img);
 
-    std::tuple<PathInfoVector,RLEVector> _2bitpaths = set2BitPaths(edgeBits01, img);
+    auto _2bitpaths = set2BitPaths(edgeBits01, img);
     paths_2bit = std::get<0>(_2bitpaths);
     rle_paths = std::get<1>(_2bitpaths);
 
-    straights = setStraights(edgeBits01, img);
+    std::tie(straights, straightsHuffmanCodesBitString, straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies) = setStraights(edgeBits01, img);
+    // calculate compression rates
+    
 
-    std::vector<bool> regionColorBitString = boolVectorFromRGBVector(regionColors);
+    auto regionColorBitString = boolVectorFromRGBVector(regionColors);
 
-    return {regionColors, paths, img, paths_2bit, rle_paths, straights, regionColorBitString};
+    return {regionColors, paths, img, paths_2bit, rle_paths, straights, 
+    regionColorBitString, straightsHuffmanCodesBitString, 
+    straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies};
 }
 
 
@@ -368,7 +376,7 @@ std::tuple<PathInfoVector, RLEVector> set2BitPaths(std::vector<bool> edgeBits01,
     return {paths_2bit, rle_paths};
 }
 
-Straights setStraights(std::vector<bool> edgeBits01, cv::Mat img){
+std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, std::vector<uint16_t>, std::vector<uint16_t>> setStraights(std::vector<bool> edgeBits01, cv::Mat img){
     Straights straights;
     std::vector<bool> visited(edgeBits01.size(), false);
     for(int edgeI=0; edgeI < edgeBits01.size(); edgeI++){
@@ -403,32 +411,126 @@ Straights setStraights(std::vector<bool> edgeBits01, cv::Mat img){
         std::tie(startEdge, count) = straight;
         straightLengths[boolVectorToInt(count)]++;
     }
-    std::cout << "Histogram:\n";
-    if (!straightLengths.empty()) {
-        straightLengths.erase(straightLengths.begin());
-    }
+
+    // store straighLengths
+    std::vector<uint16_t> straightLengthsList;
+    std::vector<uint16_t> straightLengthFrequencies;
     for (const auto& pair : straightLengths) {
-        std::cout << pair.first << ": " << pair.second << std::endl;
+        straightLengthsList.push_back(pair.first);
+        straightLengthFrequencies.push_back(pair.second);
     }
+    // std::cout << "length of straightLengthsList: " << straightLengthsList.size() << std::endl;
+
+    // show length histogram 
+    // std::cout << "Histogram:\n";
+    // if (!straightLengths.empty()) {
+    //     straightLengths.erase(straightLengths.begin());
+    // }
+    // for (const auto& pair : straightLengths) {
+    //     std::cout << pair.first << ": " << pair.second << std::endl;
+    // }
 
     // build and store huffman codes
-    std::map<int, string> straightsHuffmanCodes = buildCodes(straightLengths);
-    std::vector<bool> straightsHuffmanCodesBitString;
-    std::vector<uint16_t> straightsHuffmanCodesStartPoints;
+    std::map<int, string> straightsHuffmanCodes;
+    HuffmanNode* root; 
+    std::tie(straightsHuffmanCodes, root) = buildCodes(straightLengths);
+
+    //vectors to store huffman codes
+    // bitstring stores all huffman codes in a single string
+    std::vector<bool> straightsHuffmanCodesListString;
+    // start points stores the start points of each huffman code
+    std::vector<uint32_t> straightsStartPointsList;
+
+    std::vector<uint32_t> straightsHuffmanCodesStartPoints;
+    for (const auto& straight : straights) {
+        std::vector<bool> startEdge;
+        std::vector<bool> count;
+        std::tie(startEdge, count) = straight;
+        straightsHuffmanCodesStartPoints.push_back(boolVectorToInt(startEdge));
+    }
+
+    // storing start points in a vector and the list of corresponding huffman codes in a bitstring
+    std::cout << "size of codes vector: " << straightsHuffmanCodes.size() << std::endl;
     for (auto it = straightsHuffmanCodes.begin(); it != straightsHuffmanCodes.end(); ++it){
-        straightsHuffmanCodesStartPoints.push_back(it->first);
+        straightsStartPointsList.push_back(it->first);
         for (char c : it->second){
+            straightsHuffmanCodesListString.push_back(c == '1');
+        }
+    }
+    std::cout << "size of bitstring: " << straightsHuffmanCodesListString.size() << std::endl;
+    std::cout << "size of start points: " << straightsStartPointsList.size() << std::endl;
+    // Print first 10 values of the bitstring
+    // std::cout << "First 10 values of list string: ";
+    // for (int i = 0; i < 10 && i < straightsHuffmanCodesListString.size(); ++i) {
+    //     std::cout << straightsHuffmanCodesListString[i];
+    // }
+    // std::cout << std::endl;
+    std::cout << "Huffman codes (straights) (first 5 values):\n";
+    int i = 0;
+    for (const auto& pair : straightsHuffmanCodes) {
+        std::cout << pair.first << ": " << pair.second << std::endl;
+        if (i++ == 5) {
+            break;
+        }
+    }
+
+    // for every straight append its length encoded as huffman code to a boolean bitstring
+    std::vector<bool> straightsHuffmanCodesBitString;
+    std::cout << "straights size (compress): " << straights.size() << std::endl;
+    for (const auto& straight : straights) {
+        std::vector<bool> startEdge;
+        std::vector<bool> count;
+        std::tie(startEdge, count) = straight;
+        int countInt = boolVectorToInt(count);
+        std::string huffmanCode = straightsHuffmanCodes[countInt];
+        for (char c : huffmanCode) {
             straightsHuffmanCodesBitString.push_back(c == '1');
         }
     }
-    std::cout << "Huffman codes:\n";
-    // for (const auto& pair : straightsHuffmanCodes) {
-    //     std::cout << pair.first << ": " << pair.second << std::endl;
+
+    // // Print first 5 entries of the straights vector
+    // std::cout << "First 5 entries of straights vector: " << std::endl;
+    // for (int i = 0; i < 5 && i < straights.size(); ++i) {
+    //     std::vector<bool> startEdge;
+    //     std::vector<bool> count;
+    //     std::tie(startEdge, count) = straights[i];
+    //     std::cout << "Start Edge: ";
+    //     std::cout << boolVectorToInt(startEdge);
+    //     std::cout << ", Count: ";
+    //     std::cout << boolVectorToInt(count);
+    //     std::cout << std::endl;
     // }
-   
+
+    // // Print first 15 entries of the straightsHuffmanCodesBitString
+    // std::cout << "First 15 entries of straightsHuffmanCodesBitString: ";
+    // for (int i = 0; i < 15 && i < straightsHuffmanCodesBitString.size(); ++i) {
+    //     std::cout << straightsHuffmanCodesBitString[i];
+    // }
+    // std::cout << std::endl;
+
+    // // Print first 5 entries of the straightsHuffmanCodesStartPoints
+    // std::cout << "First 5 entries of straightsHuffmanCodesStartPoints: ";
+    // for (int i = 0; i < 5 && i < straightsStartPointsList.size(); ++i) {
+    //     std::cout << straightsStartPointsList[i] << " ";
+    // }
+    // std::cout << std::endl;
 
 
-    return straights;
+
+
+    // decode test
+    // std::string decodeTest = "111110011001010"; // code for 60
+    // std::string decodedWord = "";
+    // std::vector<int> straightsLengthsDecoded;
+    // std::tie(decodedWord,straightsLengthsDecoded) = decodeHuffman(root, decodeTest);
+    // for(int i : straightsLengthsDecoded){
+    //     std::cout << i << std::endl;
+    // }
+
+    // delete huffman tree from memory (only needed to create bitstring)
+    deleteHuffmanTree(root);
+
+    return {straights, straightsHuffmanCodesBitString, straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies};
 }
 
 /**

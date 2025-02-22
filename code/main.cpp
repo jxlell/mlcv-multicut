@@ -132,7 +132,7 @@ int main() {
     string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example";
     imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images/icon_512";
     std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
-    //parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code";
+    parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code";
     int imgCount = countImgFiles(parentDir);
     int progress = 0;
 
@@ -161,7 +161,7 @@ int main() {
     //Compressor volcomp("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example/tree5x5.png", imgDir);
     //volcomp.compressVolume();
 
-    std::filesystem::path category = "screenshot_game";
+    std::filesystem::path category = "test_img";
     std::filesystem::path categoryPath = parentDir / category;
     imgCount = countDirectImgFiles(categoryPath);
 
@@ -253,8 +253,8 @@ int main() {
             
 
             //stateless approach
-            reconstructImage(img.rows, img.cols, compImg.rleVector, compImg.paths, compImg.regionColorBitString, compImg.straights, img);
-        
+            //reconstructImage(img.rows, img.cols, compImg.rleVector, compImg.paths, compImg.regionColorBitString, compImg.straights, img);
+            reconstructImage(compImg); 
 
             progress++;
             //std::cout << progress << "/" << imgCount << std::endl;

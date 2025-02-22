@@ -10,14 +10,32 @@
 #include <chrono>
 #include <map>
 #include <string>
+#include "compress.h"
+#include "huffman.h"
 
-void reconstructImage(int rows, int cols, RLEVector rle_paths, PathInfoVector paths, std::vector<bool> regionColorBitString, Straights straights, cv::Mat originalImg){
+void reconstructImage(CompressedImage compImg){
+    cv::Mat originalImg = compImg.originalImage;
+    std::vector<RGB> regionColors = compImg.colorVector;
+    PathInfoVector paths = compImg.paths;
+    PathInfoVector paths_2bit_nonRLE = compImg.pathInfoVector2bit; // unused
+    RLEVector rle_paths = compImg.rleVector;
+    Straights straights = compImg.straights;
+    std::vector<bool> regionColorBitString = compImg.regionColorBitString;
+    int rows = originalImg.rows;
+    int cols = originalImg.cols;
+    std::vector<bool> straightsHuffmanCodesBitString = compImg.straightsHuffmanCodesBitString;
+    std::vector<uint32_t> straightsHuffmanCodesStartPoints = compImg.straightsHuffmanCodesStartPoints;
+    HuffmanNode* root = compImg.root;
+    std::vector<uint16_t> straightLengthsList = compImg.straightLengthsList;
+    std::vector<uint16_t> straightLengthFrequencies = compImg.straightLengthFrequencies;
+
+    
     cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
     int directionBitsSize;
     int edgeBitsSize = (cols-1)*rows + cols*(rows-1);
 
     // convert from rle_paths to paths_2bit
-    std::vector<PathInfo> paths_2bit;
+    PathInfoVector paths_2bit;
     for (auto rle : rle_paths) {
         std::vector<bool> edgeI;
         std::vector<bool> zeros_rle;
@@ -31,6 +49,82 @@ void reconstructImage(int rows, int cols, RLEVector rle_paths, PathInfoVector pa
         std::vector<bool> directions2bits = reconstructRLE(zeros_rle, ones_rle_16, start);
         paths_2bit.emplace_back(edgeI, getDirectionFromIndex(boolVectorToInt(edgeI), rows, cols), directions2bits);
     }
+
+    // create huffman tree from lengths and frequencies 
+    map<int,int> straightLengths;
+    for (size_t i = 0; i < straightLengthsList.size(); ++i) {
+        straightLengths[straightLengthsList[i]] = straightLengthFrequencies[i];
+    }
+    std::map<int, string> straightsHuffmanCodes;
+    HuffmanNode* reconstructedRoot; 
+    std::tie(straightsHuffmanCodes, reconstructedRoot) = buildCodes(straightLengths);
+
+
+    //reconstruct straights from straightsHuffmanCodesBitString with huffman codes and straitsHuffmanCodesStartPoints
+    std::vector<int> straightsLengthsDecoded;
+    string decodedWord = "";
+    string straightsString;
+    //convert bitstring to actual string
+    for (bool bit : straightsHuffmanCodesBitString){
+        straightsString += bit ? "1" : "0";
+    }
+    std::tie(decodedWord, straightsLengthsDecoded) = decodeHuffman(reconstructedRoot, straightsString);
+    Straights straightsDecoded;
+    // tie together start points vector and legnths vector to get the straights
+    std::cout << "straights lengths decoded size: " << straightsLengthsDecoded.size() << std::endl;
+    for (int i = 0; i < straightsLengthsDecoded.size(); i++){
+        std::vector<bool> startEdge = intToBool(straightsHuffmanCodesStartPoints[i]);
+        std::vector<bool> count = intToBool(straightsLengthsDecoded[i]);
+        straightsDecoded.push_back(std::make_tuple(startEdge, count));
+    }
+
+    for(auto& straight : straights){
+        std::cout << "Start Edge: " << boolVectorToInt(std::get<0>(straight)) << ", Count: " << boolVectorToInt(std::get<1>(straight)) << std::endl;
+        break;
+    }
+    std::cout << "huffmancodesbitstring size: " << straightsHuffmanCodesBitString.size() << std::endl;
+    std::cout << "straights string size: " << straightsString.size() << std::endl;
+    std::cout << "straights decoded size: " << straightsDecoded.size() << std::endl;
+    std::cout << "straights size: " << straights.size() << std::endl;
+
+    // Print and compare straights and straightsDecoded
+    std::cout << "Original Straights:" << std::endl;
+    int a = 0;
+    for (const auto& straight : straights) {
+        std::cout << "Start Edge: " << boolVectorToInt(std::get<0>(straight)) << ", Count: " << boolVectorToInt(std::get<1>(straight)) << std::endl;
+        if(a++ == 5){
+            break;
+        }
+    }
+
+    std::cout << "Decoded Straights:" << std::endl;
+    for (const auto& straight : straightsDecoded) {
+        std::cout << "Start Edge: " << boolVectorToInt(std::get<0>(straight)) << ", Count: " << boolVectorToInt(std::get<1>(straight)) << std::endl;
+        if(a++ == 10){
+            break;
+        }
+    }
+
+    // // Identify indices in which original and decoded straights differ and print differences
+    // std::cout << "Differences between original and decoded straights:" << std::endl;
+    // for (size_t i = 0; i < straights.size(); ++i) {
+    //     if (i >= straightsDecoded.size()) {
+    //         std::cout << "Decoded straights is shorter than original straights." << std::endl;
+    //         break;
+    //     }
+    //     if (std::get<0>(straights[i]) != std::get<0>(straightsDecoded[i]) || std::get<1>(straights[i]) != std::get<1>(straightsDecoded[i])) {
+    //         std::cout << "Index " << i << " differs." << std::endl;
+    //         std::cout << "Original: Start Edge: " << boolVectorToInt(std::get<0>(straights[i])) << ", Count: " << boolVectorToInt(std::get<1>(straights[i])) << std::endl;
+    //         std::cout << "Decoded: Start Edge: " << boolVectorToInt(std::get<0>(straightsDecoded[i])) << ", Count: " << boolVectorToInt(std::get<1>(straightsDecoded[i])) << std::endl;
+    //     }
+    // }
+    // if (straightsDecoded.size() > straights.size()) {
+    //     std::cout << "Decoded straights is longer than original straights." << std::endl;
+    // }
+
+    // Compare straights and straightsDecoded
+    bool areStraightsIdentical = (straights == straightsDecoded);
+    std::cout << "Are original and decoded straights identical? " << (areStraightsIdentical ? "YES" : "NO") << std::endl;
 
     int numberOfPaths = paths.size();
 
@@ -55,7 +149,7 @@ void reconstructImage(int rows, int cols, RLEVector rle_paths, PathInfoVector pa
     std::vector<bool> reconstructed_edgeBits_2bits = reconstruct_edgeBits2bits(paths_2bit, edgeBitsSize, cols, rows);
 
     // reconstruct from straights
-    std::vector<bool> reconstructed_edgeBits_straights = reconstructStraights(straights, edgeBitsSize, cols, rows);
+    std::vector<bool> reconstructed_edgeBits_straights = reconstructStraights(straightsDecoded, edgeBitsSize, cols, rows);
 
     // empty reconstruction
     std::vector<bool> empty_reconstruction = std::vector<bool>(edgeBitsSize, true);
@@ -120,10 +214,13 @@ void reconstructImage(int rows, int cols, RLEVector rle_paths, PathInfoVector pa
     auto start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     //decompressionTime = start_to_end;
     
-    cv::destroyAllWindows();
-    cv::imshow("Original", originalImg);
-    cv::imshow("Reconstruction", image);
-    cv::waitKey(0);
+    // cv::destroyAllWindows();
+    // cv::imshow("Original", originalImg);
+    // cv::imshow("Reconstruction", image);
+    // cv::waitKey(0);
+
+    // delete huffman tree from memory 
+    deleteHuffmanTree(reconstructedRoot);
     
 }
 

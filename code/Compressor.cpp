@@ -521,7 +521,9 @@ Straights Compressor::setStraights(){
     }
 
     // build and store huffman codes
-    map<int, string> straightsHuffmanCodes = buildCodes(straightLengths);
+    std::map<int, string> straightsHuffmanCodes;
+    HuffmanNode* root; 
+    std::tie(straightsHuffmanCodes, root) = buildCodes(straightLengths);
     std::vector<bool> straightsHuffmanCodesBitString;
     std::vector<uint16_t> straightsHuffmanCodesStartPoints;
     for (auto it = straightsHuffmanCodes.begin(); it != straightsHuffmanCodes.end(); ++it){

@@ -26,8 +26,9 @@ struct Compare {
 };
 
 void generateCode(HuffmanNode* root, string code, map<int, string>& huffmanCodes);
-map<int, string> buildCodes(map<int,int> frequencyMap);
-
+std::tuple<map<int, string>, HuffmanNode*> buildCodes(map<int,int> frequencyMap);
+void deleteHuffmanTree(HuffmanNode* root);
+std::tuple<string, std::vector<int>> decodeHuffman(HuffmanNode* root, const string& encodedStr);
 
 
 #endif // HUFFMAN_H

@@ -31,7 +31,7 @@ void generateCode(HuffmanNode* root, string code, map<int, string>& huffmanCodes
     generateCode(root->right, code + "1", huffmanCodes);
 }
 
-map<int, string> buildCodes(map<int,int> frequencyMap){
+std::tuple<map<int, string>, HuffmanNode*> buildCodes(map<int,int> frequencyMap){
     priority_queue<HuffmanNode*, vector<HuffmanNode*>, Compare> pq;
 
     for(auto& pair : frequencyMap){
@@ -54,9 +54,41 @@ map<int, string> buildCodes(map<int,int> frequencyMap){
 
     map<int,string> huffmanCodes;
     generateCode(pq.top(), "", huffmanCodes);
-    return huffmanCodes;
+    return {huffmanCodes, pq.top()};
 
 }
+
+void deleteHuffmanTree(HuffmanNode* root) {
+    if (!root) return;
+    deleteHuffmanTree(root->left);
+    deleteHuffmanTree(root->right);
+    delete root;
+}
+
+std::tuple<string, std::vector<int>> decodeHuffman(HuffmanNode* root, const string& encodedStr) {
+    string decodedStr = "";
+    HuffmanNode* currentNode = root;
+    std::vector<int> lengths;
+
+    for (char bit : encodedStr) {
+        if (bit == '0') {
+            currentNode = currentNode->left;
+        } else {
+            currentNode = currentNode->right;
+        }
+
+        // leaf node reached
+        // add to length vector
+        if (!currentNode->left && !currentNode->right) {
+            decodedStr += char(currentNode->data);
+            lengths.push_back(currentNode->data);
+            currentNode = root;
+        }
+    }
+
+    return {decodedStr, lengths};
+}
+
 
 // int main(){
 //     map<int,int> frequencyMap = {
@@ -67,7 +99,9 @@ map<int, string> buildCodes(map<int,int> frequencyMap){
 //         {5, 45}
 //     };
 
-//     map<int,string> huffmanCodes = buildCodes(frequencyMap);
+//     map<int,string> huffmanCodes;
+//     HuffmanNode* root;
+//     std::tie(huffmanCodes, root) = buildCodes(frequencyMap);
 
 //     cout << "Huffman Codes are: " << endl;
 //     for(auto& pair : huffmanCodes){
