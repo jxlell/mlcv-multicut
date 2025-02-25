@@ -58,7 +58,7 @@ void reconstructImage(CompressedImage compImg){
     std::map<int, string> straightsHuffmanCodes;
     HuffmanNode* reconstructedRoot; 
     std::tie(straightsHuffmanCodes, reconstructedRoot) = buildCodes(straightLengths);
-
+    std::cout << "Reconstructed Huffman codes for straights:" << std::endl;
 
     //reconstruct straights from straightsHuffmanCodesBitString with huffman codes and straitsHuffmanCodesStartPoints
     std::vector<int> straightsLengthsDecoded;
@@ -69,41 +69,24 @@ void reconstructImage(CompressedImage compImg){
         straightsString += bit ? "1" : "0";
     }
     std::tie(decodedWord, straightsLengthsDecoded) = decodeHuffman(reconstructedRoot, straightsString);
+    std::cout << "Decoded straights lengths:" << std::endl;
     Straights straightsDecoded;
     // tie together start points vector and legnths vector to get the straights
-    std::cout << "straights lengths decoded size: " << straightsLengthsDecoded.size() << std::endl;
+    // std::cout << "straights lengths decoded size: " << straightsLengthsDecoded.size() << std::endl;
     for (int i = 0; i < straightsLengthsDecoded.size(); i++){
         std::vector<bool> startEdge = intToBool(straightsHuffmanCodesStartPoints[i]);
         std::vector<bool> count = intToBool(straightsLengthsDecoded[i]);
         straightsDecoded.push_back(std::make_tuple(startEdge, count));
     }
 
-    for(auto& straight : straights){
-        std::cout << "Start Edge: " << boolVectorToInt(std::get<0>(straight)) << ", Count: " << boolVectorToInt(std::get<1>(straight)) << std::endl;
-        break;
-    }
-    std::cout << "huffmancodesbitstring size: " << straightsHuffmanCodesBitString.size() << std::endl;
-    std::cout << "straights string size: " << straightsString.size() << std::endl;
-    std::cout << "straights decoded size: " << straightsDecoded.size() << std::endl;
-    std::cout << "straights size: " << straights.size() << std::endl;
-
-    // Print and compare straights and straightsDecoded
-    std::cout << "Original Straights:" << std::endl;
-    int a = 0;
-    for (const auto& straight : straights) {
-        std::cout << "Start Edge: " << boolVectorToInt(std::get<0>(straight)) << ", Count: " << boolVectorToInt(std::get<1>(straight)) << std::endl;
-        if(a++ == 5){
-            break;
-        }
-    }
-
-    std::cout << "Decoded Straights:" << std::endl;
-    for (const auto& straight : straightsDecoded) {
-        std::cout << "Start Edge: " << boolVectorToInt(std::get<0>(straight)) << ", Count: " << boolVectorToInt(std::get<1>(straight)) << std::endl;
-        if(a++ == 10){
-            break;
-        }
-    }
+    // for(auto& straight : straights){
+    //     std::cout << "Start Edge: " << boolVectorToInt(std::get<0>(straight)) << ", Count: " << boolVectorToInt(std::get<1>(straight)) << std::endl;
+    //     break;
+    // }
+    // std::cout << "huffmancodesbitstring size: " << straightsHuffmanCodesBitString.size() << std::endl;
+    // std::cout << "straights string size: " << straightsString.size() << std::endl;
+    // std::cout << "straights decoded size: " << straightsDecoded.size() << std::endl;
+    // std::cout << "straights size: " << straights.size() << std::endl;
 
     // // Identify indices in which original and decoded straights differ and print differences
     // std::cout << "Differences between original and decoded straights:" << std::endl;
@@ -124,7 +107,7 @@ void reconstructImage(CompressedImage compImg){
 
     // Compare straights and straightsDecoded
     bool areStraightsIdentical = (straights == straightsDecoded);
-    std::cout << "Are original and decoded straights identical? " << (areStraightsIdentical ? "YES" : "NO") << std::endl;
+    // std::cout << "Are original and decoded straights identical? " << (areStraightsIdentical ? "YES" : "NO") << std::endl;
 
     int numberOfPaths = paths.size();
 
@@ -150,7 +133,8 @@ void reconstructImage(CompressedImage compImg){
 
     // reconstruct from straights
     std::vector<bool> reconstructed_edgeBits_straights = reconstructStraights(straightsDecoded, edgeBitsSize, cols, rows);
-
+    // Print the decoded straights
+    std::cout << "Decoded Straights size: " << straightsDecoded.size() << std::endl;
     // empty reconstruction
     std::vector<bool> empty_reconstruction = std::vector<bool>(edgeBitsSize, true);
 

@@ -24,7 +24,7 @@ struct CompressedImage{
     std::vector<uint16_t> straightLengthsList;
     std::vector<uint16_t> straightLengthFrequencies;
 
-    double compressionRate;
+    double pathCompressionRate;
     double rleCompressionRate;
     double oldCompressionRate;
     double straightsCompressionRate;

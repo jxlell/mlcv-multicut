@@ -25,4 +25,5 @@ std::vector<bool> intToBool(int num);
 int boolVectorToInt(const std::vector<bool>& binary);
 std::vector<bool> boolVectorFromRGBVector(std::vector<RGB>& regionColors);
 std::vector<RGB> colorBitStringToRGBVector(std::vector<bool>& bitString);
+int calculateBoolVectorStorage(std::vector<bool>& boolVector);
 #endif // UTIL_H

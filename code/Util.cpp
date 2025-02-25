@@ -324,3 +324,8 @@ std::vector<RGB> colorBitStringToRGBVector(std::vector<bool>& bitString){
     }
     return regionColors;
 }
+
+int calculateBoolVectorStorage(std::vector<bool>& boolVector){
+    // 64-bit chunks + overhead (8 bytes for pointer to memory, size and capacity respectively)
+    return ((boolVector.capacity()+7) / 8) * 8 + 24*8;
+}
