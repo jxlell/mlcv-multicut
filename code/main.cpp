@@ -170,7 +170,7 @@ int main() {
             continue; 
         }
         for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
-            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "tree5x5.png"
+            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "A_House_in_California.png"
             ){
                 continue;
             }

@@ -469,11 +469,11 @@ std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, st
     std::tie(straightsHuffmanCodes, root) = buildCodes(straightLengths);
     // Print Huffman codes for straights
     std::cout << "Huffman codes for straights:" << std::endl;
-    // // special case for only one distinct length
-    // if (!straightsHuffmanCodes.empty() && straightsHuffmanCodes.size() == 1) {
-    //     auto firstElement = *straightsHuffmanCodes.begin();
-    //     straightsHuffmanCodes[firstElement.first] = "0";
-    // }
+    // special case for only one distinct length
+    if (!straightsHuffmanCodes.empty() && straightsHuffmanCodes.size() == 1) {
+        auto firstElement = *straightsHuffmanCodes.begin();
+        straightsHuffmanCodes[firstElement.first] = "0";
+    }
     for (const auto& pair : straightsHuffmanCodes) {
         std::cout << "Length: " << pair.first << " Code: " << pair.second << std::endl;
     }

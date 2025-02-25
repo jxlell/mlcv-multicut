@@ -58,7 +58,6 @@ void reconstructImage(CompressedImage compImg){
     std::map<int, string> straightsHuffmanCodes;
     HuffmanNode* reconstructedRoot; 
     std::tie(straightsHuffmanCodes, reconstructedRoot) = buildCodes(straightLengths);
-    std::cout << "Reconstructed Huffman codes for straights:" << std::endl;
 
     //reconstruct straights from straightsHuffmanCodesBitString with huffman codes and straitsHuffmanCodesStartPoints
     std::vector<int> straightsLengthsDecoded;
@@ -69,7 +68,6 @@ void reconstructImage(CompressedImage compImg){
         straightsString += bit ? "1" : "0";
     }
     std::tie(decodedWord, straightsLengthsDecoded) = decodeHuffman(reconstructedRoot, straightsString);
-    std::cout << "Decoded straights lengths:" << std::endl;
     Straights straightsDecoded;
     // tie together start points vector and legnths vector to get the straights
     // std::cout << "straights lengths decoded size: " << straightsLengthsDecoded.size() << std::endl;

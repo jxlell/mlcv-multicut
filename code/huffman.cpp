@@ -72,9 +72,13 @@ std::tuple<string, std::vector<int>> decodeHuffman(HuffmanNode* root, const stri
 
     for (char bit : encodedStr) {
         if (bit == '0') {
-            currentNode = currentNode->left;
+            if(currentNode->left){
+                currentNode = currentNode->left;
+            }
         } else {
-            currentNode = currentNode->right;
+            if(currentNode->right){
+                currentNode = currentNode->right;
+            }
         }
 
         // leaf node reached
