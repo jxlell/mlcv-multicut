@@ -29,6 +29,7 @@ void generateCode(HuffmanNode* root, string code, map<int, string>& huffmanCodes
 std::tuple<map<int, string>, HuffmanNode*> buildCodes(map<int,int> frequencyMap);
 void deleteHuffmanTree(HuffmanNode* root);
 std::tuple<string, std::vector<int>> decodeHuffman(HuffmanNode* root, const string& encodedStr);
+bool areHuffmanTreesEqual(HuffmanNode* root1, HuffmanNode* root2);
 
 
 #endif // HUFFMAN_H

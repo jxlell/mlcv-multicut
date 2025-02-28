@@ -17,67 +17,6 @@ using namespace std;
 
 // g++ -std=c++11 -o multicut multicut.cpp Graph.cpp $(pkg-config --cflags --libs opencv4); ./multicut
 
-/**
- * @brief writes values of arbitrary type into a csv file 
- * @param p1 filepath
- * @param values values to be added to the file comma-separated 
- * @param category image category for allocating the correct output folder 
- */
-template<typename T>
-void writeToOutput(const std::filesystem::path& p1, const std::vector<T>& values, const std::string category) {
-    // Create the output file path using the provided path p1
-    std::filesystem::create_directories("2ndoutput/" + category);
-    std::ofstream outputFile("2ndoutput/" + category + "/output_" + p1.filename().string() + ".csv");
-
-    // Check if the file opened successfully
-    if (!outputFile.is_open()) {
-        std::cerr << "Error: Unable to open the file." << std::endl;
-        return;
-    }
-
-    // Iterate over the vector and write its elements to the file
-    for (size_t i = 0; i < values.size(); ++i) {
-        outputFile << values[i]; // Write the element
-
-        // Add a comma if it's not the last element
-        if (i != values.size() - 1) {
-            outputFile << ",";
-        }
-    }
-        
-    outputFile.close();
-}
-
-/**
- * @brief counts number of JPG and PNG files in a directory 
- * @param parentDir directory path 
- * @return number of images (.jpg and .png)
- */
-int countImgFiles(const std::filesystem::path& parentDir) {
-    int count = 0;
-    for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
-        if (!entry.is_directory()) {
-            continue;
-        }
-        for (const auto& dirEntry : std::filesystem::directory_iterator(entry)) {
-            if (dirEntry.path().extension() == ".png" || dirEntry.path().extension() == ".jpg") {
-                ++count;
-            }
-        }
-    }
-    return count;
-}
-
-int countDirectImgFiles(const std::filesystem::path& parentDir) {
-    int count = 0;
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(parentDir)) {
-        if (entry.path().extension() == ".png" || entry.path().extension() == ".jpg") {
-            ++count;
-        }
-    }
-    return count;
-}
-
 
 
 
@@ -86,10 +25,14 @@ int countDirectImgFiles(const std::filesystem::path& parentDir) {
  * 
  */
 int main() {
+
+    bool compression_successful = true;
+
     vector<double> compression_rates;
     vector<double> old_compression_rates; 
     vector<double> rle_compression_rates;
     vector<double> straights_compress_rates;
+    vector<double> straights_huffman_compress_rates;
     vector<long long> compression_times;
     vector<long long> decompression_times;
     vector<double> multicut_percentages;
@@ -132,7 +75,7 @@ int main() {
     string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example";
     imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images/icon_512";
     std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
-    parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code";
+    //parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code";
     int imgCount = countImgFiles(parentDir);
     int progress = 0;
 
@@ -161,7 +104,7 @@ int main() {
     //Compressor volcomp("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example/tree5x5.png", imgDir);
     //volcomp.compressVolume();
 
-    std::filesystem::path category = "test_img";
+    std::filesystem::path category = "screenshot_web";
     std::filesystem::path categoryPath = parentDir / category;
     imgCount = countDirectImgFiles(categoryPath);
 
@@ -170,30 +113,23 @@ int main() {
             continue; 
         }
         for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
-            if(dirEntry.path().extension().string() != ".png" || dirEntry.path().filename().string() != "A_House_in_California.png"
+            if(dirEntry.path().extension().string() != ".png" //|| dirEntry.path().filename().string() != "blek_1.png"
             ){
                 continue;
             }
 
             Compressor comp(dirEntry.path().string());
-            std::cout << "Compressing: " << dirEntry.path().filename().string() << std::endl;
+            std::cout << "\nCompressing: " << dirEntry.path().filename().string() << std::endl;
             //returning color vector, path vector, original image
 
             //stateful approach
             //auto compressed_image = comp.compressImage();
 
             //stateless approach
+            auto start = std::chrono::high_resolution_clock::now();
             auto compImg = compress(dirEntry.path().string());
-            // CompressedImage compImg {
-            //     std::get<0>(compressed_image), // color vector
-            //     std::get<1>(compressed_image), // path vector
-            //     std::get<2>(compressed_image), // original image
-            //     std::get<3>(compressed_image), // path vector 2bit
-            //     std::get<4>(compressed_image), // rle vector
-            //     std::get<5>(compressed_image), // straights
-            //     std::get<6>(compressed_image)  // region color bit string
-            // };
-
+            auto end = std::chrono::high_resolution_clock::now();
+            auto compression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
             std::string filename = dirEntry.path().filename().string();
             // Remove comma if it exists in the filename
@@ -201,28 +137,29 @@ int main() {
             filenames.push_back(filename);
             categories.push_back(entry.path().filename().string());
 
-            compression_times.push_back(comp.getCompressionTime());
-            compression_times_total.push_back(comp.getCompressionTime());
+            compression_times.push_back(compression_time);
+            //compression_times_total.push_back(comp.getCompressionTime());
 
-            double compression_rate = getCompressionRate(compImg.colorVector, compImg.paths, compImg.originalImage);
+            //double compression_rate = getCompressionRate(compImg.colorVector, compImg.paths, compImg.originalImage);
             //std::cout << "Compression Rate: " << compression_rate << std::endl;
-            compression_rates.push_back(compression_rate);
-            compression_rates_total.push_back(compression_rate);
+            compression_rates.push_back(compImg.pathCompressionRate);
+            //compression_rates_total.push_back(compression_rate);
 
 
             //double old_compression_rate = getOldCompressionRate(compImg.originalImage, compImg.colorVector);            
-            //old_compression_rates.push_back(old_compression_rate);
-            //old_compression_rates_total.push_back(old_compression_rate);
+            old_compression_rates.push_back(compImg.oldCompressionRate);
+            //old_compression_rates_total.push_back(compImg.oldCompressionRate);
 
             //double rle_comp_rate = comp.getRLECompressionRate();
             //double rle_comp_rate = getRLECompressionRate(compImg.colorVector, compImg.rleVector, compImg.originalImage);
             //std::cout << "RLE Compression Rate: " << rle_comp_rate << std::endl;
-            //rle_compression_rates.push_back(rle_comp_rate);
+            rle_compression_rates.push_back(compImg.rleCompressionRate);
 
             //double straights_comp_rate = comp.getStraightsCompressionRate();
             //double straights_comp_rate = getStraightsCompressionRate(compImg.colorVector, compImg.straights, compImg.originalImage);
             //std::cout << "Straights Compression Rate: " << straights_comp_rate << std::endl;
-            //straights_compress_rates.push_back(straights_comp_rate);
+            straights_compress_rates.push_back(compImg.straightsCompressionRate);
+            straights_huffman_compress_rates.push_back(compImg.straightsHuffmanCompressionRate);
 
             std::vector<bool> edgeBits01;
             //TODO: edgeBits01 is being computed again 
@@ -236,10 +173,10 @@ int main() {
             //disconnected_components_total.push_back(comp.getDisconnectedComponents());
             //std::cout << "Disconnected Components: " << comp.getDisconnectedComponents() << std::endl;
 
-            pixel_sizes.push_back(comp.getMulticut().getVertices());
-            pixel_sizes_total.push_back(comp.getMulticut().getVertices());
+            //pixel_sizes.push_back(comp.getMulticut().getVertices());
+            //pixel_sizes_total.push_back(comp.getMulticut().getVertices());
 
-            kBSizes.push_back(comp.getkBSize());
+            //kBSizes.push_back(comp.getkBSize());
 
             // get the number of the 2-bit paths 
             //twobit_paths_amounts.push_back(std::get<4>(compressed_image).size());
@@ -253,15 +190,24 @@ int main() {
             
 
             //stateless approach
-            //reconstructImage(img.rows, img.cols, compImg.rleVector, compImg.paths, compImg.regionColorBitString, compImg.straights, img);
-            reconstructImage(compImg); 
+            start = std::chrono::high_resolution_clock::now();
+            bool success = reconstructImage(compImg); 
+            end = std::chrono::high_resolution_clock::now();
+            auto decompression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+            decompression_times.push_back(decompression_time);
 
             progress++;
             //std::cout << progress << "/" << imgCount << std::endl;
-            //printProgressBar(progress, imgCount);
+            printProgressBar(progress, imgCount);
             ++i;
 
+            if (!success) {
+                compression_successful = false;
+            }
+
         }
+
+    std::cout << "\n\n-----\n" << (compression_successful ? "✅✅✅" : "❌❌❌") << std::endl << "-----\n";
 
     //writeToOutput(p1, compression_times);
     //writeToOutput(p1, compression_rates);
@@ -284,13 +230,15 @@ int main() {
     writeToOutput(entry, compression_rates, "compression_rates");
     //writeToOutput(entry, old_compression_rates, "old_compression_rates");
     writeToOutput(entry, compression_times, "compression_times");
-    //writeToOutput(entry, decompression_times, "decompression_times");
+    writeToOutput(entry, decompression_times, "decompression_times");
     //writeToOutput(entry, multicut_percentages, "multicut_percentages");
     //writeToOutput(entry, disconnected_components, "disconnected_components");
     //writeToOutput(entry, pixel_sizes, "pixel_sizes");
     writeToOutput(entry, rle_compression_rates, "rle_compression_rates");
-    writeToOutput(entry, twobit_paths_amounts, "twobit_paths_amounts");
+    //writeToOutput(entry, twobit_paths_amounts, "twobit_paths_amounts");
     writeToOutput(entry, straights_compress_rates, "straights_compress_rates");
+    writeToOutput(entry, straights_huffman_compress_rates, "straights_huffman_compression_rates");
+
 
     compression_rates.clear();
     old_compression_rates.clear();

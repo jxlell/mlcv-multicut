@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include "Image.h"
+#include <fstream>
 
 
 andres::Partition<int> getRegions(std::vector<bool>& edgeBitsVector, int rows, int cols);
@@ -26,4 +27,36 @@ int boolVectorToInt(const std::vector<bool>& binary);
 std::vector<bool> boolVectorFromRGBVector(std::vector<RGB>& regionColors);
 std::vector<RGB> colorBitStringToRGBVector(std::vector<bool>& bitString);
 int calculateBoolVectorStorage(std::vector<bool>& boolVector);
+/**
+ * @brief writes values of arbitrary type into a csv file 
+ * @param p1 filepath
+ * @param values values to be added to the file comma-separated 
+ * @param category image category for allocating the correct output folder 
+ */
+template<typename T>
+void writeToOutput(const std::filesystem::path& p1, const std::vector<T>& values, const std::string category) {
+    // Create the output file path using the provided path p1
+    std::filesystem::create_directories("2ndoutput/" + category);
+    std::ofstream outputFile("2ndoutput/" + category + "/output_" + p1.filename().string() + ".csv");
+
+    // Check if the file opened successfully
+    if (!outputFile.is_open()) {
+        std::cerr << "Error: Unable to open the file." << std::endl;
+        return;
+    }
+
+    // Iterate over the vector and write its elements to the file
+    for (size_t i = 0; i < values.size(); ++i) {
+        outputFile << values[i]; // Write the element
+
+        // Add a comma if it's not the last element
+        if (i != values.size() - 1) {
+            outputFile << ",";
+        }
+    }
+        
+    outputFile.close();
+}
+int countImgFiles(const std::filesystem::path& parentDir);
+int countDirectImgFiles(const std::filesystem::path& parentDir);
 #endif // UTIL_H

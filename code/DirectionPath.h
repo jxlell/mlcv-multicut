@@ -23,6 +23,8 @@ using PathInfo = std::tuple<std::vector<bool>, Direction, std::vector<bool>>;
 // Define the vector of tuples to hold path information
 using PathInfoVector = std::vector<PathInfo>;
 
+// edgeI,  zeros,          ones,           start
+// 32 bit, 1bit (vector),  16bit (vector), 1bit
 using RLEVector = std::vector<std::tuple<std::vector<bool>, std::vector<bool>, std::vector<std::vector<bool>>, bool>>;
 // start edge in binary, length of straight edges
 using Straights = std::vector<std::tuple<std::vector<bool>, std::vector<bool>>>;

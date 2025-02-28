@@ -93,6 +93,27 @@ std::tuple<string, std::vector<int>> decodeHuffman(HuffmanNode* root, const stri
     return {decodedStr, lengths};
 }
 
+bool areHuffmanTreesEqual(HuffmanNode* root1, HuffmanNode* root2) {
+    // Both nodes are null, so they are equal
+    if (!root1 && !root2) return true;
+
+    // If one is null and the other is not, they are not equal
+    if (!root1 || !root2) return false;
+
+    // Check if the current nodes have the same data and frequency
+    if (root1->data != root2->data || root1->freq != root2->freq){
+        std::cout << "data1 " << root1->data << std::endl;
+        std::cout << "freq1 " << root1->freq << std::endl;
+        std::cout << "data2 " << root2->data << std::endl;
+        std::cout << "freq2 " << root2->freq << std::endl;
+        return false;
+    } 
+
+    // Recursively check left and right subtrees
+    return areHuffmanTreesEqual(root1->left, root2->left) &&
+           areHuffmanTreesEqual(root1->right, root2->right);
+}
+
 
 // int main(){
 //     map<int,int> frequencyMap = {

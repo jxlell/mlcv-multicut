@@ -22,7 +22,7 @@ struct CompressedImage{
     std::vector<uint32_t> straightsHuffmanCodesStartPoints;
     HuffmanNode* root; 
     std::vector<uint16_t> straightLengthsList;
-    std::vector<uint16_t> straightLengthFrequencies;
+    std::vector<uint32_t> straightLengthFrequencies;
 
     double pathCompressionRate;
     double rleCompressionRate;
@@ -36,7 +36,7 @@ CompressedImage compress(const std::string& imagePath);
 std::vector<bool> setEdgeBits(cv::Mat img, std::vector<bool> edgeBits01, std::vector<int> neighborsOffsets);
 PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img);
 std::tuple<PathInfoVector, RLEVector> set2BitPaths(std::vector<bool> edgeBits01, cv::Mat img);
-std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, std::vector<uint16_t>, std::vector<uint16_t>> setStraights(std::vector<bool> edgeBits01, cv::Mat img);
+std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, std::vector<uint16_t>, std::vector<uint32_t>> setStraights(std::vector<bool> edgeBits01, cv::Mat img);
 std::vector<RGB> setRegions(cv::Mat img, std::vector<int> neighborsOffsets, int vertices);
 double getCompressionRate(std::vector<RGB> regionColors, PathInfoVector paths, cv::Mat img);
 double getRLECompressionRate(std::vector<RGB> regionColors, RLEVector rle_paths, cv::Mat img);

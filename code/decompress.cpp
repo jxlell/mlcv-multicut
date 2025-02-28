@@ -13,7 +13,7 @@
 #include "compress.h"
 #include "huffman.h"
 
-void reconstructImage(CompressedImage compImg){
+bool reconstructImage(CompressedImage compImg){
     cv::Mat originalImg = compImg.originalImage;
     std::vector<RGB> regionColors = compImg.colorVector;
     PathInfoVector paths = compImg.paths;
@@ -27,7 +27,7 @@ void reconstructImage(CompressedImage compImg){
     std::vector<uint32_t> straightsHuffmanCodesStartPoints = compImg.straightsHuffmanCodesStartPoints;
     HuffmanNode* root = compImg.root;
     std::vector<uint16_t> straightLengthsList = compImg.straightLengthsList;
-    std::vector<uint16_t> straightLengthFrequencies = compImg.straightLengthFrequencies;
+    std::vector<uint32_t> straightLengthFrequencies = compImg.straightLengthFrequencies;
 
     
     cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
@@ -59,6 +59,8 @@ void reconstructImage(CompressedImage compImg){
     HuffmanNode* reconstructedRoot; 
     std::tie(straightsHuffmanCodes, reconstructedRoot) = buildCodes(straightLengths);
 
+    // std::cout << "huffman trees equal: " << (areHuffmanTreesEqual(root, reconstructedRoot) ? "YES" : "NO") << std::endl;
+
     //reconstruct straights from straightsHuffmanCodesBitString with huffman codes and straitsHuffmanCodesStartPoints
     std::vector<int> straightsLengthsDecoded;
     string decodedWord = "";
@@ -67,8 +69,17 @@ void reconstructImage(CompressedImage compImg){
     for (bool bit : straightsHuffmanCodesBitString){
         straightsString += bit ? "1" : "0";
     }
+    // std::cout << "First 20 entries of straights string: ";
+    // for (size_t i = 0; i < 20 && i < straightsString.size(); ++i) {
+    //     std::cout << straightsString[i];
+    // }
+    // std::cout << std::endl;
     std::tie(decodedWord, straightsLengthsDecoded) = decodeHuffman(reconstructedRoot, straightsString);
     Straights straightsDecoded;
+    // std::cout << "First 5 entries of decoded straights:" << std::endl;
+    // for (size_t i = 0; i < 5 && i < straightsLengthsDecoded.size(); ++i) {
+    //     std::cout << "Start Edge: " << straightsHuffmanCodesStartPoints[i] << ", Count: " << straightsLengthsDecoded[i] << std::endl;
+    // }
     // tie together start points vector and legnths vector to get the straights
     // std::cout << "straights lengths decoded size: " << straightsLengthsDecoded.size() << std::endl;
     for (int i = 0; i < straightsLengthsDecoded.size(); i++){
@@ -103,9 +114,31 @@ void reconstructImage(CompressedImage compImg){
     //     std::cout << "Decoded straights is longer than original straights." << std::endl;
     // }
 
+    // Print the first 15 entries of the Huffman bitstring
+    // std::cout << "First 15 entries of Huffman bitstring (in decode): ";
+    // for (size_t i = 0; i < 15 && i < straightsHuffmanCodesBitString.size(); ++i) {
+    //     std::cout << straightsHuffmanCodesBitString[i];
+    // }
+    // std::cout << std::endl;
+
     // Compare straights and straightsDecoded
     bool areStraightsIdentical = (straights == straightsDecoded);
     // std::cout << "Are original and decoded straights identical? " << (areStraightsIdentical ? "YES" : "NO") << std::endl;
+    // Print indices which are different (only first 5)
+    // std::cout << "Indices where original and decoded straights differ (first 5):" << std::endl;
+    // int diffCount = 0;
+    // for (size_t i = 0; i < straights.size() && diffCount < 5; ++i) {
+    //     if (i >= straightsDecoded.size()) {
+    //         std::cout << "Decoded straights is shorter than original straights." << std::endl;
+    //         break;
+    //     }
+    //     if (std::get<0>(straights[i]) != std::get<0>(straightsDecoded[i]) || std::get<1>(straights[i]) != std::get<1>(straightsDecoded[i])) {
+    //         std::cout << "Index " << i << " differs." << std::endl;
+    //         std::cout << "Original: Start Edge: " << boolVectorToInt(std::get<0>(straights[i])) << ", Count: " << boolVectorToInt(std::get<1>(straights[i])) << std::endl;
+    //         std::cout << "Decoded: Start Edge: " << boolVectorToInt(std::get<0>(straightsDecoded[i])) << ", Count: " << boolVectorToInt(std::get<1>(straightsDecoded[i])) << std::endl;
+    //         diffCount++;
+    //     }
+    // }
 
     int numberOfPaths = paths.size();
 
@@ -132,7 +165,7 @@ void reconstructImage(CompressedImage compImg){
     // reconstruct from straights
     std::vector<bool> reconstructed_edgeBits_straights = reconstructStraights(straightsDecoded, edgeBitsSize, cols, rows);
     // Print the decoded straights
-    std::cout << "Decoded Straights size: " << straightsDecoded.size() << std::endl;
+    // std::cout << "Decoded Straights size: " << straightsDecoded.size() << std::endl;
     // empty reconstruction
     std::vector<bool> empty_reconstruction = std::vector<bool>(edgeBitsSize, true);
 
@@ -191,10 +224,8 @@ void reconstructImage(CompressedImage compImg){
     }
     
     //printSize();
-    std::cout << "reconstruction and original identical: " << ((areImagesIdentical(originalImg, image)) ? "YES" : "NO") << std::endl;
-    auto end = std::chrono::high_resolution_clock::now();
-    auto start_to_end = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    //decompressionTime = start_to_end;
+    bool success = areImagesIdentical(originalImg, image);
+    std::cout << (success ? "✅" : "❌") << std::endl;
     
     // cv::destroyAllWindows();
     // cv::imshow("Original", originalImg);
@@ -204,6 +235,7 @@ void reconstructImage(CompressedImage compImg){
     // delete huffman tree from memory 
     deleteHuffmanTree(reconstructedRoot);
     
+    return success;
 }
 
 /**

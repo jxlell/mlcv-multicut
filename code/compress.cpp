@@ -11,6 +11,7 @@
 #include <map>
 #include <string>
 #include "huffman.h"
+#include <chrono>
 
 
 
@@ -27,7 +28,7 @@ CompressedImage compress(const std::string& imagePath){
     std::vector<uint32_t> straightsHuffmanCodesStartPoints;
     HuffmanNode* root; 
     std::vector<uint16_t> straightLengthsList;
-    std::vector<uint16_t> straightLengthFrequencies;
+    std::vector<uint32_t> straightLengthFrequencies;
     edgeBits01 = setEdgeBits(img, edgeBits01, neighborsOffsets);
     int bits = 0;
 
@@ -35,13 +36,30 @@ CompressedImage compress(const std::string& imagePath){
     auto regionColorBitString = boolVectorFromRGBVector(regionColors);
     //calculate old compression rate
     double oldCompressionRate = static_cast<double>(img.rows*img.cols*24)/(edgeBits01.size() + regionColors.size() * 24);
-    std::cout << "Old Compression Rate: " << oldCompressionRate << std::endl;
+    // std::cout << "Old Compression Rate: " << oldCompressionRate << std::endl;
 
     paths = setPaths(edgeBits01, img);
 
     auto _2bitpaths = set2BitPaths(edgeBits01, img);
     paths_2bit = std::get<0>(_2bitpaths);
+    // edgeI,  zeros,          ones,           start
+    // 32 bit, 1bit (vector),  16bit (vector), 1bit
     rle_paths = std::get<1>(_2bitpaths);
+
+    // calculate storage size for RLE-paths
+    bits = 0;
+    bits += calculateBoolVectorStorage(regionColorBitString);
+    bits += rle_paths.size() * 32 + 24*8; // 32 bits for start points
+    bits += rle_paths.size() + 24*8; // 1 bit to indicate if ones or zeros vector starts 
+
+    for(auto rle : rle_paths){
+        bits += std::get<1>(rle).size();
+        bits += 24*8; // overhead
+        bits += std::get<2>(rle).size() * 16;
+        bits += 24*8; // overhead
+    }
+    double rleCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
+    // std::cout << "RLE Compression Rate: " << rleCompressionRate << std::endl;
 
     // calculate storage size for paths (2bit-directions)
     bits = 0;
@@ -53,7 +71,7 @@ CompressedImage compress(const std::string& imagePath){
         bits += 24*8; // overhead 
     }
     double pathCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
-    std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;
+    // std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;
 
     std::tie(straights, straightsHuffmanCodesBitString, straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies) = setStraights(edgeBits01, img);
     // calculate storage size for straights (huffman encoded)
@@ -64,20 +82,20 @@ CompressedImage compress(const std::string& imagePath){
     bits += straightLengthsList.size() * 16 + 24*8;
     bits += straightLengthFrequencies.size() * 16 + 24*8;
     double straightsHuffmanCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
-    std::cout << "Straights Huffman Compression Rate: " << straightsHuffmanCompressionRate << std::endl;
+    // std::cout << "Straights Huffman Compression Rate: " << straightsHuffmanCompressionRate << std::endl;
     // calculate storage size for straights (non-huffman encoded)
     bits = 0;
     bits += calculateBoolVectorStorage(regionColorBitString);
     bits += straights.size() * 32 + 24*8; // 32 bits for start points
     bits += straights.size() * 16 + 24*8; // 16 bits for lengths
     double straightsCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
-    std::cout << "Straights Compression Rate: " << straightsCompressionRate << std::endl;
+    // std::cout << "Straights Compression Rate: " << straightsCompressionRate << std::endl;
 
 
     return {regionColors, paths, img, paths_2bit, rle_paths, straights, 
     regionColorBitString, straightsHuffmanCodesBitString, 
     straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies,
-    pathCompressionRate,-1,oldCompressionRate,straightsCompressionRate,straightsHuffmanCompressionRate};
+    pathCompressionRate, rleCompressionRate ,oldCompressionRate,straightsCompressionRate,straightsHuffmanCompressionRate};
 }
 
 
@@ -286,11 +304,15 @@ std::tuple<PathInfoVector, RLEVector> set2BitPaths(std::vector<bool> edgeBits01,
             // std::cout << "empty path" << std::endl;
             rle_paths.emplace_back(intToBool(edgeI), std::vector<bool>(), std::vector<std::vector<bool>>(), false);
         }else{
+            // zeros, ones, start 
             std::tuple<std::vector<bool>, std::vector<uint16_t>, bool> rle = getRLE(directions2bits);
+            //vector of runs, each vector contains the length of a 1s run
             std::vector<std::vector<bool>> rle_directions;
             for(uint16_t run : std::get<1>(rle)){
                 rle_directions.push_back(intToBool(run));
             }
+            // edgeI,  zeros,          ones,           start
+            // 32 bit, 1bit (vector),  16bit (vector), 1bit
             rle_paths.emplace_back(intToBool(edgeI), std::get<0>(rle), rle_directions, std::get<2>(rle));
         }
         paths_2bit.emplace_back(intToBool(edgeI), startDir, directions2bits);
@@ -407,7 +429,7 @@ std::tuple<PathInfoVector, RLEVector> set2BitPaths(std::vector<bool> edgeBits01,
     return {paths_2bit, rle_paths};
 }
 
-std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, std::vector<uint16_t>, std::vector<uint16_t>> setStraights(std::vector<bool> edgeBits01, cv::Mat img){
+std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, std::vector<uint16_t>, std::vector<uint32_t>> setStraights(std::vector<bool> edgeBits01, cv::Mat img){
     Straights straights;
     std::vector<bool> visited(edgeBits01.size(), false);
     for(int edgeI=0; edgeI < edgeBits01.size(); edgeI++){
@@ -447,7 +469,7 @@ std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, st
 
     // store straighLengths
     std::vector<uint16_t> straightLengthsList;
-    std::vector<uint16_t> straightLengthFrequencies;
+    std::vector<uint32_t> straightLengthFrequencies;
     for (const auto& pair : straightLengths) {
         straightLengthsList.push_back(pair.first);
         straightLengthFrequencies.push_back(pair.second);
@@ -467,16 +489,17 @@ std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, st
     std::map<int, string> straightsHuffmanCodes;
     HuffmanNode* root; 
     std::tie(straightsHuffmanCodes, root) = buildCodes(straightLengths);
-    // Print Huffman codes for straights
-    std::cout << "Huffman codes for straights:" << std::endl;
+    
     // special case for only one distinct length
     if (!straightsHuffmanCodes.empty() && straightsHuffmanCodes.size() == 1) {
         auto firstElement = *straightsHuffmanCodes.begin();
         straightsHuffmanCodes[firstElement.first] = "0";
     }
-    for (const auto& pair : straightsHuffmanCodes) {
-        std::cout << "Length: " << pair.first << " Code: " << pair.second << std::endl;
-    }
+    // Print Huffman codes for straights
+    // std::cout << "Huffman codes for straights:" << std::endl;
+    // for (const auto& pair : straightsHuffmanCodes) {
+    //     std::cout << "Length: " << pair.first << " Code: " << pair.second << std::endl;
+    // }
     
 
     //vectors to store huffman codes
@@ -504,16 +527,17 @@ std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, st
     // std::cout << "size of bitstring: " << straightsHuffmanCodesListString.size() << std::endl;
     // std::cout << "size of start points: " << straightsStartPointsList.size() << std::endl;
     // Print first 10 values of the bitstring
-    // std::cout << "First 10 values of list string: ";
-    // for (int i = 0; i < 10 && i < straightsHuffmanCodesListString.size(); ++i) {
+    // std::cout << "First 50 values of list string: ";
+    // for (int i = 0; i < 50 && i < straightsHuffmanCodesListString.size(); ++i) {
     //     std::cout << straightsHuffmanCodesListString[i];
     // }
     // std::cout << std::endl;
-    // std::cout << "Huffman codes (straights) (first 5 values):\n";
+
+    // std::cout << "Huffman codes (straights) (first 10 values):\n";
     // int i = 0;
     // for (const auto& pair : straightsHuffmanCodes) {
     //     std::cout << pair.first << ": " << pair.second << std::endl;
-    //     if (i++ == 5) {
+    //     if (i++ == 10) {
     //         break;
     //     }
     // }
@@ -532,7 +556,7 @@ std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, st
         }
     }
 
-    // // Print first 5 entries of the straights vector
+    // Print first 5 entries of the straights vector
     // std::cout << "First 5 entries of straights vector: " << std::endl;
     // for (int i = 0; i < 5 && i < straights.size(); ++i) {
     //     std::vector<bool> startEdge;
@@ -572,7 +596,7 @@ std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, st
     // }
 
     // delete huffman tree from memory (only needed to create bitstring)
-    deleteHuffmanTree(root);
+    //deleteHuffmanTree(root);
 
     return {straights, straightsHuffmanCodesBitString, straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies};
 }

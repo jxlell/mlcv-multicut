@@ -329,3 +329,33 @@ int calculateBoolVectorStorage(std::vector<bool>& boolVector){
     // 64-bit chunks + overhead (8 bytes for pointer to memory, size and capacity respectively)
     return ((boolVector.capacity()+7) / 8) * 8 + 24*8;
 }
+
+/**
+ * @brief counts number of JPG and PNG files in a directory 
+ * @param parentDir directory path 
+ * @return number of images (.jpg and .png)
+ */
+int countImgFiles(const std::filesystem::path& parentDir) {
+    int count = 0;
+    for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
+        if (!entry.is_directory()) {
+            continue;
+        }
+        for (const auto& dirEntry : std::filesystem::directory_iterator(entry)) {
+            if (dirEntry.path().extension() == ".png" || dirEntry.path().extension() == ".jpg") {
+                ++count;
+            }
+        }
+    }
+    return count;
+}
+
+int countDirectImgFiles(const std::filesystem::path& parentDir) {
+    int count = 0;
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(parentDir)) {
+        if (entry.path().extension() == ".png" || entry.path().extension() == ".jpg") {
+            ++count;
+        }
+    }
+    return count;
+}
