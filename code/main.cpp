@@ -11,13 +11,12 @@
 #include "Util.h"
 #include "compress.h"
 #include "decompress.h"
+#include <unordered_set>
 
 
 using namespace std;
 
 // g++ -std=c++11 -o multicut multicut.cpp Graph.cpp $(pkg-config --cflags --libs opencv4); ./multicut
-
-
 
 
 /**
@@ -42,6 +41,9 @@ int main() {
 
     vector<double> compression_rates_total;
     vector<double> old_compression_rates_total; 
+    vector<double> rle_compression_rates_total;
+    vector<double> straights_compress_rates_total;
+    vector<double> straights_huffman_compress_rates_total;
     vector<long long> compression_times_total;
     vector<long long> decompression_times_total;
     vector<double> multicut_percentages_total;
@@ -52,64 +54,46 @@ int main() {
     vector<string> categories;
     vector<double> kBSizes;
 
-    // auto rle_result = getRLE({true, true, true, true, true, true , true, true});
-    // if(std::get<0>(rle_result).empty()) {
-    //     std::cerr << "Error: The result at tuple index 0 is empty." << std::endl;
-    // }
-    // if (std::get<1>(rle_result).empty()) {
-    //     std::cerr << "Error: The result at tuple index 1 is empty." << std::endl;
-    // }
-    // auto reconstructed = reconstructRLE(std::get<0>(rle_result), std::get<1>(rle_result), std::get<2>(rle_result));
 
+    std::unordered_set<std::string> category_set = {
+        "icon_64",
+        "icon_512",
+        // "photo_kodak",
+        // "photo_tecnick",
+        "photo_wikipedia",
+        // "pngimg",
+        "screenshot_web",
+        "screenshot_game",
+        // "textures_photo",
+        // "textures_pk",
+        // "textures_pk01",
+        // "textures_pk02",
+        // "textures_plants"
+    };
 
-    // cv::Mat milk_img = cv::imread("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images/pngimg/macaron_PNG35.png", cv::IMREAD_UNCHANGED);
-    // if (milk_img.empty()) {
-    //     std::cerr << "Error: Unable to load image." << std::endl;
-    //     return -1;
-    // }
-    // cv::namedWindow("Milk Image", cv::WINDOW_AUTOSIZE);
-    // cv::imshow("Milk Image", milk_img);
-    // cv::waitKey(0);
-
-    
-    string imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example";
-    imgDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images/icon_512";
-    std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
-    //parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code";
-    int imgCount = countImgFiles(parentDir);
-    int progress = 0;
-
-    std::filesystem::path p1 { imgDir };
-    int count {};
-    int i = 0;
-
-    
-    
-    long long total_time_set_multicut = 0;
-    long long total_time_reconstruct_multicut = 0;
-    
-    for (auto& p : std::filesystem::directory_iterator(p1))
-    {
-        ++count;
+    // control parameters 
+    bool single_image = true;
+    string single_image_name = "ac3_daniel_s0001.png";
+    bool showImg = single_image;
+    bool writeToFile = true;
+    if(single_image){
+        writeToFile = false;
     }
 
-    /*
-    Compressor testcomp("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/test_img/A_House_in_California.png");
-    testcomp.compressImage();
-    std::cout << "comp rate: " << testcomp.getCompressionRate() << std::endl;
-    //std::cout << "total bits: " << testcomp.getImgSize() << std::endl;
-    return 0;
-    */
+    std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
+    int imgCount = countImgFiles(parentDir, category_set);
+    int progress = 0;
 
-    //Compressor volcomp("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/5x5example/tree5x5.png", imgDir);
-    //volcomp.compressVolume();
+    if(single_image){
+        parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code";
+        category_set = {"test_img"};
+    }
 
-    std::filesystem::path category = "screenshot_web";
-    std::filesystem::path categoryPath = parentDir / category;
-    imgCount = countDirectImgFiles(categoryPath);
 
     for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
-        if (!entry.is_directory() || entry.path().filename().string() != category.string()) {
+        if (!entry.is_directory() 
+        || category_set.find(entry.path().filename().string()) == category_set.end()
+        ) {
             continue; 
         }
         for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
@@ -117,13 +101,12 @@ int main() {
             ){
                 continue;
             }
+            if(single_image && dirEntry.path().filename().string() != single_image_name){
+                continue;
+            }
 
-            Compressor comp(dirEntry.path().string());
-            std::cout << "\nCompressing: " << dirEntry.path().filename().string() << std::endl;
+            std::cout << "\nCompressing: " << dirEntry.path().filename().string() << "\nCategory: " << entry.path().filename().string() << std::endl;
             //returning color vector, path vector, original image
-
-            //stateful approach
-            //auto compressed_image = comp.compressImage();
 
             //stateless approach
             auto start = std::chrono::high_resolution_clock::now();
@@ -145,61 +128,30 @@ int main() {
             compression_rates.push_back(compImg.pathCompressionRate);
             //compression_rates_total.push_back(compression_rate);
 
-
-            //double old_compression_rate = getOldCompressionRate(compImg.originalImage, compImg.colorVector);            
             old_compression_rates.push_back(compImg.oldCompressionRate);
             //old_compression_rates_total.push_back(compImg.oldCompressionRate);
 
-            //double rle_comp_rate = comp.getRLECompressionRate();
-            //double rle_comp_rate = getRLECompressionRate(compImg.colorVector, compImg.rleVector, compImg.originalImage);
-            //std::cout << "RLE Compression Rate: " << rle_comp_rate << std::endl;
             rle_compression_rates.push_back(compImg.rleCompressionRate);
 
-            //double straights_comp_rate = comp.getStraightsCompressionRate();
-            //double straights_comp_rate = getStraightsCompressionRate(compImg.colorVector, compImg.straights, compImg.originalImage);
-            //std::cout << "Straights Compression Rate: " << straights_comp_rate << std::endl;
             straights_compress_rates.push_back(compImg.straightsCompressionRate);
             straights_huffman_compress_rates.push_back(compImg.straightsHuffmanCompressionRate);
 
-            std::vector<bool> edgeBits01;
-            //TODO: edgeBits01 is being computed again 
-            //double multicut_percentage = getMulticutPercentage(setEdgeBits(compImg.originalImage, edgeBits01,{compImg.originalImage.cols,1}));
-            //multicut_percentages.push_back(multicut_percentage);
-            //multicut_percentages_total.push_back(multicut_percentage);
-            //std::cout << "Multicut Percentage: " << comp.getMulticutPercentage() << std::endl;
             
-
-            //disconnected_components.push_back(comp.getDisconnectedComponents());
-            //disconnected_components_total.push_back(comp.getDisconnectedComponents());
-            //std::cout << "Disconnected Components: " << comp.getDisconnectedComponents() << std::endl;
-
-            //pixel_sizes.push_back(comp.getMulticut().getVertices());
-            //pixel_sizes_total.push_back(comp.getMulticut().getVertices());
-
-            //kBSizes.push_back(comp.getkBSize());
-
-            // get the number of the 2-bit paths 
-            //twobit_paths_amounts.push_back(std::get<4>(compressed_image).size());
+            //cv::Mat img;
+            //img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
             
-            cv::Mat img;// = std::get<2>(compressed_image);
-            img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
-            //Decompressor decomp(std::get<0>(compressed_image), std::get<1>(compressed_image), comp.getMulticut().edgeBits01.size(), img.cols, img.rows, img, std::get<3>(compressed_image), std::get<4>(compressed_image), std::get<5>(compressed_image), std::get<6>(compressed_image));
-            //decomp.reconstructImage();
-            //decompression_times.push_back(decomp.getDecompressionTime());
-            //decompression_times_total.push_back(decomp.getDecompressionTime());
-            
-
             //stateless approach
             start = std::chrono::high_resolution_clock::now();
-            bool success = reconstructImage(compImg); 
+            bool success = reconstructImage(compImg, showImg); 
             end = std::chrono::high_resolution_clock::now();
             auto decompression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
             decompression_times.push_back(decompression_time);
 
             progress++;
             //std::cout << progress << "/" << imgCount << std::endl;
-            printProgressBar(progress, imgCount);
-            ++i;
+            if(!single_image){
+                printProgressBar(progress, imgCount);
+            }
 
             if (!success) {
                 compression_successful = false;
@@ -207,88 +159,91 @@ int main() {
 
         }
 
-    std::cout << "\n\n-----\n" << (compression_successful ? "✅✅✅" : "❌❌❌") << std::endl << "-----\n";
+    std::cout << "\n\n------\n" << (compression_successful ? "✅✅✅" : "❌❌❌") << std::endl << "------\n";
 
-    //writeToOutput(p1, compression_times);
-    //writeToOutput(p1, compression_rates);
 
-    /*
-    // Print compression times
-    cout << "Compression Times:" << endl;
-    for (const auto& time : compression_times) {
-        cout << time << " milliseconds" << endl;
+    if(!single_image){
+        // WRITE COMPRESSION RATES TO FILE
+        writeToOutput(entry, compression_rates, "compression_rates");
+        //writeToOutput(entry, old_compression_rates, "old_compression_rates");
+        writeToOutput(entry, compression_times, "compression_times");
+        writeToOutput(entry, decompression_times, "decompression_times");
+        //writeToOutput(entry, multicut_percentages, "multicut_percentages");
+        //writeToOutput(entry, disconnected_components, "disconnected_components");
+        //writeToOutput(entry, pixel_sizes, "pixel_sizes");
+        writeToOutput(entry, rle_compression_rates, "rle_compression_rates");
+        //writeToOutput(entry, twobit_paths_amounts, "twobit_paths_amounts");
+        writeToOutput(entry, straights_compress_rates, "straights_compress_rates");
+        writeToOutput(entry, straights_huffman_compress_rates, "straights_huffman_compression_rates");
     }
 
-    // Print decompression times
-    cout << "Decompression Times:" << endl;
-    for (const auto& time : decompression_times) {
-        cout << time << " milliseconds" << endl;
-    }
-    */ 
 
-    // WRITE COMPRESSION RATES TO FILE
-    writeToOutput(entry, compression_rates, "compression_rates");
-    //writeToOutput(entry, old_compression_rates, "old_compression_rates");
-    writeToOutput(entry, compression_times, "compression_times");
-    writeToOutput(entry, decompression_times, "decompression_times");
-    //writeToOutput(entry, multicut_percentages, "multicut_percentages");
-    //writeToOutput(entry, disconnected_components, "disconnected_components");
-    //writeToOutput(entry, pixel_sizes, "pixel_sizes");
-    writeToOutput(entry, rle_compression_rates, "rle_compression_rates");
-    //writeToOutput(entry, twobit_paths_amounts, "twobit_paths_amounts");
-    writeToOutput(entry, straights_compress_rates, "straights_compress_rates");
-    writeToOutput(entry, straights_huffman_compress_rates, "straights_huffman_compression_rates");
+    // std::ofstream total_file("code/total_csv.csv");
+    // if(total_file){
+    //     total_file << 
+    // }
 
-
+    compression_rates_total.insert(compression_rates_total.end(), compression_rates.begin(), compression_rates.end());
     compression_rates.clear();
+
+    old_compression_rates_total.insert(old_compression_rates_total.end(), old_compression_rates.begin(), old_compression_rates.end());
     old_compression_rates.clear();
+
+    compression_times_total.insert(compression_times_total.end(), compression_times.begin(), compression_times.end());
     compression_times.clear();
+
+    decompression_times_total.insert(decompression_times_total.end(), decompression_times.begin(), decompression_times.end());
     decompression_times.clear();
-    multicut_percentages.clear();
-    disconnected_components.clear();
+
+    rle_compression_rates_total.insert(rle_compression_rates_total.end(), rle_compression_rates.begin(), rle_compression_rates.end());
+    rle_compression_rates.clear();
+
+    straights_compress_rates_total.insert(straights_compress_rates_total.end(), straights_compress_rates.begin(), straights_compress_rates.end());
+    straights_compress_rates.clear();
+
+    straights_huffman_compress_rates_total.insert(straights_huffman_compress_rates_total.end(), straights_huffman_compress_rates.begin(), straights_huffman_compress_rates.end());
+    straights_huffman_compress_rates.clear();
+    // multicut_percentages.clear();
+    // disconnected_components.clear();
     pixel_sizes.clear();
-    /*
-    std::cout << entry.path().filename().string() << std::endl;
-
-    double mean = std::accumulate(compression_rates.begin(), compression_rates.end(), 0.0) / compression_rates.size();
-    double min = *std::min_element(compression_rates.begin(), compression_rates.end());
-    double max = *std::max_element(compression_rates.begin(), compression_rates.end());
-    std::cout << "\nMean Compression Rate: " << mean << std::endl;
-    std::cout << "Min Compression Rate: " << min << std::endl;
-    std::cout << "Max Compression Rate: " << max << std::endl;
-
-    mean = std::accumulate(old_compression_rates.begin(), old_compression_rates.end(), 0.0) / old_compression_rates.size();
-    min = *std::min_element(old_compression_rates.begin(), old_compression_rates.end());
-    max = *std::max_element(old_compression_rates.begin(), old_compression_rates.end());
-    std::cout << "Mean Old Compression Rate: " << mean << std::endl;
-    std::cout << "Min Old Compression Rate: " << min << std::endl;
-    std::cout << "Max Old Compression Rate: " << max << std::endl;
-    */
-
-    //std::cout << total_time_set_multicut/i << endl;
-    //std::cout << total_time_reconstruct_multicut/i << endl;
     }
 
-    /*
+    if(writeToFile){
+        ofstream csvFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results.csv");
+        if (!csvFile.is_open()) {
+            cerr << "Error: Unable to open CSV file for writing." << endl;
+            return -1;
+        }
 
-    ofstream csvFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results.csv");
-    if (!csvFile.is_open()) {
-        cerr << "Error: Unable to open CSV file for writing." << endl;
-        return -1;
+        // csvFile << "filename,category,pixel_size,encode_ms,decode_ms,size_kb,rate\n";
+        // for (size_t i = 0; i < filenames.size(); ++i) {
+        //     csvFile << filenames[i] << ","
+        //             << categories[i] << ","
+        //             << pixel_sizes_total[i] << ","
+        //             << compression_times_total[i] << ","
+        //             << decompression_times_total[i] << ","
+        //             << kBSizes[i] << ","
+        //             << compression_rates_total[i] << "\n";
+        // }
+
+        csvFile << "filename,category,old_rate,path_rate,rle_rate,straights_rate,straights_huffman_rate,comp_time,decomp_time\n";
+        for (size_t i = 0; i < filenames.size(); ++i) {
+            csvFile << filenames[i] << ","
+                    << categories[i] << ","
+                    // << pixel_sizes_total[i] << ","
+                    << old_compression_rates_total[i] << ","
+                    << compression_rates_total[i] << ","
+                    << rle_compression_rates_total[i] << ","
+                    << straights_compress_rates_total[i] << ","
+                    << straights_huffman_compress_rates_total[i] << ","
+                    << compression_times_total[i] << ","
+                    << decompression_times_total[i] << "\n";
+                    // << kBSizes[i] << ","
+        }
+
+        csvFile.close();
     }
-
-    csvFile << "filename,category,pixel_size,encode_ms,decode_ms,size_kb,rate\n";
-    for (size_t i = 0; i < filenames.size(); ++i) {
-        csvFile << filenames[i] << ","
-                << categories[i] << ","
-                << pixel_sizes_total[i] << ","
-                << compression_times_total[i] << ","
-                << decompression_times_total[i] << ","
-                << kBSizes[i] << ","
-                << compression_rates_total[i] << "\n";
-    }
-
-    csvFile.close();
-    */
+    
+    
     return 0;
 }

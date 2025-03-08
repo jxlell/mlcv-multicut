@@ -30,12 +30,24 @@ CompressedImage compress(const std::string& imagePath){
     std::vector<uint16_t> straightLengthsList;
     std::vector<uint32_t> straightLengthFrequencies;
     edgeBits01 = setEdgeBits(img, edgeBits01, neighborsOffsets);
+    // double multicutPercentage = getMulticutPercentage(edgeBits01);
+    // std::cout << "Percentage of edge bits set to 1: " << multicutPercentage << "%" << std::endl;
     int bits = 0;
 
     regionColors = setRegions(img, neighborsOffsets, img.cols * img.rows);
+    std::cout << "size of regionColors: " << regionColors.size() << std::endl;
+    std::set<RGB, RGBComparator> regionColorsSet;
+    for (auto color : regionColors) {
+        regionColorsSet.insert(color);
+    }
+    std::cout << "Number of unique colors: " << regionColorsSet.size() << std::endl;
     auto regionColorBitString = boolVectorFromRGBVector(regionColors);
+    std::cout << "size of regionColorBitString: " << regionColorBitString.size() << std::endl;
     //calculate old compression rate
-    double oldCompressionRate = static_cast<double>(img.rows*img.cols*24)/(edgeBits01.size() + regionColors.size() * 24);
+    bits += calculateBoolVectorStorage(regionColorBitString) + 24*8;
+    bits += edgeBits01.size() + 24*8;
+    //TODO: ensure bits != 0
+    double oldCompressionRate = static_cast<double>(img.rows*img.cols*24) / bits;
     // std::cout << "Old Compression Rate: " << oldCompressionRate << std::endl;
 
     paths = setPaths(edgeBits01, img);
@@ -72,6 +84,16 @@ CompressedImage compress(const std::string& imagePath){
     }
     double pathCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
     // std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;
+
+    bits = 0;
+    bits += calculateBoolVectorStorage(regionColorBitString);
+    bits += paths.size() * 32 + 24*8; // 32 bits for start points
+    for (auto path : paths) {
+        bits += std::get<2>(path).size();
+        bits += 24*8; // overhead
+    }
+    pathCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
+
 
     std::tie(straights, straightsHuffmanCodesBitString, straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies) = setStraights(edgeBits01, img);
     // calculate storage size for straights (huffman encoded)
@@ -178,6 +200,7 @@ PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img){
         std::vector<bool> directionVector;
         //directionVector = dfs_paths_recursive(edgeI, visited, currentDir, directionVector);
         directionVector = dfs_paths_iterative(edgeI, currentDir, visited, img, edgeBits01);
+        //TODO: back to uint32_t
         paths.emplace_back(intToBool(edgeI), currentDir, directionVector);
         //std::cout << "path size: " << directionVector.size() << std::endl;
 
@@ -689,5 +712,8 @@ double getStraightsCompressionRate(std::vector<RGB> regionColors, Straights stra
  * @return percentage of edges connecting two different-colored pixels 
  */
 double getMulticutPercentage(std::vector<bool> edgeBits01){
-    return 100*std::count(edgeBits01.begin(), edgeBits01.end(), true) / edgeBits01.size();
+    int count = std::count(edgeBits01.begin(), edgeBits01.end(), true);
+    // std::cout << "0 in edgebits: " << edgeBits01.size() - count << std::endl;
+    // std::cout << "1 in edgebits: " << count << std::endl;
+    return 100*count / edgeBits01.size();
 }

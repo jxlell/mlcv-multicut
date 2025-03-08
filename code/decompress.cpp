@@ -13,7 +13,7 @@
 #include "compress.h"
 #include "huffman.h"
 
-bool reconstructImage(CompressedImage compImg){
+bool reconstructImage(CompressedImage compImg, bool showImg){
     cv::Mat originalImg = compImg.originalImage;
     std::vector<RGB> regionColors = compImg.colorVector;
     PathInfoVector paths = compImg.paths;
@@ -227,10 +227,13 @@ bool reconstructImage(CompressedImage compImg){
     bool success = areImagesIdentical(originalImg, image);
     std::cout << (success ? "✅" : "❌") << std::endl;
     
-    // cv::destroyAllWindows();
-    // cv::imshow("Original", originalImg);
-    // cv::imshow("Reconstruction", image);
-    // cv::waitKey(0);
+    if(showImg){
+        cv::destroyAllWindows();
+        cv::imshow("Original", originalImg);
+        cv::imshow("Reconstruction", image);
+        cv::waitKey(0);
+    }
+    
 
     // delete huffman tree from memory 
     deleteHuffmanTree(reconstructedRoot);

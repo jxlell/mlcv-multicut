@@ -16,8 +16,7 @@ def read_csv(file_path):
                     print(f"Error converting value to float: {percentage}")
     return percentages
 
-# Replace 'your_directory' with the actual directory path containing the CSV files
-directory_path = '/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/2ndoutput/compression_rates'
+directory_path = '/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/2ndoutput/straights_compress_rates'
 
 # Get a list of all CSV files in the directory
 csv_files = glob.glob(os.path.join(directory_path, '*.csv'))
@@ -50,7 +49,7 @@ fig, ax = plt.subplots()
 ax.bar(bars, mean_values, color='#EF3054')
 
 # Add a horizontal line at 50%
-ax.axhline(50, color='#F0CF65', linewidth=1, linestyle='--', label='50% Line')
+ax.axhline(1, color='#F0CF65', linewidth=1, linestyle='--', label='50% Line')
 
 # Set y-axis limit to go from zero to the maximum mean value
 ax.set_ylim(0, max(mean_values) * 1.1)  # Adding 10% padding above the maximum value

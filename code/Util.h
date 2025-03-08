@@ -10,6 +10,7 @@
 #include <iostream>
 #include "Image.h"
 #include <fstream>
+#include <unordered_set>
 
 
 andres::Partition<int> getRegions(std::vector<bool>& edgeBitsVector, int rows, int cols);
@@ -57,6 +58,6 @@ void writeToOutput(const std::filesystem::path& p1, const std::vector<T>& values
         
     outputFile.close();
 }
-int countImgFiles(const std::filesystem::path& parentDir);
+int countImgFiles(const std::filesystem::path& parentDir, std::unordered_set<std::string> category_set);
 int countDirectImgFiles(const std::filesystem::path& parentDir);
 #endif // UTIL_H

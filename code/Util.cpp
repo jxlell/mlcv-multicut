@@ -5,6 +5,7 @@
 #include <fstream>
 #include <numeric>
 #include <type_traits>
+#include <unordered_set>
 
 int getNeighbor(int currentEdge, Direction currentDir, int neighborIndex, int cols, int rows){
     std::vector<int> edgeOffsets;
@@ -335,10 +336,10 @@ int calculateBoolVectorStorage(std::vector<bool>& boolVector){
  * @param parentDir directory path 
  * @return number of images (.jpg and .png)
  */
-int countImgFiles(const std::filesystem::path& parentDir) {
+int countImgFiles(const std::filesystem::path& parentDir, std::unordered_set<std::string> category_set) {
     int count = 0;
     for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
-        if (!entry.is_directory()) {
+        if (!entry.is_directory() || category_set.find(entry.path().filename().string()) == category_set.end()) {
             continue;
         }
         for (const auto& dirEntry : std::filesystem::directory_iterator(entry)) {
