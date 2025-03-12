@@ -18,7 +18,7 @@ enum class Direction : uint8_t{
 
 // Define the tuple type for path information
 // The tuple contains: startEdge, startDirection, and a directionVector
-using PathInfo = std::tuple<std::vector<bool>, Direction, std::vector<bool>>;
+using PathInfo = std::tuple<uint32_t, Direction, std::vector<bool>>;
 
 // Define the vector of tuples to hold path information
 using PathInfoVector = std::vector<PathInfo>;

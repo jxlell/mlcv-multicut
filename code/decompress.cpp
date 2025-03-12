@@ -47,7 +47,7 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
             ones_rle_16.push_back(boolVectorToInt(vec));
         }
         std::vector<bool> directions2bits = reconstructRLE(zeros_rle, ones_rle_16, start);
-        paths_2bit.emplace_back(edgeI, getDirectionFromIndex(boolVectorToInt(edgeI), rows, cols), directions2bits);
+        paths_2bit.emplace_back(boolVectorToInt(edgeI), getDirectionFromIndex(boolVectorToInt(edgeI), rows, cols), directions2bits);
     }
 
     // create huffman tree from lengths and frequencies 
@@ -150,7 +150,7 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
         //std::cout << directionToString(std::get<1>(pathinfo)) << std::endl;
         //printProgressBar(i , paths.size());
         //reconstructed_edgeBits = reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
-        int startEdge = boolVectorToInt(std::get<0>(pathinfo));
+        int startEdge = std::get<0>(pathinfo);
         //Direction calculated just based on the index, no need to pass it as an argument
         Direction currentDir = getDirectionFromIndex(startEdge, rows, cols);
         reconstruct_edgeBits_iterative(startEdge, currentDir, std::get<2>(pathinfo), reconstructed_edgeBits, cols, rows);
@@ -286,7 +286,7 @@ void reconstruct_edgeBits_iterative(int currentEdge, Direction currentDir, std::
 std::vector<bool> reconstruct_edgeBits2bits(PathInfoVector paths, int edgeBitsSize, int cols, int rows){
     std::vector<bool> reconstructed_edgeBits_2bits(edgeBitsSize, false);
     for(PathInfo pathinfo : paths){
-        int startEdge = boolVectorToInt(std::get<0>(pathinfo));
+        int startEdge = std::get<0>(pathinfo);
         // Direction startDirection = std::get<1>(pathinfo);
         Direction startDirection = getDirectionFromIndex(startEdge, rows, cols);
         std::vector<bool> directionVector = std::get<2>(pathinfo);

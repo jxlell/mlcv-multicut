@@ -271,19 +271,22 @@ std::vector<bool> reconstructRLE(std::vector<bool> zeros_rle, std::vector<uint16
     return reconstructed;
 }
 
-std::vector<bool> intToBool(int num) {
+std::vector<bool> intToBool(int num, int padding) {
     std::vector<bool> binary;
     if (num == 0) {
         binary.push_back(false); // Special case for 0
-        return binary;
+    } else {
+        while (num > 0) {
+            binary.push_back(num & 1); // Extract LSB
+            num >>= 1; // Right shift
+        }
+        std::reverse(binary.begin(), binary.end()); // Reverse to get MSB first
     }
     
-    while (num > 0) {
-        binary.push_back(num & 1); // Extract LSB
-        num >>= 1; // Right shift
+    if (padding > 0 && binary.size() < static_cast<size_t>(padding)) {
+        binary.insert(binary.begin(), padding - binary.size(), false); // Add leading zeros
     }
     
-    std::reverse(binary.begin(), binary.end()); // Reverse to get MSB first
     return binary;
 }
 

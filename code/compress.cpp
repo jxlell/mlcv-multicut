@@ -21,7 +21,7 @@ CompressedImage compress(const std::string& imagePath){
     std::vector<int> neighborsOffsets = {img.cols, 1};
     std::vector<RGB> regionColors;
     PathInfoVector paths;
-    std::vector<bool> pathStartPointsBitString; 
+    std::vector<bool> pathsBitString; 
     PathInfoVector paths_2bit; 
     RLEVector rle_paths;
     Straights straights;
@@ -59,10 +59,23 @@ CompressedImage compress(const std::string& imagePath){
 
     auto start = std::chrono::high_resolution_clock::now();
     paths = setPaths(edgeBits01, img);
-    // for (auto& path : paths){
-    //     auto& startEdge = std::get<0>(path);
-    //     std::vector<bool> startBool = intToBool(startEdge);
-    // }
+    //set bitstring for paths 
+    std::vector<bool> startPointsBitString;
+    std::vector<bool> numberOfDisconnectedComponents = intToBool(paths.size(), 24);
+    std::vector<bool> startPointBitsVector = intToBool(startPointBits, 5);
+    startPointsBitString.insert(startPointsBitString.end(), numberOfDisconnectedComponents.begin(), numberOfDisconnectedComponents.end());
+    startPointsBitString.insert(startPointsBitString.end(), startPointBitsVector.begin(), startPointBitsVector.end());
+    for (auto& path : paths){
+        auto& startEdge = std::get<0>(path);
+        std::vector<bool> startBool = intToBool(startEdge,startPointBits);
+        startPointsBitString.insert(startPointsBitString.end(), startBool.begin(), startBool.end());
+        // std::cout << "direction size: " << std::get<2>(path).size() << std::endl;
+        // std::cout << "startEdge: " << startEdge << ", path: " << std::endl;
+        // for (bool bit : std::get<2>(path)) {
+        //     std::cout << bit;
+        // }
+        // std::cout << std::endl;
+    }
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     std::cout << "time to set paths: " << duration.count() << "ms" << std::endl;
@@ -217,7 +230,6 @@ PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img){
         std::vector<bool> directionVector;
         //directionVector = dfs_paths_recursive(edgeI, visited, currentDir, directionVector);
         directionVector = dfs_paths_iterative(edgeI, currentDir, visited, img, edgeBits01);
-        //TODO: back to uint32_t
         paths.emplace_back(edgeI, currentDir, directionVector);
         //std::cout << "path size: " << directionVector.size() << std::endl;
 
@@ -242,12 +254,12 @@ PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img){
     // Calculate storage space for the path vector
     double totalBitsPathVector = 0;
     for (const auto& path : paths) {
-        std::vector<bool> edgeI;
+        uint32_t edgeI;
         Direction dir;
         std::vector<bool> directionVector;
 
         std::tie(edgeI, dir, directionVector) = path;
-        totalBitsPathVector += edgeI.size();
+        totalBitsPathVector += 32;
         
         //totalBitsPathVector += 32; // 32 bits for starting point
         //totalBitsPathVector += ceil(log2(2 * img.rows * img.cols - img.rows - img.cols)); // 32 bits for starting point
@@ -366,20 +378,20 @@ std::tuple<PathInfoVector, RLEVector> set2BitPaths(std::vector<bool> edgeBits01,
             // 32 bit, 1bit (vector),  16bit (vector), 1bit
             rle_paths.emplace_back(intToBool(edgeI), std::get<0>(rle), rle_directions, std::get<2>(rle));
         }
-        paths_2bit.emplace_back(intToBool(edgeI), startDir, directions2bits);
+        paths_2bit.emplace_back(edgeI, startDir, directions2bits);
     }
 
     // Calculate storage space for the paths vector
     double totalBits2BitPaths = 0;
     int emptyPathsCount = 0;
     for (const auto& path : paths_2bit) {
-        std::vector<bool> edgeI;
+        uint32_t edgeI;
         Direction dir;
         std::vector<bool> directions2bits;
 
         std::tie(edgeI, dir, directions2bits) = path;
 
-        totalBits2BitPaths += edgeI.size();
+        totalBits2BitPaths += 32;
         //totalBits2BitPaths += 32; // 32 bits for starting point
         //totalBits2BitPaths += ceil(log2(2 * img.rows * img.cols - img.rows - img.cols)); // 32 bits for starting point
         
@@ -400,7 +412,7 @@ std::tuple<PathInfoVector, RLEVector> set2BitPaths(std::vector<bool> edgeBits01,
     // Identify the longest run of ones in the direction vectors
     int longestRun = 0;
     for (const auto& path : paths_2bit) {
-        std::vector<bool> edgeI;
+        uint32_t edgeI;
         Direction dir;
         std::vector<bool> directions2bits;
 
@@ -423,13 +435,13 @@ std::tuple<PathInfoVector, RLEVector> set2BitPaths(std::vector<bool> edgeBits01,
     // Calculate bits needed for run length encoding
     double totalBitsRLE = 0;
     for (const auto& path : paths_2bit) {
-        std::vector<bool> edgeI;
+        uint32_t edgeI;
         Direction dir;
         std::vector<bool> directions2bits;
 
         std::tie(edgeI, dir, directions2bits) = path;
 
-        totalBitsRLE += edgeI.size();
+        totalBitsRLE += 32;
         //totalBitsRLE += 32; // 32 bits for starting point 
         //totalBitsRLE += ceil(log2(2 * img.rows * img.cols - img.rows - img.cols)); // 32 bits for starting point
         if(!directions2bits.empty()){
@@ -455,7 +467,7 @@ std::tuple<PathInfoVector, RLEVector> set2BitPaths(std::vector<bool> edgeBits01,
     // Count the runs of 0s in the 2-bit paths
     int totalRunsOfZeros = 0;
     for (const auto& path : paths_2bit) {
-        std::vector<bool> edgeI;
+        uint32_t edgeI;
         Direction dir;
         std::vector<bool> directions2bits;
 
@@ -667,13 +679,13 @@ double getCompressionRate(std::vector<RGB> regionColors, PathInfoVector paths, c
             return 1;
         }
     for (const auto& path : paths) {
-        std::vector<bool> edgeI;
+        uint32_t edgeI;
         Direction dir;
         std::vector<bool> directionVector;
 
         std::tie(edgeI, dir, directionVector) = path;
 
-        totalBits += edgeI.size();
+        totalBits += 32;
         //totalBits += 32; // 32 bits for starting point
         // starting direction is calculated and not stored
         //totalBits += 8; // 8 bits for starting direction (smalles addressable unit)

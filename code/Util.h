@@ -23,7 +23,7 @@ Direction getDirectionFromIndex(int index, int row, int col);
 std::string directionToString(Direction dir);
 std::tuple<std::vector<bool>, std::vector<uint16_t>, bool> getRLE(std::vector<bool> bits);
 std::vector<bool> reconstructRLE(std::vector<bool> zeros_rle, std::vector<uint16_t> ones_rle, bool start);
-std::vector<bool> intToBool(int num);
+std::vector<bool> intToBool(int num, int padding=0);
 int boolVectorToInt(const std::vector<bool>& binary);
 std::vector<bool> boolVectorFromRGBVector(std::vector<RGB>& regionColors);
 std::vector<RGB> colorBitStringToRGBVector(std::vector<bool>& bitString);
