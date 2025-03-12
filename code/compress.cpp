@@ -21,6 +21,7 @@ CompressedImage compress(const std::string& imagePath){
     std::vector<int> neighborsOffsets = {img.cols, 1};
     std::vector<RGB> regionColors;
     PathInfoVector paths;
+    std::vector<bool> pathStartPointsBitString; 
     PathInfoVector paths_2bit; 
     RLEVector rle_paths;
     Straights straights;
@@ -32,6 +33,12 @@ CompressedImage compress(const std::string& imagePath){
     edgeBits01 = setEdgeBits(img, edgeBits01, neighborsOffsets);
     // double multicutPercentage = getMulticutPercentage(edgeBits01);
     // std::cout << "Percentage of edge bits set to 1: " << multicutPercentage << "%" << std::endl;
+    
+    //getAnomalies(edgeBits01, img);
+
+    int startPointBits = std::ceil(std::log2(edgeBits01.size()));
+    std::cout << "startPointBits: " << startPointBits << std::endl;
+    
     int bits = 0;
 
     regionColors = setRegions(img, neighborsOffsets, img.cols * img.rows);
@@ -50,7 +57,25 @@ CompressedImage compress(const std::string& imagePath){
     double oldCompressionRate = static_cast<double>(img.rows*img.cols*24) / bits;
     // std::cout << "Old Compression Rate: " << oldCompressionRate << std::endl;
 
+    auto start = std::chrono::high_resolution_clock::now();
     paths = setPaths(edgeBits01, img);
+    // for (auto& path : paths){
+    //     auto& startEdge = std::get<0>(path);
+    //     std::vector<bool> startBool = intToBool(startEdge);
+    // }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "time to set paths: " << duration.count() << "ms" << std::endl;
+
+    bits = 0;
+    bits += calculateBoolVectorStorage(regionColorBitString);
+    bits += paths.size() * startPointBits + 24*8; // bits for start points
+    for (auto path : paths) {
+        bits += std::get<2>(path).size();
+        bits += 24*8; // overhead
+    }
+    double pathCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
+    std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;
 
     auto _2bitpaths = set2BitPaths(edgeBits01, img);
     paths_2bit = std::get<0>(_2bitpaths);
@@ -82,18 +107,10 @@ CompressedImage compress(const std::string& imagePath){
         bits += std::get<2>(path).size();
         bits += 24*8; // overhead 
     }
-    double pathCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
+    // pathCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
     // std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;
 
-    bits = 0;
-    bits += calculateBoolVectorStorage(regionColorBitString);
-    bits += paths.size() * 32 + 24*8; // 32 bits for start points
-    for (auto path : paths) {
-        bits += std::get<2>(path).size();
-        bits += 24*8; // overhead
-    }
-    pathCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
-
+    
 
     std::tie(straights, straightsHuffmanCodesBitString, straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies) = setStraights(edgeBits01, img);
     // calculate storage size for straights (huffman encoded)
@@ -201,7 +218,7 @@ PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img){
         //directionVector = dfs_paths_recursive(edgeI, visited, currentDir, directionVector);
         directionVector = dfs_paths_iterative(edgeI, currentDir, visited, img, edgeBits01);
         //TODO: back to uint32_t
-        paths.emplace_back(intToBool(edgeI), currentDir, directionVector);
+        paths.emplace_back(edgeI, currentDir, directionVector);
         //std::cout << "path size: " << directionVector.size() << std::endl;
 
         edgeI++;
@@ -209,7 +226,18 @@ PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img){
     //std::cout << "edgeI: " << edgeI << std::endl;
     //std::cout << "number of edges: " << 2*rows*cols - cols - rows << std::endl;
 
-    //printPaths();
+    // print paths
+    // for (auto path : paths) {
+    //     std::vector<bool> edgeI;
+    //     Direction dir;
+    //     std::vector<bool> directionVector;
+    //     std::tie(edgeI, dir, directionVector) = path;
+    //     std::cout << "Start Edge: " << boolVectorToInt(edgeI) << ", Direction: " << static_cast<int>(dir) << ", Path: ";
+    //     for (bool bit : directionVector) {
+    //         std::cout << bit;
+    //     }
+    //     std::cout << std::endl;
+    // }
 
     // Calculate storage space for the path vector
     double totalBitsPathVector = 0;
@@ -716,4 +744,24 @@ double getMulticutPercentage(std::vector<bool> edgeBits01){
     // std::cout << "0 in edgebits: " << edgeBits01.size() - count << std::endl;
     // std::cout << "1 in edgebits: " << count << std::endl;
     return 100*count / edgeBits01.size();
+}
+
+
+void getAnomalies(std::vector<bool> edgeBits01, cv::Mat img){
+    int count = 0;
+    for (int col = 1; col <= 2 * img.cols - 3; col += 2){
+        int current = col;
+        while (getNeighbor(current, Direction::DOWN, 1, img.cols, img.rows) != -1){
+            bool left = edgeBits01[getNeighbor(current, Direction::DOWN, 0, img.cols, img.rows)];
+            bool right = edgeBits01[getNeighbor(current, Direction::DOWN, 2, img.cols, img.rows)];
+            bool front = edgeBits01[getNeighbor(current, Direction::DOWN, 1, img.cols, img.rows)];
+            bool currentEdge = edgeBits01[current];
+            if((left || right) && (front == currentEdge)){
+                // std::cout << "Anomaly found at edge " << current << std::endl;
+                count++;
+            }
+            current = getNeighbor(current, Direction::DOWN, 1, img.cols, img.rows);
+        }
+    }
+    std::cout << "Number of anomalies: " << count << std::endl;
 }

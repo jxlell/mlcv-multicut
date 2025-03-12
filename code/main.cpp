@@ -71,14 +71,25 @@ int main() {
         // "textures_plants"
     };
 
+    std::ifstream inputFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/singlefile.txt");
+    if (!inputFile.is_open()) {
+        std::cerr << "Error: Unable to open file for reading." << std::endl;
+        return -1;
+    }
+
+    std::string single_image_txt;
+    if (std::getline(inputFile, single_image_txt)) {
+        // Process the single line read from the file
+        std::cout << single_image_txt << std::endl;
+    }
+
+    inputFile.close();
+
     // control parameters 
     bool single_image = true;
-    string single_image_name = "ac3_daniel_s0001.png";
+    string single_image_name = single_image_txt;
     bool showImg = single_image;
-    bool writeToFile = true;
-    if(single_image){
-        writeToFile = false;
-    }
+    bool writeToFile = !single_image;
 
     std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
     int imgCount = countImgFiles(parentDir, category_set);

@@ -4,6 +4,9 @@
 
 using namespace std;
 
+// adapted from Ayush Agrawal, https://github.com/mr-ayush-agrawal/Hacktoberfest/blob/9e5d9c36121664d988d2072cd8eafc476c008c9e/Most_Useful_Algorithms/HuffmanCoding.cpp
+// accessed 20-02-2025
+
 struct HuffmanNode{
     int data;
     int freq;
