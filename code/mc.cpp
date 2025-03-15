@@ -49,7 +49,7 @@ std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std
     std::stack<std::pair<int, Direction>> pendingEdges;
     int vecIndex = 0;
     pendingEdges.push(std::make_pair(currentEdge, currentDir));
-    visited[currentEdge] = true;
+    //visited[currentEdge] = true;
     bool left, front, right;
     while(!pendingEdges.empty()){
         left = false;
@@ -64,12 +64,16 @@ std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std
         int neighborFront = getNeighbor(currentEdge, currentDir, 1, cols, rows);
         int neighborRight = getNeighbor(currentEdge, currentDir, 2, cols, rows);
 
-
+        if(visited[currentEdge]){
+            continue;
+        }
+        visited[currentEdge] = true;
+        
         //TODO: push 000 und continue falls nächste edges nicht multicut oder schon visited 
         if(neighborLeft == -1 || neighborFront == -1 || neighborRight == -1 || neighborLeft >= edgeBits01.size() || neighborFront >= edgeBits01.size() || neighborRight >= edgeBits01.size()){
-            directionVector.push_back(0);
-            directionVector.push_back(0);
-            directionVector.push_back(0);
+            // directionVector.push_back(0);
+            // directionVector.push_back(0);
+            // directionVector.push_back(0);
             //directionVector[vecIndex++] = 0;
             //directionVector[vecIndex++] = 0;
             //directionVector[vecIndex++] = 0;
@@ -77,14 +81,34 @@ std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std
             continue;
         }
 
+        
 
 
+        left = edgeBits01[neighborLeft];
+        front = edgeBits01[neighborFront];
+        right = edgeBits01[neighborRight];
+        directionVector.push_back(left);
+        directionVector.push_back(front);
+        directionVector.push_back(right);
+
+        if(right){
+            pendingEdges.push(std::make_pair(neighborRight, nextDirection(currentDir)));
+        }
+        if(front){
+            pendingEdges.push(std::make_pair(neighborFront, currentDir));
+        }
+        if(left){
+            pendingEdges.push(std::make_pair(neighborLeft, previousDirection(currentDir)));
+        }
+
+        /*
 
         if(!visited[neighborLeft]){
             left = edgeBits01[neighborLeft];
             directionVector.push_back(left);
             //directionVector[vecIndex++] = left;
-        }else{
+        }
+        else{
             directionVector.push_back(false);
             //directionVector[vecIndex++] = false;
         }
@@ -120,12 +144,18 @@ std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std
         }
 
         if(!left && !front && !right && !lastThreeAllFalse){
-            directionVector.push_back(0);
-            directionVector.push_back(0);
-            directionVector.push_back(0);
+            // directionVector.push_back(0);
+            // directionVector.push_back(0);
+            // directionVector.push_back(0);
             //directionVector[vecIndex++] = 0;
             //directionVector[vecIndex++] = 0;
             //directionVector[vecIndex++] = 0;
+            continue;
+        }
+        if(lastThreeAllFalse){
+            directionVector.pop_back();
+            directionVector.pop_back();
+            directionVector.pop_back();
             continue;
         }
         
@@ -149,6 +179,7 @@ std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std
                 visited[neighborLeft] = true;
             }
         }
+        */
 
     }
     //directionVector.resize(vecIndex);

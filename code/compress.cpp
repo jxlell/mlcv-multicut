@@ -60,22 +60,41 @@ CompressedImage compress(const std::string& imagePath){
     auto start = std::chrono::high_resolution_clock::now();
     paths = setPaths(edgeBits01, img);
     //set bitstring for paths 
-    std::vector<bool> startPointsBitString;
-    std::vector<bool> numberOfDisconnectedComponents = intToBool(paths.size(), 24);
+    int disconnectedComponentsBits = std::ceil(std::log2(img.cols * img.rows / 2));
+    std::vector<bool> numberOfDisconnectedComponents = intToBool(paths.size(), disconnectedComponentsBits);
     std::vector<bool> startPointBitsVector = intToBool(startPointBits, 5);
-    startPointsBitString.insert(startPointsBitString.end(), numberOfDisconnectedComponents.begin(), numberOfDisconnectedComponents.end());
-    startPointsBitString.insert(startPointsBitString.end(), startPointBitsVector.begin(), startPointBitsVector.end());
+    // add numner of components to bitstring
+    pathsBitString.insert(pathsBitString.end(), numberOfDisconnectedComponents.begin(), numberOfDisconnectedComponents.end());
+    // add number of bits for start points to bitstring
+    pathsBitString.insert(pathsBitString.end(), startPointBitsVector.begin(), startPointBitsVector.end());
     for (auto& path : paths){
         auto& startEdge = std::get<0>(path);
         std::vector<bool> startBool = intToBool(startEdge,startPointBits);
-        startPointsBitString.insert(startPointsBitString.end(), startBool.begin(), startBool.end());
+        pathsBitString.insert(pathsBitString.end(), startBool.begin(), startBool.end());
         // std::cout << "direction size: " << std::get<2>(path).size() << std::endl;
         // std::cout << "startEdge: " << startEdge << ", path: " << std::endl;
+        // int i = 0;
         // for (bool bit : std::get<2>(path)) {
         //     std::cout << bit;
+        //     if(++i % 3 == 0){
+        //         std::cout << "-";
+        //     }
         // }
         // std::cout << std::endl;
     }
+    for(auto& path : paths){
+        // add direction vector to bitstring, delimited bei 000
+        pathsBitString.insert(pathsBitString.end(), std::get<2>(path).begin(), std::get<2>(path).end());
+    }
+
+    // std::cout << "bits for startpoints: " << startPointBits << std::endl;
+    // std::cout << "paths bitstring: ";
+    // for (bool b : pathsBitString){
+    //     std::cout << b;
+    // }
+    // std::cout << std::endl;
+
+
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     std::cout << "time to set paths: " << duration.count() << "ms" << std::endl;
@@ -212,6 +231,7 @@ PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img){
     for (bool edge : edgeBits01){
         // skip non-multicut edges or previously visited edges ||
         if(!edge){
+            //visited[edgeI] = true;
             edgeI++;
             continue;
         }
@@ -220,6 +240,7 @@ PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img){
             continue;
         }
         //std::cout << std::endl << edgeI;
+        //visited[edgeI] = true;
 
         // dir rausfinden
         // get current direction (either down or right) from current index 
@@ -230,6 +251,9 @@ PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img){
         std::vector<bool> directionVector;
         //directionVector = dfs_paths_recursive(edgeI, visited, currentDir, directionVector);
         directionVector = dfs_paths_iterative(edgeI, currentDir, visited, img, edgeBits01);
+        directionVector.push_back(false);
+        directionVector.push_back(false);
+        directionVector.push_back(false);
         paths.emplace_back(edgeI, currentDir, directionVector);
         //std::cout << "path size: " << directionVector.size() << std::endl;
 

@@ -89,6 +89,7 @@ int main() {
     bool single_image = true;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
+    // showImg = false;
     bool writeToFile = !single_image;
 
     std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";

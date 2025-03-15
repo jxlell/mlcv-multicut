@@ -145,7 +145,7 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     auto start = std::chrono::high_resolution_clock::now();
 
     std::vector<bool> reconstructed_edgeBits(edgeBitsSize, false);
-    int i;
+    int i = 0;
     for(PathInfo pathinfo : paths){
         //std::cout << directionToString(std::get<1>(pathinfo)) << std::endl;
         //printProgressBar(i , paths.size());
@@ -178,8 +178,7 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     //std::cout << "\nreconstruction for edgebits01 finished" << std::endl;
 
     //reconstructed_edgeBits.assign(reconstructed_edgeBits.size(), false);
-
-    andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits_straights, rows, cols);
+    andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits, rows, cols);
     //printColorRegions();
     std::map<int, int> representativeLabels;
     reconstruction.representativeLabeling(representativeLabels);
@@ -251,6 +250,7 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
 void reconstruct_edgeBits_iterative(int currentEdge, Direction currentDir, std::vector<bool>& directionVector, std::vector<bool>& reconstructedEdgeBits, int cols, int rows){
     std::stack<std::pair<int, Direction>> pendingEdges;
     std::queue<bool> directionQueue;
+    std::vector<bool> visited(reconstructedEdgeBits.size(), false);
     for (bool dir : directionVector){
         directionQueue.push(dir);
     }
@@ -259,24 +259,40 @@ void reconstruct_edgeBits_iterative(int currentEdge, Direction currentDir, std::
     while(!pendingEdges.empty()){
         std::tie(currentEdge, currentDir) = pendingEdges.top();
         pendingEdges.pop();
+        if(currentEdge == -1){
+            std::cout << "edge out of bounds" << std::endl;
+            continue;
+        }
         reconstructedEdgeBits[currentEdge] = true;
+        if(visited[currentEdge]){
+            continue;
+        }
+        visited[currentEdge] = true;
+        if(directionQueue.size() == 3){
+            continue;
+        }
+        // check if out of bounds (or visited?)
+        int leftEdge = getNeighbor(currentEdge, currentDir, 0, cols, rows);
+        int forwardEdge = getNeighbor(currentEdge, currentDir, 1, cols, rows);
+        int rightEdge = getNeighbor(currentEdge, currentDir, 2, cols, rows);
+        if(leftEdge == -1 || forwardEdge == -1 || rightEdge == -1 || leftEdge >= reconstructedEdgeBits.size() || forwardEdge >= reconstructedEdgeBits.size() || rightEdge >= reconstructedEdgeBits.size()){
+            continue;
+        }
         bool left = directionQueue.front();
         directionQueue.pop();
         bool forward = directionQueue.front();
         directionQueue.pop();
         bool right = directionQueue.front();
         directionQueue.pop();
-        if(!left && !forward && !right){
-            continue;
-        }
+        
         if(right){
-            pendingEdges.push(std::make_pair(getNeighbor(currentEdge, currentDir, 2, cols, rows), nextDirection(currentDir)));
+            pendingEdges.push(std::make_pair(rightEdge, nextDirection(currentDir)));
         }
         if(forward){
-            pendingEdges.push(std::make_pair(getNeighbor(currentEdge, currentDir, 1, cols, rows), currentDir));
+            pendingEdges.push(std::make_pair(forwardEdge, currentDir));
         }
         if(left){
-            pendingEdges.push(std::make_pair(getNeighbor(currentEdge, currentDir, 0, cols, rows), previousDirection(currentDir)));
+            pendingEdges.push(std::make_pair(leftEdge, previousDirection(currentDir)));
         }
     }
     return;
