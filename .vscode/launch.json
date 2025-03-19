@@ -12,7 +12,7 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb",
-            "preLaunchTask": "build multicut"
+            "preLaunchTask": "build multicut - no optimization"
         }
     ]
 }

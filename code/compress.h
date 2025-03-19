@@ -13,6 +13,7 @@
 struct CompressedImage{
     std::vector<RGB> colorVector;
     PathInfoVector paths;
+    std::vector<bool> pathsBitString;
     cv::Mat originalImage;
     PathInfoVector pathInfoVector2bit;
     RLEVector rleVector;

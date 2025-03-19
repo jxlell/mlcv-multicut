@@ -60,10 +60,10 @@ int main() {
         "icon_512",
         // "photo_kodak",
         // "photo_tecnick",
-        "photo_wikipedia",
+        // "photo_wikipedia",
         // "pngimg",
-        "screenshot_web",
-        "screenshot_game",
+        // "screenshot_web",
+        // "screenshot_game",
         // "textures_photo",
         // "textures_pk",
         // "textures_pk01",
@@ -91,6 +91,7 @@ int main() {
     bool showImg = single_image;
     // showImg = false;
     bool writeToFile = !single_image;
+    writeToFile = false;
 
     std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
     int imgCount = countImgFiles(parentDir, category_set);
@@ -171,53 +172,53 @@ int main() {
 
         }
 
-    std::cout << "\n\n------\n" << (compression_successful ? "✅✅✅" : "❌❌❌") << std::endl << "------\n";
+        std::cout << "\n\n------\n" << (compression_successful ? "✅✅✅" : "❌❌❌") << std::endl << "------\n";
 
 
-    if(!single_image){
-        // WRITE COMPRESSION RATES TO FILE
-        writeToOutput(entry, compression_rates, "compression_rates");
-        //writeToOutput(entry, old_compression_rates, "old_compression_rates");
-        writeToOutput(entry, compression_times, "compression_times");
-        writeToOutput(entry, decompression_times, "decompression_times");
-        //writeToOutput(entry, multicut_percentages, "multicut_percentages");
-        //writeToOutput(entry, disconnected_components, "disconnected_components");
-        //writeToOutput(entry, pixel_sizes, "pixel_sizes");
-        writeToOutput(entry, rle_compression_rates, "rle_compression_rates");
-        //writeToOutput(entry, twobit_paths_amounts, "twobit_paths_amounts");
-        writeToOutput(entry, straights_compress_rates, "straights_compress_rates");
-        writeToOutput(entry, straights_huffman_compress_rates, "straights_huffman_compression_rates");
-    }
+        if(!single_image){
+            // WRITE COMPRESSION RATES TO FILE
+            writeToOutput(entry, compression_rates, "compression_rates");
+            //writeToOutput(entry, old_compression_rates, "old_compression_rates");
+            writeToOutput(entry, compression_times, "compression_times");
+            writeToOutput(entry, decompression_times, "decompression_times");
+            //writeToOutput(entry, multicut_percentages, "multicut_percentages");
+            //writeToOutput(entry, disconnected_components, "disconnected_components");
+            //writeToOutput(entry, pixel_sizes, "pixel_sizes");
+            writeToOutput(entry, rle_compression_rates, "rle_compression_rates");
+            //writeToOutput(entry, twobit_paths_amounts, "twobit_paths_amounts");
+            writeToOutput(entry, straights_compress_rates, "straights_compress_rates");
+            writeToOutput(entry, straights_huffman_compress_rates, "straights_huffman_compression_rates");
+        }
 
 
-    // std::ofstream total_file("code/total_csv.csv");
-    // if(total_file){
-    //     total_file << 
-    // }
+        // std::ofstream total_file("code/total_csv.csv");
+        // if(total_file){
+        //     total_file << 
+        // }
 
-    compression_rates_total.insert(compression_rates_total.end(), compression_rates.begin(), compression_rates.end());
-    compression_rates.clear();
+        compression_rates_total.insert(compression_rates_total.end(), compression_rates.begin(), compression_rates.end());
+        compression_rates.clear();
 
-    old_compression_rates_total.insert(old_compression_rates_total.end(), old_compression_rates.begin(), old_compression_rates.end());
-    old_compression_rates.clear();
+        old_compression_rates_total.insert(old_compression_rates_total.end(), old_compression_rates.begin(), old_compression_rates.end());
+        old_compression_rates.clear();
 
-    compression_times_total.insert(compression_times_total.end(), compression_times.begin(), compression_times.end());
-    compression_times.clear();
+        compression_times_total.insert(compression_times_total.end(), compression_times.begin(), compression_times.end());
+        compression_times.clear();
 
-    decompression_times_total.insert(decompression_times_total.end(), decompression_times.begin(), decompression_times.end());
-    decompression_times.clear();
+        decompression_times_total.insert(decompression_times_total.end(), decompression_times.begin(), decompression_times.end());
+        decompression_times.clear();
 
-    rle_compression_rates_total.insert(rle_compression_rates_total.end(), rle_compression_rates.begin(), rle_compression_rates.end());
-    rle_compression_rates.clear();
+        rle_compression_rates_total.insert(rle_compression_rates_total.end(), rle_compression_rates.begin(), rle_compression_rates.end());
+        rle_compression_rates.clear();
 
-    straights_compress_rates_total.insert(straights_compress_rates_total.end(), straights_compress_rates.begin(), straights_compress_rates.end());
-    straights_compress_rates.clear();
+        straights_compress_rates_total.insert(straights_compress_rates_total.end(), straights_compress_rates.begin(), straights_compress_rates.end());
+        straights_compress_rates.clear();
 
-    straights_huffman_compress_rates_total.insert(straights_huffman_compress_rates_total.end(), straights_huffman_compress_rates.begin(), straights_huffman_compress_rates.end());
-    straights_huffman_compress_rates.clear();
-    // multicut_percentages.clear();
-    // disconnected_components.clear();
-    pixel_sizes.clear();
+        straights_huffman_compress_rates_total.insert(straights_huffman_compress_rates_total.end(), straights_huffman_compress_rates.begin(), straights_huffman_compress_rates.end());
+        straights_huffman_compress_rates.clear();
+        // multicut_percentages.clear();
+        // disconnected_components.clear();
+        pixel_sizes.clear();
     }
 
     if(writeToFile){

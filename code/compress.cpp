@@ -37,19 +37,19 @@ CompressedImage compress(const std::string& imagePath){
     //getAnomalies(edgeBits01, img);
 
     int startPointBits = std::ceil(std::log2(edgeBits01.size()));
-    std::cout << "startPointBits: " << startPointBits << std::endl;
+    // std::cout << "startPointBits: " << startPointBits << std::endl;
     
     int bits = 0;
 
     regionColors = setRegions(img, neighborsOffsets, img.cols * img.rows);
-    std::cout << "size of regionColors: " << regionColors.size() << std::endl;
+    // std::cout << "size of regionColors: " << regionColors.size() << std::endl;
     std::set<RGB, RGBComparator> regionColorsSet;
     for (auto color : regionColors) {
         regionColorsSet.insert(color);
     }
-    std::cout << "Number of unique colors: " << regionColorsSet.size() << std::endl;
+    // std::cout << "Number of unique colors: " << regionColorsSet.size() << std::endl;
     auto regionColorBitString = boolVectorFromRGBVector(regionColors);
-    std::cout << "size of regionColorBitString: " << regionColorBitString.size() << std::endl;
+    // std::cout << "size of regionColorBitString: " << regionColorBitString.size() << std::endl;
     //calculate old compression rate
     bits += calculateBoolVectorStorage(regionColorBitString) + 24*8;
     bits += edgeBits01.size() + 24*8;
@@ -60,10 +60,27 @@ CompressedImage compress(const std::string& imagePath){
     auto start = std::chrono::high_resolution_clock::now();
     paths = setPaths(edgeBits01, img);
     //set bitstring for paths 
-    int disconnectedComponentsBits = std::ceil(std::log2(img.cols * img.rows / 2));
+
+    std::vector<bool> cols_bitstring = intToBool(img.cols, 16);
+    std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
+    pathsBitString.insert(pathsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
+    pathsBitString.insert(pathsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
+
+    // std::cout << "region color bitstring size: " << regionColorBitString.size()/24 << std::endl;
+    int regionColorsInt = regionColorBitString.size()/24;
+    int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows));
+    std::cout << "region color bits size: " << regionColorBitsSize << std::endl;
+    std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
+    pathsBitString.insert(pathsBitString.end(), regionColorBits.begin(), regionColorBits.end());
+    pathsBitString.insert(pathsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
+
+
+    //int disconnectedComponentsBits = std::ceil(std::log2(img.cols * img.rows / 2));
+    int disconnectedComponentsBits = std::ceil(img.cols/2) * std::ceil(img.rows/2);
+    std::cout << "paths size: " << paths.size() << std::endl;
     std::vector<bool> numberOfDisconnectedComponents = intToBool(paths.size(), disconnectedComponentsBits);
     std::vector<bool> startPointBitsVector = intToBool(startPointBits, 5);
-    // add numner of components to bitstring
+    // add number of components to bitstring
     pathsBitString.insert(pathsBitString.end(), numberOfDisconnectedComponents.begin(), numberOfDisconnectedComponents.end());
     // add number of bits for start points to bitstring
     pathsBitString.insert(pathsBitString.end(), startPointBitsVector.begin(), startPointBitsVector.end());
@@ -83,7 +100,7 @@ CompressedImage compress(const std::string& imagePath){
         // std::cout << std::endl;
     }
     for(auto& path : paths){
-        // add direction vector to bitstring, delimited bei 000
+        // add direction vector to bitstring, delimited by 000
         pathsBitString.insert(pathsBitString.end(), std::get<2>(path).begin(), std::get<2>(path).end());
     }
 
@@ -93,6 +110,8 @@ CompressedImage compress(const std::string& imagePath){
     //     std::cout << b;
     // }
     // std::cout << std::endl;
+
+    std::cout << "paths bitstring size: " << pathsBitString.size() << std::endl;
 
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -106,6 +125,10 @@ CompressedImage compress(const std::string& imagePath){
         bits += std::get<2>(path).size();
         bits += 24*8; // overhead
     }
+    // add bits for cols and rows integers
+    bits += 16 + 24*8; // 32 bits for cols
+    bits += 16 + 24*8; // 32 bits for rows
+    std::cout << "bits for paths: " << bits << std::endl;
     double pathCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
     std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;
 
@@ -139,6 +162,7 @@ CompressedImage compress(const std::string& imagePath){
         bits += std::get<2>(path).size();
         bits += 24*8; // overhead 
     }
+
     // pathCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
     // std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;
 
@@ -163,7 +187,7 @@ CompressedImage compress(const std::string& imagePath){
     // std::cout << "Straights Compression Rate: " << straightsCompressionRate << std::endl;
 
 
-    return {regionColors, paths, img, paths_2bit, rle_paths, straights, 
+    return {regionColors, paths, pathsBitString, img, paths_2bit, rle_paths, straights, 
     regionColorBitString, straightsHuffmanCodesBitString, 
     straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies,
     pathCompressionRate, rleCompressionRate ,oldCompressionRate,straightsCompressionRate,straightsHuffmanCompressionRate};
