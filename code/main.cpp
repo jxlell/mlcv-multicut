@@ -57,7 +57,7 @@ int main() {
 
     std::unordered_set<std::string> category_set = {
         "icon_64",
-        "icon_512",
+        // "icon_512",
         // "photo_kodak",
         // "photo_tecnick",
         // "photo_wikipedia",
@@ -86,7 +86,7 @@ int main() {
     inputFile.close();
 
     // control parameters 
-    bool single_image = true;
+    bool single_image = false;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
     // showImg = false;
@@ -175,7 +175,7 @@ int main() {
         std::cout << "\n\n------\n" << (compression_successful ? "✅✅✅" : "❌❌❌") << std::endl << "------\n";
 
 
-        if(!single_image){
+        if(writeToFile){
             // WRITE COMPRESSION RATES TO FILE
             writeToOutput(entry, compression_rates, "compression_rates");
             //writeToOutput(entry, old_compression_rates, "old_compression_rates");

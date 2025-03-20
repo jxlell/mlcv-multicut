@@ -65,7 +65,6 @@ CompressedImage compress(const std::string& imagePath){
     std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
     pathsBitString.insert(pathsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
     pathsBitString.insert(pathsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
-
     // std::cout << "region color bitstring size: " << regionColorBitString.size()/24 << std::endl;
     int regionColorsInt = regionColorBitString.size()/24;
     int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows));
@@ -76,9 +75,10 @@ CompressedImage compress(const std::string& imagePath){
 
 
     //int disconnectedComponentsBits = std::ceil(std::log2(img.cols * img.rows / 2));
-    int disconnectedComponentsBits = std::ceil(img.cols/2) * std::ceil(img.rows/2);
+    int disconnectedComponentsBits = std::log2(std::ceil(img.cols/2) * std::ceil(img.rows/2));
     std::cout << "paths size: " << paths.size() << std::endl;
     std::vector<bool> numberOfDisconnectedComponents = intToBool(paths.size(), disconnectedComponentsBits);
+    std::cout << "disconnected comp bits: " << disconnectedComponentsBits << std::endl;
     std::vector<bool> startPointBitsVector = intToBool(startPointBits, 5);
     // add number of components to bitstring
     pathsBitString.insert(pathsBitString.end(), numberOfDisconnectedComponents.begin(), numberOfDisconnectedComponents.end());
@@ -128,7 +128,8 @@ CompressedImage compress(const std::string& imagePath){
     // add bits for cols and rows integers
     bits += 16 + 24*8; // 32 bits for cols
     bits += 16 + 24*8; // 32 bits for rows
-    std::cout << "bits for paths: " << bits << std::endl;
+    // std::cout << "bits for paths: " << bits << std::endl;
+
     double pathCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
     std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;
 

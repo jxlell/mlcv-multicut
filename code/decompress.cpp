@@ -63,15 +63,9 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     }
     pathsBitStringStr = pathsBitStringStr.substr(regionColorBitStringStr.size());
 
-    // Calculate compression rates
-    int originalSize = rows * cols * 24; // Assuming 24 bits per pixel for the original image
-    int compressedSize = pathsBitString.size() + regionColorBitString.size();
-
-    double compressionRate = (double)compressedSize / originalSize;
-    std::cout << "Compression Rate: " << compressionRate << std::endl;
 
     //int disconnectedComponentsBits = std::ceil(std::log2(cols * rows / 2));
-    int disconnectedComponentsBits = std::ceil(cols_int/2) * std::ceil(rows_int/2);
+    int disconnectedComponentsBits = std::log2(std::ceil(cols_int/2) * std::ceil(rows_int/2));
 
     // std::cout << "Paths bitstring: " << pathsBitStringStr << std::endl;
     std::string numberOfComponentsStr = pathsBitStringStr.substr(0,disconnectedComponentsBits);
@@ -316,22 +310,6 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     
     //printSize();
     bool success = areImagesIdentical(originalImg, image);
-    // Compare pixel colors between original and reconstructed images
-    int differingPixels = 0;
-    for (int y = 0; y < rows; ++y) {
-        for (int x = 0; x < cols; ++x) {
-            cv::Vec3b originalPixel = originalImg.at<cv::Vec3b>(y, x);
-            cv::Vec3b reconstructedPixel = image.at<cv::Vec3b>(y, x);
-            if (originalPixel != reconstructedPixel) {
-                differingPixels++;
-                std::cout << "Pixel mismatch at (" << y << ", " << x << "): "
-                          << "Original: (" << (int)originalPixel[2] << ", " << (int)originalPixel[1] << ", " << (int)originalPixel[0] << "), "
-                          << "Reconstructed: (" << (int)reconstructedPixel[2] << ", " << (int)reconstructedPixel[1] << ", " << (int)reconstructedPixel[0] << ")" 
-                          << std::endl;
-            }
-        }
-    }
-    std::cout << "Total differing pixels: " << differingPixels << std::endl;
     std::cout << (success ? "✅" : "❌") << std::endl;
     
     if(showImg){
