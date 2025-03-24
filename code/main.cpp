@@ -32,6 +32,7 @@ int main() {
     vector<double> rle_compression_rates;
     vector<double> straights_compress_rates;
     vector<double> straights_huffman_compress_rates;
+    vector<double> newEdgeBitsCompressionRates;
     vector<long long> compression_times;
     vector<long long> decompression_times;
     vector<double> multicut_percentages;
@@ -44,6 +45,7 @@ int main() {
     vector<double> rle_compression_rates_total;
     vector<double> straights_compress_rates_total;
     vector<double> straights_huffman_compress_rates_total;
+    vector<double> newEdgeBitsCompressionRates_total;
     vector<long long> compression_times_total;
     vector<long long> decompression_times_total;
     vector<double> multicut_percentages_total;
@@ -90,8 +92,8 @@ int main() {
     string single_image_name = single_image_txt;
     bool showImg = single_image;
     // showImg = false;
-    bool writeToFile = !single_image;
-    writeToFile = false;
+    bool writeToFile = false;
+    //writeToFile = !single_image;
 
     std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
     int imgCount = countImgFiles(parentDir, category_set);
@@ -142,6 +144,7 @@ int main() {
             //compression_rates_total.push_back(compression_rate);
 
             old_compression_rates.push_back(compImg.oldCompressionRate);
+            newEdgeBitsCompressionRates.push_back(compImg.newEdgeBitsCompressionRate);
             //old_compression_rates_total.push_back(compImg.oldCompressionRate);
 
             rle_compression_rates.push_back(compImg.rleCompressionRate);
@@ -202,6 +205,9 @@ int main() {
         old_compression_rates_total.insert(old_compression_rates_total.end(), old_compression_rates.begin(), old_compression_rates.end());
         old_compression_rates.clear();
 
+        newEdgeBitsCompressionRates_total.insert(newEdgeBitsCompressionRates_total.end(), newEdgeBitsCompressionRates.begin(), newEdgeBitsCompressionRates.end());
+        newEdgeBitsCompressionRates.clear();
+
         compression_times_total.insert(compression_times_total.end(), compression_times.begin(), compression_times.end());
         compression_times.clear();
 
@@ -239,7 +245,7 @@ int main() {
         //             << compression_rates_total[i] << "\n";
         // }
 
-        csvFile << "filename,category,old_rate,path_rate,rle_rate,straights_rate,straights_huffman_rate,comp_time,decomp_time\n";
+        csvFile << "filename,category,old_rate,path_rate,rle_rate,straights_rate,straights_huffman_rate,new_edgebits_rate,comp_time,decomp_time\n";
         for (size_t i = 0; i < filenames.size(); ++i) {
             csvFile << filenames[i] << ","
                     << categories[i] << ","
@@ -249,6 +255,7 @@ int main() {
                     << rle_compression_rates_total[i] << ","
                     << straights_compress_rates_total[i] << ","
                     << straights_huffman_compress_rates_total[i] << ","
+                    << newEdgeBitsCompressionRates_total[i] << ","
                     << compression_times_total[i] << ","
                     << decompression_times_total[i] << "\n";
                     // << kBSizes[i] << ","

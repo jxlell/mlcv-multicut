@@ -30,7 +30,28 @@ CompressedImage compress(const std::string& imagePath){
     HuffmanNode* root; 
     std::vector<uint16_t> straightLengthsList;
     std::vector<uint32_t> straightLengthFrequencies;
+
     edgeBits01 = setEdgeBits(img, edgeBits01, neighborsOffsets);
+    std::vector<bool> verticalBits;
+    std::vector<bool> horizontalBits;
+    std::vector<bool> reducedHoroizontalBits;
+    std::vector<bool> reducedVerticalBits;
+    //std::vector<bool> verticalBits = setVerticalBits(img);
+    horizontalBits = setHorizontalBits(img);
+    // std::cout << "horizontal bits: ";
+    // for (bool b : horizontalBits){
+    //     std::cout << b;
+    // }
+    // std::cout << std::endl;
+    //reducedHoroizontalBits = reduceHorizontalBits(img);
+    reducedVerticalBits = reduceVerticalBits(img, edgeBits01);
+    // std::cout << "reduced verticals: ";
+    // for (bool b : reducedVerticalBits){
+    //     std::cout << b;
+    // }
+    // std::cout << std::endl;
+
+
     // double multicutPercentage = getMulticutPercentage(edgeBits01);
     // std::cout << "Percentage of edge bits set to 1: " << multicutPercentage << "%" << std::endl;
     
@@ -51,11 +72,18 @@ CompressedImage compress(const std::string& imagePath){
     auto regionColorBitString = boolVectorFromRGBVector(regionColors);
     // std::cout << "size of regionColorBitString: " << regionColorBitString.size() << std::endl;
     //calculate old compression rate
-    bits += calculateBoolVectorStorage(regionColorBitString) + 24*8;
-    bits += edgeBits01.size() + 24*8;
+    bits += calculateBoolVectorStorage(regionColorBitString);
+    bits += edgeBits01.size();
+    bits += 32;
     //TODO: ensure bits != 0
     double oldCompressionRate = static_cast<double>(img.rows*img.cols*24) / bits;
     // std::cout << "Old Compression Rate: " << oldCompressionRate << std::endl;
+
+    bits = 0;
+    bits += calculateBoolVectorStorage(regionColorBitString);
+    bits += horizontalBits.size() + reducedVerticalBits.size();
+    bits += 32;
+    double newEdgeBitsCompressionRate = static_cast<double>(img.rows*img.cols*24) / bits;
 
     auto start = std::chrono::high_resolution_clock::now();
     paths = setPaths(edgeBits01, img);
@@ -131,6 +159,7 @@ CompressedImage compress(const std::string& imagePath){
     // std::cout << "bits for paths: " << bits << std::endl;
 
     double pathCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
+    pathCompressionRate = (img.rows * img.cols * 24) / (double)pathsBitString.size();
     std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;
 
     auto _2bitpaths = set2BitPaths(edgeBits01, img);
@@ -188,10 +217,11 @@ CompressedImage compress(const std::string& imagePath){
     // std::cout << "Straights Compression Rate: " << straightsCompressionRate << std::endl;
 
 
-    return {regionColors, paths, pathsBitString, img, paths_2bit, rle_paths, straights, 
+    return {regionColors, edgeBits01, paths, pathsBitString, img, paths_2bit, rle_paths, straights, 
     regionColorBitString, straightsHuffmanCodesBitString, 
     straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies,
-    pathCompressionRate, rleCompressionRate ,oldCompressionRate,straightsCompressionRate,straightsHuffmanCompressionRate};
+    horizontalBits, reducedVerticalBits,
+    pathCompressionRate, rleCompressionRate ,oldCompressionRate,straightsCompressionRate,straightsHuffmanCompressionRate, newEdgeBitsCompressionRate};
 }
 
 
@@ -230,6 +260,76 @@ std::vector<bool> setEdgeBits(cv::Mat img, std::vector<bool> edgeBits01, std::ve
     }
 
     return edgeBits01;
+}
+
+std::vector<bool> setVerticalBits(cv::Mat img){
+    std::vector<bool> verticalBits;
+    int vertices = img.cols * img.rows;
+    RGB previousColor = getVertexColor(0, vertices, img);
+    RGB currentColor;
+    for(int v = 1; v < vertices; v++){
+        if(v % img.cols == 0){
+            previousColor = getVertexColor(v, vertices, img);
+            continue;
+        }
+        currentColor = getVertexColor(v, vertices, img);
+        verticalBits.push_back(!compareRGB(previousColor, currentColor));
+        previousColor = currentColor;
+    }
+    return verticalBits;
+}
+
+std::vector<bool> reduceVerticalBits(cv::Mat img, std::vector<bool>& edgeBits01){
+    std::vector<bool> reducedVerticalBits;
+    int cols = img.cols;
+    int rows = img.rows;
+    int currentCol = 0;
+    int currentEdge = 1;
+    int previousEdge;
+    reducedVerticalBits.push_back(edgeBits01[1]);
+    while(true){
+        if(currentEdge == edgeBits01.size()-1 || currentEdge >= edgeBits01.size()){
+            break;
+        }
+        if(currentEdge > edgeBits01.size() - cols){
+            currentCol+=2;
+            currentEdge = currentCol+1;
+            // if(edgeBits01[currentEdge] != reducedVerticalBits.back()){
+            //     reducedVerticalBits.push_back(edgeBits01[currentEdge]);
+            // }
+            reducedVerticalBits.push_back(edgeBits01[currentEdge]);
+        }
+        bool left = edgeBits01[getNeighbor(currentEdge, Direction::DOWN, 0, cols, rows)];
+        bool right = edgeBits01[getNeighbor(currentEdge, Direction::DOWN, 2, cols, rows)];
+        bool front = edgeBits01[getNeighbor(currentEdge, Direction::DOWN, 1, cols, rows)];
+        if(left || right){
+            reducedVerticalBits.push_back(front);
+        }
+        currentEdge = getNeighbor(currentEdge, Direction::DOWN, 1, cols, rows);
+        //TODO: evtl. bug durch return werte von getNeighbor (gibt auch manchmal -5 zurück o.ä.)
+        
+
+    }
+
+    return reducedVerticalBits;
+}
+
+std::vector<bool> setHorizontalBits(cv::Mat img){
+    std::vector<bool> horizontalBits;
+    int vertices = img.cols * img.rows;
+    RGB previousColor = getVertexColor(0, vertices, img, true);
+    RGB currentColor;
+    for(int v = 1; v < vertices; v++){
+        if(v % img.rows == 0){
+            previousColor = getVertexColor(v, vertices, img, true);
+            // horizontalBits.push_back(true);
+            continue;
+        }
+        currentColor = getVertexColor(v, vertices, img, true);
+        horizontalBits.push_back(!compareRGB(previousColor, currentColor));
+        previousColor = currentColor;
+    }
+    return horizontalBits;
 }
 
 std::vector<RGB> setRegions(cv::Mat img, std::vector<int> neighborsOffsets, int vertices){

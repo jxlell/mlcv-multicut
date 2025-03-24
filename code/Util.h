@@ -18,6 +18,8 @@ int getNeighbor(int currentEdge, Direction currentDirection, int neighborIndex, 
 Direction nextDirection(Direction dir);
 Direction previousDirection(Direction dir);
 int getEdgeBitFromList(int v, int w, std::vector<bool>& edgebitsvector, int rows, int cols);
+int mapVerticalToEdgebitsIndex(int verticalIndex, int cols, int rows);
+int mapHorizontalToEdgebitsIndex(int horizontalIndex, int cols, int rows);
 void printProgressBar(int progress, int total);
 Direction getDirectionFromIndex(int index, int row, int col);
 std::string directionToString(Direction dir);

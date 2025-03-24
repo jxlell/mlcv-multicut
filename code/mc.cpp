@@ -7,10 +7,14 @@
 
 
 
-RGB getVertexColor(int v, int vertices, cv::Mat img) {
+RGB getVertexColor(int v, int vertices, cv::Mat img, bool invert) {
     if (v >= 0 && v < vertices) {
         int x = v % img.cols;
         int y = v / img.cols;
+        if(invert){
+            x = v / img.rows;
+            y = v % img.rows;
+        }
         cv::Vec3b pixel = img.at<cv::Vec3b>(y, x);
         return {pixel[2], pixel[1], pixel[0]};
     } else {

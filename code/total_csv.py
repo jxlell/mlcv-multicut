@@ -36,16 +36,18 @@ def plot_compression_rates(csv_file, category_filter=None):
     rle_rates = df_sorted['rle_rate']
     straights_rates = df_sorted['straights_rate']
     straights_huffman_rates = df_sorted['straights_huffman_rate']
+    new_edgebits_rates = df_sorted['new_edgebits_rate']
 
     plt.figure(figsize=(12, 6))
     plt.scatter(filenames, old_rates, label='Old Rate', marker='x', alpha=1, s=3) #scatter
     #plt.plot(filenames, old_rates, label='Old Rate', marker='o') #line plot
-    plt.scatter(filenames, path_rates, label='Path Rate', marker='o', s=3)
-    plt.scatter(filenames, rle_rates, label='RLE Rate', marker='o', s=3)
-    plt.scatter(filenames, straights_rates, label='Straights Rate', marker='x', alpha=1, s=3) #scatter
-    plt.scatter(filenames, straights_huffman_rates, label='Straights Huffman Rate', marker='x', alpha=1, s=3)
+    # plt.scatter(filenames, path_rates, label='Path Rate', marker='o', s=3)
+    # plt.scatter(filenames, rle_rates, label='RLE Rate', marker='o', s=3)
+    # plt.scatter(filenames, straights_rates, label='Straights Rate', marker='x', alpha=1, s=3) #scatter
+    # plt.scatter(filenames, straights_huffman_rates, label='Straights Huffman Rate', marker='x', alpha=1, s=3)
+    plt.scatter(filenames, new_edgebits_rates, label='new edgebits rates', marker='x', alpha=1, s=3)
     plt.xticks([])
-    plt.yscale('log')
+    # plt.yscale('log')
 
     plt.xlabel('Filename (Sorted by Old Rate)')
     plt.ylabel('Compression Rate')

@@ -12,6 +12,7 @@
 
 struct CompressedImage{
     std::vector<RGB> colorVector;
+    std::vector<bool> edgeBits01;
     PathInfoVector paths;
     std::vector<bool> pathsBitString;
     cv::Mat originalImage;
@@ -24,17 +25,24 @@ struct CompressedImage{
     HuffmanNode* root; 
     std::vector<uint16_t> straightLengthsList;
     std::vector<uint32_t> straightLengthFrequencies;
+    std::vector<bool> horizontalBits;
+    std::vector<bool> reducedVerticalBits;
 
     double pathCompressionRate;
     double rleCompressionRate;
     double oldCompressionRate;
     double straightsCompressionRate;
     double straightsHuffmanCompressionRate; 
+    double newEdgeBitsCompressionRate;
 };
 
 //std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights, std::vector<bool>> compress(const std::string& imagePath);
 CompressedImage compress(const std::string& imagePath);
 std::vector<bool> setEdgeBits(cv::Mat img, std::vector<bool> edgeBits01, std::vector<int> neighborsOffsets);
+std::vector<bool> setVerticalBits(cv::Mat img);
+std::vector<bool> reduceVerticalBits(cv::Mat img, std::vector<bool>& edgeBits01);
+std::vector<bool> reduceHorizontalBits(cv::Mat img, std::vector<bool>& edgeBits01);
+std::vector<bool> setHorizontalBits(cv::Mat img);
 PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img);
 std::tuple<PathInfoVector, RLEVector> set2BitPaths(std::vector<bool> edgeBits01, cv::Mat img);
 std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, std::vector<uint16_t>, std::vector<uint32_t>> setStraights(std::vector<bool> edgeBits01, cv::Mat img);

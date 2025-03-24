@@ -76,7 +76,7 @@ int getNeighbor(int currentEdge, Direction currentDir, int neighborIndex, int co
     }
     
     //return edgeBits01[currentEdge + edgeOffsets[neighborIndex]];
-    return currentEdge + edgeOffsets[neighborIndex];
+    return std::max(-1,currentEdge + edgeOffsets[neighborIndex]);
 }
 
 Direction nextDirection(Direction dir) {
@@ -362,4 +362,24 @@ int countDirectImgFiles(const std::filesystem::path& parentDir) {
         }
     }
     return count;
+}
+
+int mapHorizontalToEdgebitsIndex(int verticalIndex, int cols, int rows){
+    int row = verticalIndex / (rows - 1);
+    int col = verticalIndex % (rows - 1);
+
+    int edgebitsIndex = 0;
+    edgebitsIndex = (cols - 1 + rows) * row * (col + 1);
+
+    return edgebitsIndex;
+}
+
+int mapVerticalToEdgebitsIndex(int verticalIndex, int cols, int rows){
+    int row = verticalIndex / (rows - 1);
+    int col = verticalIndex % (rows - 1);
+
+    int edgebitsIndex = 0;
+    edgebitsIndex = (cols - 1 + rows) * row * (col + 1) + cols - 1;
+
+    return edgebitsIndex;
 }

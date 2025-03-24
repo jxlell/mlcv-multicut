@@ -15,6 +15,7 @@
 
 bool reconstructImage(CompressedImage compImg, bool showImg){
     cv::Mat originalImg = compImg.originalImage;
+    std::vector<bool> edgeBits01 = compImg.edgeBits01;
     std::vector<RGB> regionColors = compImg.colorVector;
     PathInfoVector paths = compImg.paths;
     std::vector<bool> pathsBitString = compImg.pathsBitString;
@@ -29,6 +30,8 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     HuffmanNode* root = compImg.root;
     std::vector<uint16_t> straightLengthsList = compImg.straightLengthsList;
     std::vector<uint32_t> straightLengthFrequencies = compImg.straightLengthFrequencies;
+    std::vector<bool> horizontalBits = compImg.horizontalBits;
+    std::vector<bool> reducedVerticalBits = compImg.reducedVerticalBits;
 
     
     cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
@@ -44,6 +47,8 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
 
     std::cout << "length of pathsBitStringStr: " << pathsBitStringStr.size() << std::endl;
     std::cout << "bitstring compression rate: " << (rows * cols * 24) / (double)pathsBitStringStr.size() << std::endl;
+
+    std::cout << "improvement over old edgebits: " << ((double)edgeBits01.size() / (double)(horizontalBits.size() + reducedVerticalBits.size()) - 1);
 
     std::string cols_str = pathsBitStringStr.substr(0, 16);
     int cols_int = std::stoi(cols_str, nullptr, 2);
@@ -228,7 +233,7 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    std::vector<bool> reconstructed_edgeBits(edgeBitsSize, false);
+    std::vector<bool> reconstructed_edgeBits_from_paths(edgeBitsSize, false);
     int i = 0;
 
     std::vector<bool> visited(edgeBitsSize, false);
@@ -239,11 +244,14 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
         int startEdge = std::get<0>(pathinfo);
         //Direction calculated just based on the index, no need to pass it as an argument
         Direction currentDir = getDirectionFromIndex(startEdge, rows, cols);
-        reconstruct_edgeBits_iterative(startEdge, currentDir, std::get<2>(pathinfo), reconstructed_edgeBits, cols, rows, visited);
+        reconstruct_edgeBits_iterative(startEdge, currentDir, std::get<2>(pathinfo), reconstructed_edgeBits_from_paths, cols, rows, visited);
         directionBitsSize += std::get<2>(pathinfo).size();
         //break;
         i++;
     }
+
+    //reconstruct edgebits from horizontals/verticals
+    std::vector<bool> reconstructed_edgeBits_horizontals = reconstruct_edgeBits_from_Horizontals(horizontalBits, reducedVerticalBits, cols, rows);
 
     // reconstruct from 2-bit paths
     std::vector<bool> reconstructed_edgeBits_2bits = reconstruct_edgeBits2bits(paths_2bit, edgeBitsSize, cols, rows);
@@ -264,7 +272,7 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     //std::cout << "\nreconstruction for edgebits01 finished" << std::endl;
 
     //reconstructed_edgeBits.assign(reconstructed_edgeBits.size(), false);
-    andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits, rows, cols);
+    andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits_horizontals, rows, cols);
     //printColorRegions();
     std::map<int, int> representativeLabels;
     reconstruction.representativeLabeling(representativeLabels);
@@ -434,4 +442,61 @@ std::vector<bool> reconstructStraights(Straights straights, int edgeBitsSize, in
         }
     }
     return reconstructed_edgeBits_straights;
+}
+
+
+std::vector<bool> reconstruct_edgeBits_from_Horizontals(std::vector<bool>& horizontalBits, std::vector<bool>& reducedVerticals, int cols, int rows){
+    std::vector<bool> reconstructed_edgeBits(rows * (cols - 1) + cols * (rows - 1), false);
+
+    int row = 0;
+    int col = 0;
+    int reducedVerticalIndex = 0;
+    int verticalIndex = 0;
+    int edgebitsIndex = 1;
+    
+    //reconstructed_edgeBits[1] = reducedVerticals[0];
+    while(true){
+        if(col == cols - 1){
+            break;
+        }
+
+        //edgebitsIndex = mapVerticalToEdgebitsIndex(verticalIndex, cols, rows);
+        reconstructed_edgeBits[edgebitsIndex] = reducedVerticals[reducedVerticalIndex];
+        edgebitsIndex = getNeighbor(edgebitsIndex, Direction::DOWN, 1, cols, rows);
+
+        if(row == rows - 1){
+            row = 0;
+            col++;
+            reducedVerticalIndex++;
+            verticalIndex++;
+            edgebitsIndex = col * 2 + 1;
+            continue;
+        }
+
+        int leftI = row + (rows-1) * col;
+        int rightI = row + (rows-1) * (col + 1);
+        bool left = horizontalBits[leftI];
+        bool right = horizontalBits[rightI];
+
+        if(left || right){
+            reducedVerticalIndex++;
+        }
+
+        verticalIndex++;
+        row++;
+        
+    }
+
+    // set known horizontal bits in edgebitmap
+    int horizontalIndex = 0;
+    for (int col = 0; col < cols; col++){
+        for (int row = 0; row < rows - 1; row++){
+            int edgeIndex = row * (cols * 2 - 1) + col * 2;
+            reconstructed_edgeBits[edgeIndex] = horizontalBits[horizontalIndex];
+            horizontalIndex++;
+        }
+    }
+
+
+    return reconstructed_edgeBits;
 }
