@@ -77,7 +77,7 @@ CompressedImage compress(const std::string& imagePath){
     bits += 32;
     //TODO: ensure bits != 0
     double oldCompressionRate = static_cast<double>(img.rows*img.cols*24) / bits;
-    // std::cout << "Old Compression Rate: " << oldCompressionRate << std::endl;
+    std::cout << "Old Compression Rate: " << oldCompressionRate << std::endl;
 
     bits = 0;
     bits += calculateBoolVectorStorage(regionColorBitString);
@@ -103,7 +103,7 @@ CompressedImage compress(const std::string& imagePath){
 
 
     //int disconnectedComponentsBits = std::ceil(std::log2(img.cols * img.rows / 2));
-    int disconnectedComponentsBits = std::log2(std::ceil(img.cols/2) * std::ceil(img.rows/2));
+    int disconnectedComponentsBits = std::log2(std::ceil(static_cast<double>(img.cols)/2) * std::ceil(static_cast<double>(img.rows)/2));
     std::cout << "paths size: " << paths.size() << std::endl;
     std::vector<bool> numberOfDisconnectedComponents = intToBool(paths.size(), disconnectedComponentsBits);
     std::cout << "disconnected comp bits: " << disconnectedComponentsBits << std::endl;
@@ -121,9 +121,9 @@ CompressedImage compress(const std::string& imagePath){
         // int i = 0;
         // for (bool bit : std::get<2>(path)) {
         //     std::cout << bit;
-        //     if(++i % 3 == 0){
-        //         std::cout << "-";
-        //     }
+        //     // if(++i % 3 == 0){
+        //     //     std::cout << "-";
+        //     // }
         // }
         // std::cout << std::endl;
     }
@@ -376,9 +376,9 @@ PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img){
         std::vector<bool> directionVector;
         //directionVector = dfs_paths_recursive(edgeI, visited, currentDir, directionVector);
         directionVector = dfs_paths_iterative(edgeI, currentDir, visited, img, edgeBits01);
-        directionVector.push_back(false);
-        directionVector.push_back(false);
-        directionVector.push_back(false);
+        // directionVector.push_back(false);
+        // directionVector.push_back(false);
+        // directionVector.push_back(false);
         paths.emplace_back(edgeI, currentDir, directionVector);
         //std::cout << "path size: " << directionVector.size() << std::endl;
 

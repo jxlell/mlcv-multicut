@@ -53,7 +53,7 @@ std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std
     std::stack<std::pair<int, Direction>> pendingEdges;
     int vecIndex = 0;
     pendingEdges.push(std::make_pair(currentEdge, currentDir));
-    //visited[currentEdge] = true;
+    visited[currentEdge] = true;
     bool left, front, right;
     while(!pendingEdges.empty()){
         left = false;
@@ -68,10 +68,10 @@ std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std
         int neighborFront = getNeighbor(currentEdge, currentDir, 1, cols, rows);
         int neighborRight = getNeighbor(currentEdge, currentDir, 2, cols, rows);
 
-        if(visited[currentEdge]){
-            continue;
-        }
-        visited[currentEdge] = true;
+        // if(visited[currentEdge]){
+        //     continue;
+        // }
+        // visited[currentEdge] = true;
         
         //TODO: push 000 und continue falls nächste edges nicht multicut oder schon visited 
         if(neighborLeft == -1 || neighborFront == -1 || neighborRight == -1 || neighborLeft >= edgeBits01.size() || neighborFront >= edgeBits01.size() || neighborRight >= edgeBits01.size()){
@@ -85,15 +85,25 @@ std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std
             continue;
         }
 
-        
-
-
-        left = edgeBits01[neighborLeft];
-        front = edgeBits01[neighborFront];
-        right = edgeBits01[neighborRight];
-        directionVector.push_back(left);
-        directionVector.push_back(front);
-        directionVector.push_back(right);
+    
+        left = false;
+        if(!visited[neighborLeft]){
+            left = edgeBits01[neighborLeft];
+            directionVector.push_back(left);
+            visited[neighborLeft] = true;
+        }
+        front = false;
+        if(!visited[neighborFront]){
+            front = edgeBits01[neighborFront];
+            directionVector.push_back(front);
+            visited[neighborFront] = true;
+        }
+        right = false;
+        if(!visited[neighborRight]){
+            right = edgeBits01[neighborRight];
+            directionVector.push_back(right);
+            visited[neighborRight] = true;
+        }
 
         if(right){
             pendingEdges.push(std::make_pair(neighborRight, nextDirection(currentDir)));

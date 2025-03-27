@@ -91,7 +91,7 @@ int main() {
     bool single_image = false;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
-    // showImg = false;
+    showImg = false;
     bool writeToFile = false;
     //writeToFile = !single_image;
 
@@ -263,7 +263,6 @@ int main() {
 
         csvFile.close();
     }
-    
     
     return 0;
 }

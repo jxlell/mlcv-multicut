@@ -52,14 +52,17 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
 
     std::string cols_str = pathsBitStringStr.substr(0, 16);
     int cols_int = std::stoi(cols_str, nullptr, 2);
+    std::cout << "cols: " << cols_int << std::endl;
     pathsBitStringStr = pathsBitStringStr.substr(16);
     std::string rows_str = pathsBitStringStr.substr(0, 16);
     int rows_int = std::stoi(rows_str, nullptr, 2);
+    std::cout << "rows: " << rows_int << std::endl;
     pathsBitStringStr = pathsBitStringStr.substr(16);
 
     int regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
     std::string regionColorBitsSizeStr = pathsBitStringStr.substr(0, regionColorBitsSize);
     int regionColorBitsSizeInt = std::stoi(regionColorBitsSizeStr, nullptr, 2);
+    std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
     pathsBitStringStr = pathsBitStringStr.substr(regionColorBitsSize);
     std::string regionColorBitStringStr = pathsBitStringStr.substr(0, regionColorBitsSizeInt*24);
     std::vector<bool> regionColorBitStringParsed;
@@ -70,15 +73,16 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
 
 
     //int disconnectedComponentsBits = std::ceil(std::log2(cols * rows / 2));
-    int disconnectedComponentsBits = std::log2(std::ceil(cols_int/2) * std::ceil(rows_int/2));
-
+    int disconnectedComponentsBits = std::log2(std::ceil(static_cast<double>(cols_int)/2) * std::ceil(static_cast<double>(rows_int)/2));
+    std::cout << "disconnect bits: " << disconnectedComponentsBits << std::endl;
     // std::cout << "Paths bitstring: " << pathsBitStringStr << std::endl;
     std::string numberOfComponentsStr = pathsBitStringStr.substr(0,disconnectedComponentsBits);
     // std::cout << "Number of components: " << numberOfComponentsStr << std::endl;
     int numberOfComponets = std::stoi(numberOfComponentsStr, nullptr, 2);
+    std::cout << "Number of components: " << numberOfComponets << std::endl;
     std::string startPointBitsStr = pathsBitStringStr.substr(disconnectedComponentsBits, 5);
     int startPointBits = std::stoi(startPointBitsStr, nullptr, 2);
-    // std::cout << "Start point bits: " << startPointBits << std::endl;
+     std::cout << "Start point bits: " << startPointBits << std::endl;
     pathsBitStringStr = pathsBitStringStr.substr(disconnectedComponentsBits + 5);
 
     std::string startPointBitstring = pathsBitStringStr.substr(0, startPointBits * numberOfComponets);
@@ -88,30 +92,20 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     for(size_t i = 0; i<startPointBitstring.size(); i+=startPointBits){
         std::string currentStr = startPointBitstring.substr(i, startPointBits);
         uint32_t startPoint = std::stoi(currentStr, nullptr, 2);
+        // std::cout << "Start point: " << startPoint << std::endl;
         startPoints.push_back(startPoint);
     }
+    std::cout << "start points size: " << startPoints.size() << std::endl;
 
-    std::vector<std::vector<bool>> directions;
-    std::string currentDirection;
-    std::string currentDirectionBitstring;
-    for(size_t i = 0; i<directionsBitstring.size(); i+=3){
-        currentDirection = directionsBitstring.substr(i, 3);
-        currentDirectionBitstring += currentDirection;
-        if(currentDirection == "000"){
-            std::vector<bool> currentDirectionVector;
-            for(size_t j = 0; j<currentDirectionBitstring.size(); j++){
-                currentDirectionVector.push_back(currentDirectionBitstring[j] == '1');
-            }
-            directions.push_back(currentDirectionVector);
-            currentDirectionBitstring.clear();
-        }
-    }
+    //std::vector<std::vector<bool>> directions = directionsVectorFromBitstring(directionsBitstring, directionBitsSize);
+    
+    //std::cout << "directions size: " << directions.size() << std::endl;
 
     // Compile paths vector from startPoints and directions
-    PathInfoVector paths_from_bitstring;
-    for (size_t i = 0; i < startPoints.size(); ++i) {
-        paths_from_bitstring.emplace_back(startPoints[i], getDirectionFromIndex(startPoints[i], rows, cols), directions[i]);
-    }
+    // PathInfoVector paths_from_bitstring;
+    // for (size_t i = 0; i < startPoints.size(); ++i) {
+    //     paths_from_bitstring.emplace_back(startPoints[i], getDirectionFromIndex(startPoints[i], rows, cols), directions[i]);
+    // }
 
     // Print paths from bitstring
     // std::cout << "Paths from bitstring:" << std::endl;
@@ -237,18 +231,29 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     int i = 0;
 
     std::vector<bool> visited(edgeBitsSize, false);
-    for(PathInfo pathinfo : paths_from_bitstring){
-        //std::cout << directionToString(std::get<1>(pathinfo)) << std::endl;
-        //printProgressBar(i , paths.size());
-        //reconstructed_edgeBits = reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
-        int startEdge = std::get<0>(pathinfo);
-        //Direction calculated just based on the index, no need to pass it as an argument
-        Direction currentDir = getDirectionFromIndex(startEdge, rows, cols);
-        reconstruct_edgeBits_iterative(startEdge, currentDir, std::get<2>(pathinfo), reconstructed_edgeBits_from_paths, cols, rows, visited);
-        directionBitsSize += std::get<2>(pathinfo).size();
-        //break;
-        i++;
+    // for(PathInfo pathinfo : paths_from_bitstring){
+    //     //std::cout << directionToString(std::get<1>(pathinfo)) << std::endl;
+    //     //printProgressBar(i , paths.size());
+    //     //reconstructed_edgeBits = reconstruct_edgeBits_iterative(std::get<0>(pathinfo), std::get<1>(pathinfo), std::get<2>(pathinfo));
+    //     int startEdge = std::get<0>(pathinfo);
+    //     //Direction calculated just based on the index, no need to pass it as an argument
+    //     Direction currentDir = getDirectionFromIndex(startEdge, rows, cols);
+    //     reconstruct_edgeBits_iterative(startEdge, currentDir, std::get<2>(pathinfo), reconstructed_edgeBits_from_paths, cols, rows, visited);
+    //     directionBitsSize += std::get<2>(pathinfo).size();
+    //     //break;
+    //     i++;
+    // }
+
+    reconstructed_edgeBits_from_paths.assign(edgeBitsSize, false);
+    visited.assign(edgeBitsSize, false);
+    std::queue<bool> directionQueue;
+    for (char c : directionsBitstring){
+        directionQueue.push(c == '1');
     }
+    for(size_t i = 0; i < startPoints.size(); i++){
+        reconstruct_edgeBits_iterative(startPoints[i], getDirectionFromIndex(startPoints[i], rows, cols), reconstructed_edgeBits_from_paths, cols, rows, visited, directionQueue);
+    }
+    
 
     //reconstruct edgebits from horizontals/verticals
     std::vector<bool> reconstructed_edgeBits_horizontals = reconstruct_edgeBits_from_Horizontals(horizontalBits, reducedVerticalBits, cols, rows);
@@ -272,7 +277,7 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     //std::cout << "\nreconstruction for edgebits01 finished" << std::endl;
 
     //reconstructed_edgeBits.assign(reconstructed_edgeBits.size(), false);
-    andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits_horizontals, rows, cols);
+    andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits_from_paths, rows, cols);
     //printColorRegions();
     std::map<int, int> representativeLabels;
     reconstruction.representativeLabeling(representativeLabels);
@@ -341,30 +346,15 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
  * @param directionVector boolen direction sequence of the current path 
  * @param reconstructedEdgeBits output edgebits vector which is to be filled with the reconstructed bits 
  */
-void reconstruct_edgeBits_iterative(int currentEdge, Direction currentDir, std::vector<bool>& directionVector, std::vector<bool>& reconstructedEdgeBits, int cols, int rows, std::vector<bool>& visited){
+void reconstruct_edgeBits_iterative(int currentEdge, Direction currentDir, std::vector<bool>& reconstructedEdgeBits, int cols, int rows, std::vector<bool>& visited, std::queue<bool>& directionQueue){
     std::stack<std::pair<int, Direction>> pendingEdges;
-    std::queue<bool> directionQueue;
-    // std::vector<bool> visited(reconstructedEdgeBits.size(), false);
-    for (bool dir : directionVector){
-        directionQueue.push(dir);
-    }
     pendingEdges.push(std::make_pair(currentEdge, currentDir));
+    visited[currentEdge] = true;
     
     while(!pendingEdges.empty()){
         std::tie(currentEdge, currentDir) = pendingEdges.top();
         pendingEdges.pop();
-        if(currentEdge == -1){
-            std::cout << "edge out of bounds" << std::endl;
-            continue;
-        }
         reconstructedEdgeBits[currentEdge] = true;
-        if(visited[currentEdge]){
-            continue;
-        }
-        visited[currentEdge] = true;
-        if(directionQueue.size() == 3){
-            continue;
-        }
         // check if out of bounds (or visited?)
         int leftEdge = getNeighbor(currentEdge, currentDir, 0, cols, rows);
         int forwardEdge = getNeighbor(currentEdge, currentDir, 1, cols, rows);
@@ -372,17 +362,29 @@ void reconstruct_edgeBits_iterative(int currentEdge, Direction currentDir, std::
         if(leftEdge == -1 || forwardEdge == -1 || rightEdge == -1 || leftEdge >= reconstructedEdgeBits.size() || forwardEdge >= reconstructedEdgeBits.size() || rightEdge >= reconstructedEdgeBits.size()){
             continue;
         }
-        bool left = directionQueue.front();
-        directionQueue.pop();
-        bool forward = directionQueue.front();
-        directionQueue.pop();
-        bool right = directionQueue.front();
-        directionQueue.pop();
-        
+        bool left = false;
+        if(!visited[leftEdge]){
+            left = directionQueue.front();
+            directionQueue.pop();
+            visited[leftEdge] = true;
+        }
+        bool front = false;
+        if(!visited[forwardEdge]){
+            front = directionQueue.front();
+            directionQueue.pop();
+            visited[forwardEdge] = true;
+        }
+        bool right = false;
+        if(!visited[rightEdge]){
+            right = directionQueue.front();
+            directionQueue.pop();
+            visited[rightEdge] = true;
+        }
+
         if(right){
             pendingEdges.push(std::make_pair(rightEdge, nextDirection(currentDir)));
         }
-        if(forward){
+        if(front){
             pendingEdges.push(std::make_pair(forwardEdge, currentDir));
         }
         if(left){
@@ -499,4 +501,23 @@ std::vector<bool> reconstruct_edgeBits_from_Horizontals(std::vector<bool>& horiz
 
 
     return reconstructed_edgeBits;
+}
+
+
+std::vector<std::vector<bool>> directionsVectorFromBitstring(std::string directionsBitstring, int directionBitsSize){
+    std::string currentDirectionBitstring;
+    std::vector<std::vector<bool>> directions;
+    for(size_t i = 0; i<directionsBitstring.size(); i++){
+        currentDirectionBitstring += directionsBitstring[i];
+        if(currentDirectionBitstring.size() >= 3 && 
+        currentDirectionBitstring.substr(currentDirectionBitstring.size() - 3) == "000"){
+            std::vector<bool> currentDirectionVector;
+            for(size_t j = 0; j<currentDirectionBitstring.size(); j++){
+                currentDirectionVector.push_back(currentDirectionBitstring[j] == '1');
+            }
+            directions.push_back(currentDirectionVector);
+            currentDirectionBitstring.clear();
+        }
+    }
+    return directions;
 }
