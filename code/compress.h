@@ -18,13 +18,17 @@ struct CompressedImage{
     cv::Mat originalImage;
     PathInfoVector pathInfoVector2bit;
     RLEVector rleVector;
+    std::vector<bool> rleBitString;
     Straights straights;
     std::vector<bool> regionColorBitString;
+
     std::vector<bool> straightsHuffmanCodesBitString;
     std::vector<uint32_t> straightsHuffmanCodesStartPoints;
     HuffmanNode* root; 
     std::vector<uint16_t> straightLengthsList;
     std::vector<uint32_t> straightLengthFrequencies;
+    std::vector<bool> straightsBitString;
+
     std::vector<bool> horizontalBits;
     std::vector<bool> reducedVerticalBits;
 

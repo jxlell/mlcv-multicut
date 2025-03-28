@@ -88,7 +88,7 @@ int main() {
     inputFile.close();
 
     // control parameters 
-    bool single_image = false;
+    bool single_image = true;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
     showImg = false;
