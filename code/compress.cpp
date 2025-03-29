@@ -35,6 +35,7 @@ CompressedImage compress(const std::string& imagePath){
     }
 
     std::vector<bool> edgeBits01((img.cols-1)*img.rows + img.cols*(img.rows-1), false);
+    std::vector<bool> edgeBitsBitString;
     std::vector<int> neighborsOffsets = {img.cols, 1};
     std::vector<RGB> regionColors;
     PathInfoVector paths;
@@ -55,6 +56,7 @@ CompressedImage compress(const std::string& imagePath){
     std::vector<bool> horizontalBits;
     std::vector<bool> reducedHoroizontalBits;
     std::vector<bool> reducedVerticalBits;
+    std::vector<bool> reducedEdgeBitsBitString;
     //std::vector<bool> verticalBits = setVerticalBits(img);
     horizontalBits = setHorizontalBits(img);
     // std::cout << "horizontal bits: ";
@@ -69,6 +71,9 @@ CompressedImage compress(const std::string& imagePath){
     //     std::cout << b;
     // }
     // std::cout << std::endl;
+
+    // set reduced edge bits bitstring
+
 
 
     // double multicutPercentage = getMulticutPercentage(edgeBits01);
@@ -103,6 +108,7 @@ CompressedImage compress(const std::string& imagePath){
     bits += horizontalBits.size() + reducedVerticalBits.size();
     bits += 32;
     double newEdgeBitsCompressionRate = static_cast<double>(img.rows*img.cols*24) / bits;
+
 
     auto start = std::chrono::high_resolution_clock::now();
     paths = setPaths(edgeBits01, img);
@@ -191,6 +197,41 @@ CompressedImage compress(const std::string& imagePath){
         rleStartPoints.push_back(boolVectorToInt(std::get<0>(rle)));
         // std::cout << "start: " << boolVectorToInt(std::get<0>(rle)) << std::endl;
     }
+
+
+    // set reduced edge bits bitstring
+    reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
+    reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
+    reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), regionColorBits.begin(), regionColorBits.end());
+    reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
+
+    int horizontalBitsAmount = horizontalBits.size();
+    std::vector<bool> horizontalBitsAmountVector = intToBool(horizontalBitsAmount, 32);
+    reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), horizontalBitsAmountVector.begin(), horizontalBitsAmountVector.end());
+    for(auto bit : horizontalBits){
+        reducedEdgeBitsBitString.push_back(bit);
+    }
+    int reducedVerticalBitsAmount = reducedVerticalBits.size();
+    std::vector<bool> reducedVerticalBitsAmountVector = intToBool(reducedVerticalBitsAmount, 32);
+    reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), reducedVerticalBitsAmountVector.begin(), reducedVerticalBitsAmountVector.end());
+    for(auto bit : reducedVerticalBits){
+        reducedEdgeBitsBitString.push_back(bit);
+    }
+
+    // set edgebits bitstring
+    edgeBitsBitString.insert(edgeBitsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
+    edgeBitsBitString.insert(edgeBitsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
+    edgeBitsBitString.insert(edgeBitsBitString.end(), regionColorBits.begin(), regionColorBits.end());
+    edgeBitsBitString.insert(edgeBitsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
+
+    int edgeBitsAmount = edgeBits01.size();
+    std::vector<bool> edgeBitsAmountVector = intToBool(edgeBitsAmount, 32);
+    edgeBitsBitString.insert(edgeBitsBitString.end(), edgeBitsAmountVector.begin(), edgeBitsAmountVector.end());
+    for(auto bit : edgeBits01){
+        edgeBitsBitString.push_back(bit);
+    }
+
+
 
     // set rle bitstring
     rleBitString.insert(rleBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
@@ -333,11 +374,11 @@ CompressedImage compress(const std::string& imagePath){
     std::cout << "Straights Compression Rate: " << straightsCompressionRate << std::endl;
 
 
-    return {regionColors, edgeBits01, paths, pathsBitString, img, paths_2bit, rle_paths, rleBitString,
+    return {regionColors, edgeBits01, edgeBitsBitString, paths, pathsBitString, img, paths_2bit, rle_paths, rleBitString,
         straights, 
     regionColorBitString, straightsHuffmanCodesBitString, 
     straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies, straightsBitString,
-    horizontalBits, reducedVerticalBits,
+    horizontalBits, reducedVerticalBits, reducedEdgeBitsBitString,
     pathCompressionRate, rleCompressionRate ,oldCompressionRate,straightsCompressionRate,straightsHuffmanCompressionRate, newEdgeBitsCompressionRate,
     transparencyValues};
 }

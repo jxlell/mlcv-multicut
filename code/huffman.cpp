@@ -37,8 +37,18 @@ void generateCode(HuffmanNode* root, string code, map<int, string>& huffmanCodes
 std::tuple<map<int, string>, HuffmanNode*> buildCodes(map<int,int> frequencyMap){
     priority_queue<HuffmanNode*, vector<HuffmanNode*>, Compare> pq;
 
+    if (frequencyMap.empty()) {
+        std::cout << "Frequency map is empty, skipping Huffman code generation." << std::endl;
+        // Return an empty Huffman tree in case of empty frequency map
+        return {std::map<int, string>(), nullptr};
+    }
+
     for(auto& pair : frequencyMap){
         pq.push(new HuffmanNode(pair.first, pair.second));
+    }
+
+    if(frequencyMap.size() == 0){
+        std::cout << "Frequency map is empty" << std::endl;
     }
 
     while(pq.size() > 1){
@@ -54,6 +64,8 @@ std::tuple<map<int, string>, HuffmanNode*> buildCodes(map<int,int> frequencyMap)
         pq.push(newNode);
 
     }
+
+
 
     map<int,string> huffmanCodes;
     generateCode(pq.top(), "", huffmanCodes);

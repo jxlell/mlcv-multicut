@@ -36,6 +36,7 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
 
     std::vector<bool> horizontalBits = compImg.horizontalBits;
     std::vector<bool> reducedVerticalBits = compImg.reducedVerticalBits;
+    std::vector<bool> reducedEdgeBitsBitString = compImg.reducedEdgeBitsBitString;
 
     std::vector<uint8_t> transparencyValues = compImg.transparencyValues;
     
@@ -43,6 +44,7 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     int directionBitsSize;
     int edgeBitsSize = (cols-1)*rows + cols*(rows-1);
 
+    
 
     // parse tree path bitstring
     std::string pathsBitStringStr;
@@ -122,176 +124,282 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     //     std::cout << std::endl;
     // }
 
+    size_t bitIndex = 0;
+
+    // Parse reduced edge bits bitstring
+
+    // Convert vector<bool> to string efficiently
+    std::string reducedEdgeBitsBitStringStr;
+    reducedEdgeBitsBitStringStr.reserve(reducedEdgeBitsBitString.size());
+    for (bool bit : reducedEdgeBitsBitString) {
+        reducedEdgeBitsBitStringStr += bit ? '1' : '0';
+    }
+    
+    // Parse cols and rows
+    cols_int = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 16), nullptr, 2);
+    bitIndex += 16;
+    rows_int = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 16), nullptr, 2);
+    bitIndex += 16;
+    
+    std::cout << "rows: " << rows_int << std::endl;
+    
+    // Compute region color bits size
+    regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+    regionColorBitsSizeInt = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, regionColorBitsSize), nullptr, 2);
+    bitIndex += regionColorBitsSize;
+    
+    std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
+    
+    // Parse region color bits
+    regionColorBitStringParsed.reserve(regionColorBitsSizeInt * 24);
+    for (size_t i = 0; i < regionColorBitsSizeInt * 24; ++i) {
+        regionColorBitStringParsed.push_back(reducedEdgeBitsBitStringStr[bitIndex++] == '1');
+    }
+    
+    // Parse horizontal bits amount
+    int horizontalBitsAmount = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 32), nullptr, 2);
+    bitIndex += 32;
+    
+    // Parse horizontal bits
+    for (size_t i = 0; i < horizontalBitsAmount; ++i) {
+        horizontalBits[i] = (reducedEdgeBitsBitStringStr[bitIndex++] == '1');
+    }
+    
+    // Parse reduced vertical bits amount
+    int reducedVerticalBitsAmount = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 32), nullptr, 2);
+    bitIndex += 32;
+    
+    // Parse reduced vertical bits
+    for (size_t i = 0; i < reducedVerticalBitsAmount; ++i) {
+        reducedVerticalBits[i] = (reducedEdgeBitsBitStringStr[bitIndex++] == '1');
+    }
+    
+
+    // // Parse edgebits bitstring
+    // bitIndex = 0;
+
+    // // Convert vector<bool> to string efficiently
+    // std::string edgeBitsBitStringStr;
+    // edgeBitsBitStringStr.reserve(edgeBits01.size());
+    // for (bool bit : edgeBits01) {
+    //     edgeBitsBitStringStr += bit ? '1' : '0';
+    // }
+
+    // // Extract cols and rows
+    // cols_str = edgeBitsBitStringStr.substr(bitIndex, 16);
+    // cols_int = std::stoi(cols_str, nullptr, 2);
+    // bitIndex += 16;
+
+    // rows_str = edgeBitsBitStringStr.substr(bitIndex, 16);
+    // rows_int = std::stoi(rows_str, nullptr, 2);
+    // bitIndex += 16;
+
+    // std::cout << "cols: " << cols_int << std::endl;
+    // std::cout << "rows: " << rows_int << std::endl;
+
+    // // Compute region color bits size
+    // regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+    // regionColorBitsSizeStr = edgeBitsBitStringStr.substr(bitIndex, regionColorBitsSize);
+    // regionColorBitsSizeInt = std::stoi(regionColorBitsSizeStr, nullptr, 2);
+    // bitIndex += regionColorBitsSize;
+
+    // std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
+
+    // // Parse region color bit string
+    // regionColorBitStringStr = edgeBitsBitStringStr.substr(bitIndex, regionColorBitsSizeInt * 24);
+    // regionColorBitStringParsed.clear();
+    // regionColorBitStringParsed.reserve(regionColorBitsSizeInt * 24);
+    // for (char c : regionColorBitStringStr) {
+    //     regionColorBitStringParsed.push_back(c == '1');
+    // }
+    // bitIndex += regionColorBitStringStr.size();
+
+    // // Parse edge bits amount
+    // std::string edgeBitsAmountStr = edgeBitsBitStringStr.substr(bitIndex, 32);
+    // int edgeBitsAmount = std::stoi(edgeBitsAmountStr, nullptr, 2);
+    // bitIndex += 32;
+
+    // // Parse edge bits
+    // for (size_t i = 0; i < edgeBitsAmount; i++) {
+    //     edgeBits01[i] = edgeBitsBitStringStr[bitIndex++] == '1';
+    // }
+
+
+
+
+
+
+
 
     std::cout << "parse huffman straights bitstring" << std::endl;
-size_t bitIndex = 0;
+    bitIndex = 0;
 
-// Convert bool vector to a string representation (can be avoided if direct bit operations are used)
-std::string straightsBitStringStr;
-for (bool bit : straightsBitString) {
-    straightsBitStringStr += bit ? '1' : '0';
-}
-
-// Read 16-bit cols
-cols_int = std::stoi(straightsBitStringStr.substr(bitIndex, 16), nullptr, 2);
-bitIndex += 16;
-std::cout << "cols: " << cols_int << std::endl;
-
-// Read 16-bit rows
-rows_int = std::stoi(straightsBitStringStr.substr(bitIndex, 16), nullptr, 2);
-bitIndex += 16;
-std::cout << "rows: " << rows_int << std::endl;
-
-// Compute and read regionColorBitsSize
-regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
-regionColorBitsSizeInt = std::stoi(straightsBitStringStr.substr(bitIndex, regionColorBitsSize), nullptr, 2);
-bitIndex += regionColorBitsSize;
-std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
-
-// Read region color bitstring
-regionColorBitStringParsed.clear();
-for (size_t i = 0; i < regionColorBitsSizeInt * 24; ++i) {
-    regionColorBitStringParsed.push_back(straightsBitStringStr[bitIndex++] == '1');
-}
-
-// Read Huffman start points amount (32 bits)
-int huffmanStartPointsAmount = std::stoi(straightsBitStringStr.substr(bitIndex, 32), nullptr, 2);
-bitIndex += 32;
-std::cout << "huffmanStartPointsAmount: " << huffmanStartPointsAmount << std::endl;
-
-// Read Huffman start points bit size (5 bits)
-int huffmanStartPointsBits = std::stoi(straightsBitStringStr.substr(bitIndex, 5), nullptr, 2);
-bitIndex += 5;
-std::cout << "huffmanStartPointsBits: " << huffmanStartPointsBits << std::endl;
-
-// Read Huffman start points
-straightsHuffmanCodesStartPoints.clear();
-for (size_t i = 0; i < huffmanStartPointsAmount; ++i) {
-    uint32_t startPoint = std::stoi(straightsBitStringStr.substr(bitIndex, huffmanStartPointsBits), nullptr, 2);
-    bitIndex += huffmanStartPointsBits;
-    straightsHuffmanCodesStartPoints.push_back(startPoint);
-}
-
-// Read Huffman string size (64 bits)
-int huffmanStringSize = std::stoi(straightsBitStringStr.substr(bitIndex, 64), nullptr, 2);
-bitIndex += 64;
-std::cout << "huffmanStringSize: " << huffmanStringSize << std::endl;
-
-// Read Huffman string
-std::string huffmanString = straightsBitStringStr.substr(bitIndex, huffmanStringSize);
-bitIndex += huffmanStringSize;
-
-// Read straightsLengthsBits (5 bits)
-int straightsLengthsBits = std::stoi(straightsBitStringStr.substr(bitIndex, 5), nullptr, 2);
-bitIndex += 5;
-std::cout << "straightsLengthsBits: " << straightsLengthsBits << std::endl;
-
-// Read straightsLengths (16 bits)
-int straightsLengths = std::stoi(straightsBitStringStr.substr(bitIndex, 16), nullptr, 2);
-bitIndex += 16;
-std::cout << "straightsLengths: " << straightsLengths << std::endl;
-
-// Read straight lengths
-straightLengthsList.clear();
-for (size_t i = 0; i < straightsLengths; ++i) {
-    uint16_t length = std::stoi(straightsBitStringStr.substr(bitIndex, straightsLengthsBits), nullptr, 2);
-    bitIndex += straightsLengthsBits;
-    straightLengthsList.push_back(length);
-}
-
-// Read straightsFrequenciesSize (16 bits)
-int straightsFrequenciesSize = std::stoi(straightsBitStringStr.substr(bitIndex, 16), nullptr, 2);
-bitIndex += 16;
-std::cout << "straightsFrequenciesSize: " << straightsFrequenciesSize << std::endl;
-
-// Read straightsFrequenciesBits (5 bits)
-int straightsFrequenciesBits = std::stoi(straightsBitStringStr.substr(bitIndex, 5), nullptr, 2);
-bitIndex += 5;
-std::cout << "straightsFrequenciesBits: " << straightsFrequenciesBits << std::endl;
-
-// Read frequency values
-straightLengthFrequencies.clear();
-for (size_t i = 0; i < straightsFrequenciesSize; ++i) {
-    uint32_t frequency = std::stoi(straightsBitStringStr.substr(bitIndex, straightsFrequenciesBits), nullptr, 2);
-    bitIndex += straightsFrequenciesBits;
-    straightLengthFrequencies.push_back(frequency);
-}
-
-
-
-std::string rleBitStringStr;
-for (bool bit : rleBitString) {
-    rleBitStringStr += bit ? '1' : '0';
-}
-
-std::cout << "rle parse" << std::endl;
-size_t index = 0;
-
-auto extract_bits = [&](size_t length) {
-    std::string result = rleBitStringStr.substr(index, length);
-    index += length;
-    return result;
-};
-
-auto extract_int = [&](size_t length) {
-    return std::stoi(extract_bits(length), nullptr, 2);
-};
-
-cols_int = extract_int(16);
-std::cout << "cols: " << cols_int << std::endl;
-rows_int = extract_int(16);
-std::cout << "rows: " << rows_int << std::endl;
-
-regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
-regionColorBitsSizeInt = extract_int(regionColorBitsSize);
-regionColorBitStringParsed.clear();
-
-regionColorBitStringStr = extract_bits(regionColorBitsSizeInt * 24);
-regionColorBitStringParsed.reserve(regionColorBitStringStr.size());
-for (char c : regionColorBitStringStr) {
-    regionColorBitStringParsed.push_back(c == '1');
-}
-
-int rleStartPointsAmount = extract_int(32);
-int rleStartPointsBits = extract_int(5);
-std::vector<std::vector<bool>> rleStartPoints(rleStartPointsAmount);
-
-for (auto &startPoint : rleStartPoints) {
-    startPoint.reserve(rleStartPointsBits);
-    std::string startPointStr = extract_bits(rleStartPointsBits);
-    for (char c : startPointStr) {
-        startPoint.push_back(c == '1');
+    // Convert bool vector to a string representation (can be avoided if direct bit operations are used)
+    std::string straightsBitStringStr;
+    for (bool bit : straightsBitString) {
+        straightsBitStringStr += bit ? '1' : '0';
     }
-}
 
-RLEVector rle_paths_parsed;
-std::vector<std::vector<bool>> zeros(rleStartPoints.size());
-std::vector<std::vector<std::vector<bool>>> ones(rleStartPoints.size());
-std::vector<bool> startIndicator;
+    // Read 16-bit cols
+    cols_int = std::stoi(straightsBitStringStr.substr(bitIndex, 16), nullptr, 2);
+    bitIndex += 16;
+    std::cout << "cols: " << cols_int << std::endl;
 
-for (size_t i = 0; i < rleStartPoints.size(); i++) {
-    int numberOfZeros = extract_int(16);
-    std::string zerosStr = extract_bits(numberOfZeros);
-    zeros[i].reserve(zerosStr.size());
-    for (char c : zerosStr) {
-        zeros[i].push_back(c == '1');
+    // Read 16-bit rows
+    rows_int = std::stoi(straightsBitStringStr.substr(bitIndex, 16), nullptr, 2);
+    bitIndex += 16;
+    std::cout << "rows: " << rows_int << std::endl;
+
+    // Compute and read regionColorBitsSize
+    regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+    regionColorBitsSizeInt = std::stoi(straightsBitStringStr.substr(bitIndex, regionColorBitsSize), nullptr, 2);
+    bitIndex += regionColorBitsSize;
+    std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
+
+    // Read region color bitstring
+    regionColorBitStringParsed.clear();
+    for (size_t i = 0; i < regionColorBitsSizeInt * 24; ++i) {
+        regionColorBitStringParsed.push_back(straightsBitStringStr[bitIndex++] == '1');
     }
-    
-    int numberOfOnes = extract_int(16);
-    ones[i].reserve(numberOfOnes);
-    for (int j = 0; j < numberOfOnes; j++) {
-        std::string onesStr = extract_bits(16);
-        std::vector<bool> currentOnes;
-        currentOnes.reserve(onesStr.size());
-        for (char c : onesStr) {
-            currentOnes.push_back(c == '1');
+
+    // Read Huffman start points amount (32 bits)
+    int huffmanStartPointsAmount = std::stoi(straightsBitStringStr.substr(bitIndex, 32), nullptr, 2);
+    bitIndex += 32;
+    std::cout << "huffmanStartPointsAmount: " << huffmanStartPointsAmount << std::endl;
+
+    // Read Huffman start points bit size (5 bits)
+    int huffmanStartPointsBits = std::stoi(straightsBitStringStr.substr(bitIndex, 5), nullptr, 2);
+    bitIndex += 5;
+    std::cout << "huffmanStartPointsBits: " << huffmanStartPointsBits << std::endl;
+
+    // Read Huffman start points
+    straightsHuffmanCodesStartPoints.clear();
+    for (size_t i = 0; i < huffmanStartPointsAmount; ++i) {
+        uint32_t startPoint = std::stoi(straightsBitStringStr.substr(bitIndex, huffmanStartPointsBits), nullptr, 2);
+        bitIndex += huffmanStartPointsBits;
+        straightsHuffmanCodesStartPoints.push_back(startPoint);
+    }
+
+    // Read Huffman string size (64 bits)
+    int huffmanStringSize = std::stoi(straightsBitStringStr.substr(bitIndex, 64), nullptr, 2);
+    bitIndex += 64;
+    std::cout << "huffmanStringSize: " << huffmanStringSize << std::endl;
+
+    // Read Huffman string
+    std::string huffmanString = straightsBitStringStr.substr(bitIndex, huffmanStringSize);
+    bitIndex += huffmanStringSize;
+
+    // Read straightsLengthsBits (5 bits)
+    int straightsLengthsBits = std::stoi(straightsBitStringStr.substr(bitIndex, 5), nullptr, 2);
+    bitIndex += 5;
+    std::cout << "straightsLengthsBits: " << straightsLengthsBits << std::endl;
+
+    // Read straightsLengths (16 bits)
+    int straightsLengths = std::stoi(straightsBitStringStr.substr(bitIndex, 16), nullptr, 2);
+    bitIndex += 16;
+    std::cout << "straightsLengths: " << straightsLengths << std::endl;
+
+    // Read straight lengths
+    straightLengthsList.clear();
+    for (size_t i = 0; i < straightsLengths; ++i) {
+        uint16_t length = std::stoi(straightsBitStringStr.substr(bitIndex, straightsLengthsBits), nullptr, 2);
+        bitIndex += straightsLengthsBits;
+        straightLengthsList.push_back(length);
+    }
+
+    // Read straightsFrequenciesSize (16 bits)
+    int straightsFrequenciesSize = std::stoi(straightsBitStringStr.substr(bitIndex, 16), nullptr, 2);
+    bitIndex += 16;
+    std::cout << "straightsFrequenciesSize: " << straightsFrequenciesSize << std::endl;
+
+    // Read straightsFrequenciesBits (5 bits)
+    int straightsFrequenciesBits = std::stoi(straightsBitStringStr.substr(bitIndex, 5), nullptr, 2);
+    bitIndex += 5;
+    std::cout << "straightsFrequenciesBits: " << straightsFrequenciesBits << std::endl;
+
+    // Read frequency values
+    straightLengthFrequencies.clear();
+    for (size_t i = 0; i < straightsFrequenciesSize; ++i) {
+        uint32_t frequency = std::stoi(straightsBitStringStr.substr(bitIndex, straightsFrequenciesBits), nullptr, 2);
+        bitIndex += straightsFrequenciesBits;
+        straightLengthFrequencies.push_back(frequency);
+    }
+
+
+
+    std::string rleBitStringStr;
+    for (bool bit : rleBitString) {
+        rleBitStringStr += bit ? '1' : '0';
+    }
+
+    std::cout << "rle parse" << std::endl;
+    size_t index = 0;
+
+    auto extract_bits = [&](size_t length) {
+        std::string result = rleBitStringStr.substr(index, length);
+        index += length;
+        return result;
+    };
+
+    auto extract_int = [&](size_t length) {
+        return std::stoi(extract_bits(length), nullptr, 2);
+    };
+
+    cols_int = extract_int(16);
+    std::cout << "cols: " << cols_int << std::endl;
+    rows_int = extract_int(16);
+    std::cout << "rows: " << rows_int << std::endl;
+
+    regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+    regionColorBitsSizeInt = extract_int(regionColorBitsSize);
+    regionColorBitStringParsed.clear();
+
+    regionColorBitStringStr = extract_bits(regionColorBitsSizeInt * 24);
+    regionColorBitStringParsed.reserve(regionColorBitStringStr.size());
+    for (char c : regionColorBitStringStr) {
+        regionColorBitStringParsed.push_back(c == '1');
+    }
+
+    int rleStartPointsAmount = extract_int(32);
+    int rleStartPointsBits = extract_int(5);
+    std::vector<std::vector<bool>> rleStartPoints(rleStartPointsAmount);
+
+    for (auto &startPoint : rleStartPoints) {
+        startPoint.reserve(rleStartPointsBits);
+        std::string startPointStr = extract_bits(rleStartPointsBits);
+        for (char c : startPointStr) {
+            startPoint.push_back(c == '1');
         }
-        ones[i].push_back(std::move(currentOnes));
     }
-    
-    startIndicator.push_back(extract_bits(1)[0] == '1');
-    rle_paths_parsed.emplace_back(rleStartPoints[i], zeros[i], ones[i], startIndicator[i]);
-}
+
+    RLEVector rle_paths_parsed;
+    std::vector<std::vector<bool>> zeros(rleStartPoints.size());
+    std::vector<std::vector<std::vector<bool>>> ones(rleStartPoints.size());
+    std::vector<bool> startIndicator;
+
+    for (size_t i = 0; i < rleStartPoints.size(); i++) {
+        int numberOfZeros = extract_int(16);
+        std::string zerosStr = extract_bits(numberOfZeros);
+        zeros[i].reserve(zerosStr.size());
+        for (char c : zerosStr) {
+            zeros[i].push_back(c == '1');
+        }
+        
+        int numberOfOnes = extract_int(16);
+        ones[i].reserve(numberOfOnes);
+        for (int j = 0; j < numberOfOnes; j++) {
+            std::string onesStr = extract_bits(16);
+            std::vector<bool> currentOnes;
+            currentOnes.reserve(onesStr.size());
+            for (char c : onesStr) {
+                currentOnes.push_back(c == '1');
+            }
+            ones[i].push_back(std::move(currentOnes));
+        }
+        
+        startIndicator.push_back(extract_bits(1)[0] == '1');
+        rle_paths_parsed.emplace_back(rleStartPoints[i], zeros[i], ones[i], startIndicator[i]);
+    }
 
     
 

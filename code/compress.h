@@ -13,6 +13,7 @@
 struct CompressedImage{
     std::vector<RGB> colorVector;
     std::vector<bool> edgeBits01;
+    std::vector<bool> edgeBitsBitString;
     PathInfoVector paths;
     std::vector<bool> pathsBitString;
     cv::Mat originalImage;
@@ -31,13 +32,14 @@ struct CompressedImage{
 
     std::vector<bool> horizontalBits;
     std::vector<bool> reducedVerticalBits;
+    std::vector<bool> reducedEdgeBitsBitString;
 
-    double pathCompressionRate;
+    double treeCompressionRate;
     double rleCompressionRate;
     double oldCompressionRate;
     double straightsCompressionRate;
     double straightsHuffmanCompressionRate; 
-    double newEdgeBitsCompressionRate;
+    double reducedEdgeBitsCompressionRate;
 
     std::vector<uint8_t> transparencyValues;
 };

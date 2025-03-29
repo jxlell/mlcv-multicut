@@ -27,12 +27,12 @@ int main() {
 
     bool compression_successful = true;
 
-    vector<double> compression_rates;
+    vector<double> tree_compression_rates;
     vector<double> old_compression_rates; 
     vector<double> rle_compression_rates;
     vector<double> straights_compress_rates;
     vector<double> straights_huffman_compress_rates;
-    vector<double> newEdgeBitsCompressionRates;
+    vector<double> reducedEdgeBitsCompressionRates;
     vector<long long> compression_times;
     vector<long long> decompression_times;
     vector<double> multicut_percentages;
@@ -40,12 +40,12 @@ int main() {
     vector<int> pixel_sizes; 
     vector<int> twobit_paths_amounts;
 
-    vector<double> compression_rates_total;
+    vector<double> tree_compression_rates_total;
     vector<double> old_compression_rates_total; 
     vector<double> rle_compression_rates_total;
     vector<double> straights_compress_rates_total;
     vector<double> straights_huffman_compress_rates_total;
-    vector<double> newEdgeBitsCompressionRates_total;
+    vector<double> reducedEdgeBitsCompressionRates_total;
     vector<long long> compression_times_total;
     vector<long long> decompression_times_total;
     vector<double> multicut_percentages_total;
@@ -60,17 +60,17 @@ int main() {
     std::unordered_set<std::string> category_set = {
         "icon_64",
         "icon_512",
-        // "photo_kodak",
-        // "photo_tecnick",
+        "photo_kodak",
+        "photo_tecnick",
         "photo_wikipedia",
-        // "pngimg",
-        // "screenshot_web",
-        // "screenshot_game",
-        // "textures_photo",
-        // "textures_pk",
-        // "textures_pk01",
-        // "textures_pk02",
-        // "textures_plants"
+        "pngimg",
+        "screenshot_web",
+        "screenshot_game",
+        "textures_photo",
+        "textures_pk",
+        "textures_pk01",
+        "textures_pk02",
+        "textures_plants"
     };
 
     std::ifstream inputFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/singlefile.txt");
@@ -140,11 +140,11 @@ int main() {
 
             //double compression_rate = getCompressionRate(compImg.colorVector, compImg.paths, compImg.originalImage);
             //std::cout << "Compression Rate: " << compression_rate << std::endl;
-            compression_rates.push_back(compImg.pathCompressionRate);
+            tree_compression_rates.push_back(compImg.treeCompressionRate);
             //compression_rates_total.push_back(compression_rate);
 
             old_compression_rates.push_back(compImg.oldCompressionRate);
-            newEdgeBitsCompressionRates.push_back(compImg.newEdgeBitsCompressionRate);
+            reducedEdgeBitsCompressionRates.push_back(compImg.reducedEdgeBitsCompressionRate);
             //old_compression_rates_total.push_back(compImg.oldCompressionRate);
 
             rle_compression_rates.push_back(compImg.rleCompressionRate);
@@ -178,20 +178,20 @@ int main() {
         std::cout << "\n\n------\n" << (compression_successful ? "✅✅✅" : "❌❌❌") << std::endl << "------\n";
 
 
-        if(writeToFile){
-            // WRITE COMPRESSION RATES TO FILE
-            writeToOutput(entry, compression_rates, "compression_rates");
-            //writeToOutput(entry, old_compression_rates, "old_compression_rates");
-            writeToOutput(entry, compression_times, "compression_times");
-            writeToOutput(entry, decompression_times, "decompression_times");
-            //writeToOutput(entry, multicut_percentages, "multicut_percentages");
-            //writeToOutput(entry, disconnected_components, "disconnected_components");
-            //writeToOutput(entry, pixel_sizes, "pixel_sizes");
-            writeToOutput(entry, rle_compression_rates, "rle_compression_rates");
-            //writeToOutput(entry, twobit_paths_amounts, "twobit_paths_amounts");
-            writeToOutput(entry, straights_compress_rates, "straights_compress_rates");
-            writeToOutput(entry, straights_huffman_compress_rates, "straights_huffman_compression_rates");
-        }
+        // if(writeToFile){
+        //     // WRITE COMPRESSION RATES TO FILE
+        //     writeToOutput(entry, tree_compression_rates, "compression_rates");
+        //     //writeToOutput(entry, old_compression_rates, "old_compression_rates");
+        //     writeToOutput(entry, compression_times, "compression_times");
+        //     writeToOutput(entry, decompression_times, "decompression_times");
+        //     //writeToOutput(entry, multicut_percentages, "multicut_percentages");
+        //     //writeToOutput(entry, disconnected_components, "disconnected_components");
+        //     //writeToOutput(entry, pixel_sizes, "pixel_sizes");
+        //     writeToOutput(entry, rle_compression_rates, "rle_compression_rates");
+        //     //writeToOutput(entry, twobit_paths_amounts, "twobit_paths_amounts");
+        //     writeToOutput(entry, straights_compress_rates, "straights_compress_rates");
+        //     writeToOutput(entry, straights_huffman_compress_rates, "straights_huffman_compression_rates");
+        // }
 
 
         // std::ofstream total_file("code/total_csv.csv");
@@ -199,14 +199,14 @@ int main() {
         //     total_file << 
         // }
 
-        compression_rates_total.insert(compression_rates_total.end(), compression_rates.begin(), compression_rates.end());
-        compression_rates.clear();
+        tree_compression_rates_total.insert(tree_compression_rates_total.end(), tree_compression_rates.begin(), tree_compression_rates.end());
+        tree_compression_rates.clear();
 
         old_compression_rates_total.insert(old_compression_rates_total.end(), old_compression_rates.begin(), old_compression_rates.end());
         old_compression_rates.clear();
 
-        newEdgeBitsCompressionRates_total.insert(newEdgeBitsCompressionRates_total.end(), newEdgeBitsCompressionRates.begin(), newEdgeBitsCompressionRates.end());
-        newEdgeBitsCompressionRates.clear();
+        reducedEdgeBitsCompressionRates_total.insert(reducedEdgeBitsCompressionRates_total.end(), reducedEdgeBitsCompressionRates.begin(), reducedEdgeBitsCompressionRates.end());
+        reducedEdgeBitsCompressionRates.clear();
 
         compression_times_total.insert(compression_times_total.end(), compression_times.begin(), compression_times.end());
         compression_times.clear();
@@ -245,17 +245,17 @@ int main() {
         //             << compression_rates_total[i] << "\n";
         // }
 
-        csvFile << "filename,category,old_rate,path_rate,rle_rate,straights_rate,straights_huffman_rate,new_edgebits_rate,comp_time,decomp_time\n";
+        csvFile << "filename,category,old_rate,tree_rate,rle_rate,straights_rate,straights_huffman_rate,new_edgebits_rate,comp_time,decomp_time\n";
         for (size_t i = 0; i < filenames.size(); ++i) {
             csvFile << filenames[i] << ","
                     << categories[i] << ","
                     // << pixel_sizes_total[i] << ","
                     << old_compression_rates_total[i] << ","
-                    << compression_rates_total[i] << ","
+                    << tree_compression_rates_total[i] << ","
                     << rle_compression_rates_total[i] << ","
                     << straights_compress_rates_total[i] << ","
                     << straights_huffman_compress_rates_total[i] << ","
-                    << newEdgeBitsCompressionRates_total[i] << ","
+                    << reducedEdgeBitsCompressionRates_total[i] << ","
                     << compression_times_total[i] << ","
                     << decompression_times_total[i] << "\n";
                     // << kBSizes[i] << ","
