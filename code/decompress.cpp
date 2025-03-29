@@ -16,6 +16,7 @@
 decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     cv::Mat originalImg = compImg.originalImage;
     std::vector<bool> edgeBits01 = compImg.edgeBits01;
+    std::vector<bool> edgeBitsBitString = compImg.edgeBitsBitString;
     std::vector<RGB> regionColors = compImg.colorVector;
     PathInfoVector paths = compImg.paths;
     std::vector<bool> pathsBitString = compImg.pathsBitString;
@@ -62,7 +63,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     std::cout << "length of pathsBitStringStr: " << pathsBitStringStr.size() << std::endl;
     std::cout << "bitstring compression rate: " << (rows * cols * 24) / (double)pathsBitStringStr.size() << std::endl;
 
-    std::cout << "improvement over old edgebits: " << ((double)edgeBits01.size() / (double)(horizontalBits.size() + reducedVerticalBits.size()) - 1);
+    std::cout << "improvement over old edgebits: " << ((double)edgeBits01.size() / (double)(horizontalBits.size() + reducedVerticalBits.size()) - 1) << std::endl;
 
     std::string cols_str = pathsBitStringStr.substr(0, 16);
     int cols_int = std::stoi(cols_str, nullptr, 2);
@@ -135,109 +136,111 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
 
     size_t bitIndex = 0;
 
-    // // Parse reduced edge bits bitstring
-    // start = std::chrono::high_resolution_clock::now();
-    // // Convert vector<bool> to string efficiently
-    // std::string reducedEdgeBitsBitStringStr;
-    // reducedEdgeBitsBitStringStr.reserve(reducedEdgeBitsBitString.size());
-    // for (bool bit : reducedEdgeBitsBitString) {
-    //     reducedEdgeBitsBitStringStr += bit ? '1' : '0';
-    // }
+    // Parse reduced edge bits bitstring
+    start = std::chrono::high_resolution_clock::now();
+    // Convert vector<bool> to string efficiently
+    std::string reducedEdgeBitsBitStringStr;
+    reducedEdgeBitsBitStringStr.reserve(reducedEdgeBitsBitString.size());
+    for (bool bit : reducedEdgeBitsBitString) {
+        reducedEdgeBitsBitStringStr += bit ? '1' : '0';
+    }
     
-    // // Parse cols and rows
-    // cols_int = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 16), nullptr, 2);
-    // bitIndex += 16;
-    // rows_int = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 16), nullptr, 2);
-    // bitIndex += 16;
+    // Parse cols and rows
+    cols_int = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 16), nullptr, 2);
+    bitIndex += 16;
+    rows_int = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 16), nullptr, 2);
+    bitIndex += 16;
     
-    // std::cout << "rows: " << rows_int << std::endl;
+    std::cout << "rows: " << rows_int << std::endl;
     
-    // // Compute region color bits size
-    // regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
-    // regionColorBitsSizeInt = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, regionColorBitsSize), nullptr, 2);
-    // bitIndex += regionColorBitsSize;
+    // Compute region color bits size
+    regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+    regionColorBitsSizeInt = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, regionColorBitsSize), nullptr, 2);
+    bitIndex += regionColorBitsSize;
     
-    // std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
+    std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
     
-    // // Parse region color bits
-    // regionColorBitStringParsed.reserve(regionColorBitsSizeInt * 24);
-    // for (size_t i = 0; i < regionColorBitsSizeInt * 24; ++i) {
-    //     regionColorBitStringParsed.push_back(reducedEdgeBitsBitStringStr[bitIndex++] == '1');
-    // }
+    // Parse region color bits
+    regionColorBitStringParsed.reserve(regionColorBitsSizeInt * 24);
+    for (size_t i = 0; i < regionColorBitsSizeInt * 24; ++i) {
+        regionColorBitStringParsed.push_back(reducedEdgeBitsBitStringStr[bitIndex++] == '1');
+    }
     
-    // // Parse horizontal bits amount
-    // int horizontalBitsAmount = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 32), nullptr, 2);
-    // bitIndex += 32;
+    // Parse horizontal bits amount
+    int horizontalBitsAmount = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 32), nullptr, 2);
+    bitIndex += 32;
     
-    // // Parse horizontal bits
-    // for (size_t i = 0; i < horizontalBitsAmount; ++i) {
-    //     horizontalBits[i] = (reducedEdgeBitsBitStringStr[bitIndex++] == '1');
-    // }
+    // Parse horizontal bits
+    for (size_t i = 0; i < horizontalBitsAmount; ++i) {
+        horizontalBits[i] = (reducedEdgeBitsBitStringStr[bitIndex++] == '1');
+    }
     
-    // // Parse reduced vertical bits amount
-    // int reducedVerticalBitsAmount = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 32), nullptr, 2);
-    // bitIndex += 32;
+    // Parse reduced vertical bits amount
+    int reducedVerticalBitsAmount = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 32), nullptr, 2);
+    bitIndex += 32;
     
-    // // Parse reduced vertical bits
-    // for (size_t i = 0; i < reducedVerticalBitsAmount; ++i) {
-    //     reducedVerticalBits[i] = (reducedEdgeBitsBitStringStr[bitIndex++] == '1');
-    // }
+    // Parse reduced vertical bits
+    for (size_t i = 0; i < reducedVerticalBitsAmount; ++i) {
+        reducedVerticalBits[i] = (reducedEdgeBitsBitStringStr[bitIndex++] == '1');
+    }
     
-    // end = std::chrono::high_resolution_clock::now();
-    // reduced_edgebits_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    end = std::chrono::high_resolution_clock::now();
+    reduced_edgebits_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-    // // Parse edgebits bitstring
-    // start = std::chrono::high_resolution_clock::now();
-    // bitIndex = 0;
-    // std::vector<bool> reconsctructedEdgeBits(edgeBits01.size(), false);
+    // Parse edgebits bitstring
+    std::cout << "parse edgebits bitstring" << std::endl;
 
-    // // Convert vector<bool> to string efficiently
-    // std::string edgeBitsBitStringStr;
-    // edgeBitsBitStringStr.reserve(edgeBits01.size());
-    // for (bool bit : edgeBits01) {
-    //     edgeBitsBitStringStr += bit ? '1' : '0';
-    // }
+    start = std::chrono::high_resolution_clock::now();
+    bitIndex = 0;
+    std::vector<bool> edgeBitsFromBitString(edgeBits01.size(), false);
 
-    // // Extract cols and rows
-    // cols_str = edgeBitsBitStringStr.substr(bitIndex, 16);
-    // cols_int = std::stoi(cols_str, nullptr, 2);
-    // bitIndex += 16;
+    // Convert vector<bool> to string efficiently
+    std::string edgeBitsBitStringStr;
+    edgeBitsBitStringStr.reserve(edgeBits01.size());
+    for (bool bit : edgeBitsBitString) {
+        edgeBitsBitStringStr += bit ? '1' : '0';
+    }
 
-    // rows_str = edgeBitsBitStringStr.substr(bitIndex, 16);
-    // rows_int = std::stoi(rows_str, nullptr, 2);
-    // bitIndex += 16;
+    // Extract cols and rows
+    cols_str = edgeBitsBitStringStr.substr(bitIndex, 16);
+    cols_int = std::stoi(cols_str, nullptr, 2);
+    bitIndex += 16;
 
-    // std::cout << "cols: " << cols_int << std::endl;
-    // std::cout << "rows: " << rows_int << std::endl;
+    rows_str = edgeBitsBitStringStr.substr(bitIndex, 16);
+    rows_int = std::stoi(rows_str, nullptr, 2);
+    bitIndex += 16;
 
-    // // Compute region color bits size
-    // regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
-    // regionColorBitsSizeStr = edgeBitsBitStringStr.substr(bitIndex, regionColorBitsSize);
-    // regionColorBitsSizeInt = std::stoi(regionColorBitsSizeStr, nullptr, 2);
-    // bitIndex += regionColorBitsSize;
+    std::cout << "cols: " << cols_int << std::endl;
+    std::cout << "rows: " << rows_int << std::endl;
 
-    // std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
+    // Compute region color bits size
+    regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+    regionColorBitsSizeStr = edgeBitsBitStringStr.substr(bitIndex, regionColorBitsSize);
+    regionColorBitsSizeInt = std::stoi(regionColorBitsSizeStr, nullptr, 2);
+    bitIndex += regionColorBitsSize;
 
-    // // Parse region color bit string
-    // regionColorBitStringStr = edgeBitsBitStringStr.substr(bitIndex, regionColorBitsSizeInt * 24);
-    // regionColorBitStringParsed.clear();
-    // regionColorBitStringParsed.reserve(regionColorBitsSizeInt * 24);
-    // for (char c : regionColorBitStringStr) {
-    //     regionColorBitStringParsed.push_back(c == '1');
-    // }
-    // bitIndex += regionColorBitStringStr.size();
+    std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
 
-    // // Parse edge bits amount
-    // std::string edgeBitsAmountStr = edgeBitsBitStringStr.substr(bitIndex, 32);
-    // int edgeBitsAmount = std::stoi(edgeBitsAmountStr, nullptr, 2);
-    // bitIndex += 32;
+    // Parse region color bit string
+    regionColorBitStringStr = edgeBitsBitStringStr.substr(bitIndex, regionColorBitsSizeInt * 24);
+    regionColorBitStringParsed.clear();
+    regionColorBitStringParsed.reserve(regionColorBitsSizeInt * 24);
+    for (char c : regionColorBitStringStr) {
+        regionColorBitStringParsed.push_back(c == '1');
+    }
+    bitIndex += regionColorBitStringStr.size();
 
-    // // Parse edge bits
-    // for (size_t i = 0; i < edgeBitsAmount; i++) {
-    //     reconsctructedEdgeBits[i] = edgeBitsBitStringStr[bitIndex++] == '1';
-    // }
-    // end = std::chrono::high_resolution_clock::now();
-    // old_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    // Parse edge bits amount
+    std::string edgeBitsAmountStr = edgeBitsBitStringStr.substr(bitIndex, 32);
+    int edgeBitsAmount = std::stoi(edgeBitsAmountStr, nullptr, 2);
+    bitIndex += 32;
+
+    // Parse edge bits
+    for (size_t i = 0; i < edgeBitsAmount; i++) {
+        edgeBitsFromBitString[i] = edgeBitsBitStringStr[bitIndex++] == '1';
+    }
+    end = std::chrono::high_resolution_clock::now();
+    old_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
 
 
@@ -666,7 +669,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
 
     //printSize();
     //bool success = areImagesIdentical(originalImg, image);
-    bool success = (edgeBits01 == reconstructed_edgeBits_from_paths) && (edgeBits01 == reconstructed_edgeBits_horizontals) && (edgeBits01 == reconstructed_edgeBits_2bits) && (edgeBits01 == reconstructed_edgeBits_straights);
+    bool success = (edgeBits01 == reconstructed_edgeBits_from_paths) && (edgeBits01 == reconstructed_edgeBits_horizontals) && (edgeBits01 == reconstructed_edgeBits_2bits) && (edgeBits01 == reconstructed_edgeBits_straights) && (edgeBits01 == edgeBitsFromBitString);
     std::cout << (success ? "✅" : "❌") << std::endl;
     
     if(showImg){

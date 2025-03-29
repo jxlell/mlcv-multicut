@@ -1,2 +1,2 @@
 filename,category,old_rate,tree_rate,rle_rate,straights_huffman_rate,reduced_edgebits_rate,tree_comp_time,tree_decomp_time,old_comp_time, old_decomp_time,rle_comp_time,rle_decomp_time,straights_comp_time,straights_decomp_time,reduced_comp_time,reduced_decomp_time
-A_House_in_California.png,test_img,9.5997,31.2728,5.64857,24.5388,15.1217,18,29,57,14,37,34,19,26,101,37
+A_House_in_California.png,test_img,9.5997,31.2728,5.64857,24.5388,15.1217,18,28,55,22,34,30,17,25,99,42

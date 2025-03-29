@@ -43,7 +43,7 @@ int main() {
     vector<double> tree_compression_rates_total;
     vector<double> old_compression_rates_total; 
     vector<double> rle_compression_rates_total;
-    vector<double> straights_compress_rates_total;
+    vector<double> straights_compression_rates_total;
     vector<double> straights_huffman_compression_rates_total;
     vector<double> reduced_edgebits_compression_rates_total;
     vector<long long> compression_times_total;
@@ -86,17 +86,17 @@ int main() {
     std::unordered_set<std::string> category_set = {
         "icon_64",
         "icon_512",
-        "photo_kodak",
-        "photo_tecnick",
-        "photo_wikipedia",
-        "pngimg",
-        "screenshot_web",
-        "screenshot_game",
-        "textures_photo",
-        "textures_pk",
-        "textures_pk01",
-        "textures_pk02",
-        "textures_plants"
+        // "photo_kodak",
+        // "photo_tecnick",
+        // "photo_wikipedia",
+        // "pngimg",
+        // "screenshot_web",
+        // "screenshot_game",
+        // "textures_photo",
+        // "textures_pk",
+        // "textures_pk01",
+        // "textures_pk02",
+        // "textures_plants"
     };
 
     std::ifstream inputFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/singlefile.txt");
@@ -114,11 +114,11 @@ int main() {
     inputFile.close();
 
     // control parameters 
-    bool single_image = true;
+    bool single_image = false;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
     //showImg = false;
-    bool writeToFile = true;
+    bool writeToFile = false;
     //writeToFile = !single_image;
 
     std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
@@ -259,7 +259,7 @@ int main() {
         rle_compression_rates_total.insert(rle_compression_rates_total.end(), rle_compression_rates.begin(), rle_compression_rates.end());
         rle_compression_rates.clear();
 
-        straights_compress_rates_total.insert(straights_compress_rates_total.end(), straights_compress_rates.begin(), straights_compress_rates.end());
+        straights_compression_rates_total.insert(straights_compression_rates_total.end(), straights_compress_rates.begin(), straights_compress_rates.end());
         straights_compress_rates.clear();
 
         straights_huffman_compression_rates_total.insert(straights_huffman_compression_rates_total.end(), straights_huffman_compress_rates.begin(), straights_huffman_compress_rates.end());
@@ -409,7 +409,7 @@ int main() {
                     << old_compression_rates_total[i] << ","
                     << tree_compression_rates_total[i] << ","
                     << rle_compression_rates_total[i] << ","
-                    // << straights_compress_rates_total[i] << ","
+                    //  << straights_compression_rates_total[i] << ","
                     << straights_huffman_compression_rates_total[i] << ","
                     << reduced_edgebits_compression_rates_total[i] << ","
                     << tree_compression_times_total[i] << ","

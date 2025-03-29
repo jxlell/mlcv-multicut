@@ -114,6 +114,7 @@ CompressedImage compress(const std::string& imagePath){
     bits += 32;
     //TODO: ensure bits != 0
     double oldCompressionRate = static_cast<double>(img.rows*img.cols*24) / bits;
+    oldCompressionRate = (img.rows * img.cols * 24) / (double)(edgeBitsBitString.size());
     std::cout << "Old Compression Rate: " << oldCompressionRate << std::endl;
 
     bits = 0;
