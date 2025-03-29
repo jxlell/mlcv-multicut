@@ -17,6 +17,23 @@
 
 CompressedImage compress(const std::string& imagePath){
     cv::Mat img = cv::imread(imagePath, cv::IMREAD_COLOR);
+    cv::Mat img_transparent = cv::imread(imagePath, cv::IMREAD_UNCHANGED);
+    std::cout << "reading transparency" << std::endl;
+    std::cout << "channels: " << img_transparent.channels() << std::endl;
+    std::vector<uint8_t> transparencyValues;
+    if (img_transparent.channels() == 4) {
+        for (int row = 0; row < img_transparent.rows; ++row) {
+            for (int col = 0; col < img_transparent.cols; ++col) {
+                cv::Vec4b pixel = img_transparent.at<cv::Vec4b>(row, col);
+                transparencyValues.push_back(pixel[3]); // Alpha channel
+            }
+        }
+        std::cout << "transparency 1: " << (int)transparencyValues[0] << std::endl;
+    }
+    else {
+        transparencyValues = std::vector<uint8_t>(img.rows * img.cols, 255);
+    }
+
     std::vector<bool> edgeBits01((img.cols-1)*img.rows + img.cols*(img.rows-1), false);
     std::vector<int> neighborsOffsets = {img.cols, 1};
     std::vector<RGB> regionColors;
@@ -169,7 +186,48 @@ CompressedImage compress(const std::string& imagePath){
     // edgeI,  zeros,          ones,           start
     // 32 bit, 1bit (vector),  16bit (vector), 1bit
     rle_paths = std::get<1>(_2bitpaths);
-    
+    std::vector<uint32_t> rleStartPoints;
+    for (auto rle : rle_paths) {
+        rleStartPoints.push_back(boolVectorToInt(std::get<0>(rle)));
+        // std::cout << "start: " << boolVectorToInt(std::get<0>(rle)) << std::endl;
+    }
+
+    // set rle bitstring
+    rleBitString.insert(rleBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
+    rleBitString.insert(rleBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
+    rleBitString.insert(rleBitString.end(), regionColorBits.begin(), regionColorBits.end());
+    rleBitString.insert(rleBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
+
+    std::vector<bool> rleStartPointsAmount = intToBool(rle_paths.size(), 32);
+    rleBitString.insert(rleBitString.end(), rleStartPointsAmount.begin(), rleStartPointsAmount.end());
+    int rleStartPointsBits = std::ceil(std::log2(edgeBits01.size()));
+    std::vector<bool> rleStartPointsBitsVector = intToBool(rleStartPointsBits, 5);
+    rleBitString.insert(rleBitString.end(), rleStartPointsBitsVector.begin(), rleStartPointsBitsVector.end());
+    for(auto& startPoint : rleStartPoints){
+        std::vector<bool> startPointBits = intToBool(startPoint, rleStartPointsBits);
+        rleBitString.insert(rleBitString.end(), startPointBits.begin(), startPointBits.end());
+    }
+
+    for(auto rle : rle_paths){
+        int numberOfZeros = std::get<1>(rle).size();
+        std::vector<bool> zerosAmount = intToBool(numberOfZeros, 16);
+        rleBitString.insert(rleBitString.end(), zerosAmount.begin(), zerosAmount.end());
+        for(auto zero : std::get<1>(rle)){
+            rleBitString.push_back(zero);
+        }
+        int numberOfOnes = std::get<2>(rle).size();
+        std::vector<bool> onesAmount = intToBool(numberOfOnes, 16);
+        rleBitString.insert(rleBitString.end(), onesAmount.begin(), onesAmount.end());
+        for(auto one : std::get<2>(rle)){
+            std::vector<bool> oneBits = intToBool(boolVectorToInt(one), 16);
+            rleBitString.insert(rleBitString.end(), oneBits.begin(), oneBits.end());
+        }
+        rleBitString.push_back(std::get<3>(rle));
+    }
+
+    int rleBitstringSize = rleBitString.size();
+    std::cout << "RLE compression rate (bitstring): " << (img.cols * img.rows * 24) / (double)rleBitstringSize << std::endl;
+
     // calculate storage size for RLE-paths
     bits = 0;
     bits += calculateBoolVectorStorage(regionColorBitString);
@@ -243,7 +301,7 @@ CompressedImage compress(const std::string& imagePath){
     }
 
     // length of huffman bitstring + huffman bitstring
-    std::vector<bool> huffmanCodesBitstringSize = intToBool(straightsHuffmanCodesBitString.size(), 16);
+    std::vector<bool> huffmanCodesBitstringSize = intToBool(straightsHuffmanCodesBitString.size(), 64);
     straightsBitString.insert(straightsBitString.end(), huffmanCodesBitstringSize.begin(), huffmanCodesBitstringSize.end());
     straightsBitString.insert(straightsBitString.end(), straightsHuffmanCodesBitString.begin(), straightsHuffmanCodesBitString.end());
     
@@ -280,7 +338,8 @@ CompressedImage compress(const std::string& imagePath){
     regionColorBitString, straightsHuffmanCodesBitString, 
     straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies, straightsBitString,
     horizontalBits, reducedVerticalBits,
-    pathCompressionRate, rleCompressionRate ,oldCompressionRate,straightsCompressionRate,straightsHuffmanCompressionRate, newEdgeBitsCompressionRate};
+    pathCompressionRate, rleCompressionRate ,oldCompressionRate,straightsCompressionRate,straightsHuffmanCompressionRate, newEdgeBitsCompressionRate,
+    transparencyValues};
 }
 
 
@@ -872,89 +931,6 @@ std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, st
     return {straights, straightsHuffmanCodesBitString, straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies};
 }
 
-/**
- * @brief calculates compression rate based on the bits needed for storing the path vector
- * as well as the color vector, compares to storing color for every pixel individually
- * @return factor of compression 
- */
-double getCompressionRate(std::vector<RGB> regionColors, PathInfoVector paths, cv::Mat img){
-    double totalBits = 0;
-
-    // Calculate bits for color regions
-    totalBits += regionColors.size() * 3 * 8;
-    totalBits += 2; 
-    if(paths.size() == 0){
-            return 1;
-        }
-    for (const auto& path : paths) {
-        uint32_t edgeI;
-        Direction dir;
-        std::vector<bool> directionVector;
-
-        std::tie(edgeI, dir, directionVector) = path;
-
-        totalBits += 32;
-        //totalBits += 32; // 32 bits for starting point
-        // starting direction is calculated and not stored
-        //totalBits += 8; // 8 bits for starting direction (smalles addressable unit)
-        totalBits += directionVector.size(); // Size of directionVector in bits
-    }
-    //std::cout << "total bits: " << totalBits << std::endl;
-    // Ensure that the calculation results in a double
-    double compressionRate = static_cast<double>(img.cols * img.rows) * 24.0 / totalBits;
-    
-    return compressionRate;
-}
-
-double getRLECompressionRate(std::vector<RGB> regionColors, RLEVector rle_paths, cv::Mat img){
-    double totalBitsRLE = 0;
-    // Calculate bits for color regions
-    totalBitsRLE += regionColors.size() * 3 * 8;
-
-    // Calculate bits for the paths vector
-    for (const auto& path : rle_paths) {
-        std::tuple <std::vector<bool>, std::vector<bool>, std::vector<std::vector<bool>>, bool> rle = path;
-        //totalBitsRLE += 32; // 32 bits for starting point
-        totalBitsRLE += std::get<0>(rle).size(); // Size of edgeI in bits
-        totalBitsRLE += std::get<1>(rle).size(); // Size of zeros_rle in bits
-        //totalBitsRLE += std::get<2>(rle).size() * 16; // Size of ones_rle in bits
-        for (std::vector<bool> vec : std::get<2>(rle)){
-            totalBitsRLE += vec.size();
-        }
-        totalBitsRLE++; // 1 bit indicates which run starts the sequence 
-    }
-    // std::cout << "Total bits for RLE: " << totalBitsRLE << std::endl;
-    // if(static_cast<double>(vertices) * 24.0 / totalBitsRLE  > 1000){
-    //     std::cout << "high rate: " << imagePath << std::endl;
-    // }
-    return static_cast<double>(img.cols * img.rows) * 24.0 / totalBitsRLE;
-}
-
-/**
- * @brief compression rate of method without multicut paths 
- * @return factor of compression
- */
-double getOldCompressionRate(cv::Mat img, std::vector<RGB> regionColors){
-    int edgeBits01size = (img.cols-1)*img.rows + img.cols*(img.rows-1);
-    double compRate = static_cast<double>(img.cols * img.rows) * 24.0 / 
-                      (static_cast<double>(edgeBits01size) + 
-                       static_cast<double>(regionColors.size()) * 3.0 * 8.0);
-    return compRate;
-}
-
-
-double getStraightsCompressionRate(std::vector<RGB> regionColors, Straights straights, cv::Mat img){
-    double totalBitsStraights = 0;
-    totalBitsStraights += regionColors.size() * 3 * 8;
-    for (const auto& straight : straights) {
-        std::vector<bool> startEdge;
-        std::vector<bool> count;
-        std::tie(startEdge, count) = straight;
-        totalBitsStraights += startEdge.size();
-        totalBitsStraights += count.size();
-    }
-    return static_cast<double>(img.rows * img.cols) * 24.0 / totalBitsStraights;
-}
 
 /**
  * @return percentage of edges connecting two different-colored pixels 

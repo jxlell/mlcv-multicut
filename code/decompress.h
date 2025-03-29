@@ -15,5 +15,6 @@ std::vector<bool> reconstruct_edgeBits2bits(PathInfoVector paths, int edgeBitsSi
 std::vector<bool> reconstructStraights(Straights straights, int edgeBitsSize, int cols, int rows);
 std::vector<bool> reconstruct_edgeBits_from_Horizontals(std::vector<bool>& horizontalBits, std::vector<bool>& reducedVerticals, int cols, int rows);
 std::vector<std::vector<bool>> directionsVectorFromBitstring(std::string directionsBitstring, int directionBitsSize);
+RLEVector parseRLEBitstring(std::vector<bool> rleBitString);
 
 #endif // DECOMPRESS_H

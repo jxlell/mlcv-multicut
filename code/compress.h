@@ -38,6 +38,8 @@ struct CompressedImage{
     double straightsCompressionRate;
     double straightsHuffmanCompressionRate; 
     double newEdgeBitsCompressionRate;
+
+    std::vector<uint8_t> transparencyValues;
 };
 
 //std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights, std::vector<bool>> compress(const std::string& imagePath);

@@ -59,10 +59,10 @@ int main() {
 
     std::unordered_set<std::string> category_set = {
         "icon_64",
-        // "icon_512",
+        "icon_512",
         // "photo_kodak",
         // "photo_tecnick",
-        // "photo_wikipedia",
+        "photo_wikipedia",
         // "pngimg",
         // "screenshot_web",
         // "screenshot_game",
@@ -88,10 +88,10 @@ int main() {
     inputFile.close();
 
     // control parameters 
-    bool single_image = true;
+    bool single_image = false;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
-    showImg = false;
+    //showImg = false;
     bool writeToFile = false;
     //writeToFile = !single_image;
 

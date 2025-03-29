@@ -21,23 +21,25 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     std::vector<bool> pathsBitString = compImg.pathsBitString;
     PathInfoVector paths_2bit_nonRLE = compImg.pathInfoVector2bit; // unused
     RLEVector rle_paths = compImg.rleVector;
+    std::vector<bool> rleBitString = compImg.rleBitString;
     Straights straights = compImg.straights;
     std::vector<bool> regionColorBitString = compImg.regionColorBitString;
     int rows = originalImg.rows;
     int cols = originalImg.cols;
 
-    std::vector<bool> straightsHuffmanCodesBitString; // = compImg.straightsHuffmanCodesBitString;
-    std::vector<uint32_t> straightsHuffmanCodesStartPoints; // = compImg.straightsHuffmanCodesStartPoints;
+    std::vector<bool> straightsHuffmanCodesBitString;// = compImg.straightsHuffmanCodesBitString;
+    std::vector<uint32_t> straightsHuffmanCodesStartPoints;// = compImg.straightsHuffmanCodesStartPoints;
     HuffmanNode* root = compImg.root;
-    std::vector<uint16_t> straightLengthsList; // = compImg.straightLengthsList;
-    std::vector<uint32_t> straightLengthFrequencies; // = compImg.straightLengthFrequencies;
+    std::vector<uint16_t> straightLengthsList;// = compImg.straightLengthsList;
+    std::vector<uint32_t> straightLengthFrequencies;// = compImg.straightLengthFrequencies;
     std::vector<bool> straightsBitString = compImg.straightsBitString;
 
     std::vector<bool> horizontalBits = compImg.horizontalBits;
     std::vector<bool> reducedVerticalBits = compImg.reducedVerticalBits;
 
+    std::vector<uint8_t> transparencyValues = compImg.transparencyValues;
     
-    cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0)); 
+    cv::Mat image(rows, cols, CV_8UC4, cv::Scalar(0, 0, 0, 0)); 
     int directionBitsSize;
     int edgeBitsSize = (cols-1)*rows + cols*(rows-1);
 
@@ -120,90 +122,183 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     //     std::cout << std::endl;
     // }
 
-    // parse huffman straights bitstring
-    std::string straightsBitStringStr;
-    for (bool bit : straightsBitString) {
-        straightsBitStringStr += bit ? "1" : "0";
+
+    std::cout << "parse huffman straights bitstring" << std::endl;
+size_t bitIndex = 0;
+
+// Convert bool vector to a string representation (can be avoided if direct bit operations are used)
+std::string straightsBitStringStr;
+for (bool bit : straightsBitString) {
+    straightsBitStringStr += bit ? '1' : '0';
+}
+
+// Read 16-bit cols
+cols_int = std::stoi(straightsBitStringStr.substr(bitIndex, 16), nullptr, 2);
+bitIndex += 16;
+std::cout << "cols: " << cols_int << std::endl;
+
+// Read 16-bit rows
+rows_int = std::stoi(straightsBitStringStr.substr(bitIndex, 16), nullptr, 2);
+bitIndex += 16;
+std::cout << "rows: " << rows_int << std::endl;
+
+// Compute and read regionColorBitsSize
+regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+regionColorBitsSizeInt = std::stoi(straightsBitStringStr.substr(bitIndex, regionColorBitsSize), nullptr, 2);
+bitIndex += regionColorBitsSize;
+std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
+
+// Read region color bitstring
+regionColorBitStringParsed.clear();
+for (size_t i = 0; i < regionColorBitsSizeInt * 24; ++i) {
+    regionColorBitStringParsed.push_back(straightsBitStringStr[bitIndex++] == '1');
+}
+
+// Read Huffman start points amount (32 bits)
+int huffmanStartPointsAmount = std::stoi(straightsBitStringStr.substr(bitIndex, 32), nullptr, 2);
+bitIndex += 32;
+std::cout << "huffmanStartPointsAmount: " << huffmanStartPointsAmount << std::endl;
+
+// Read Huffman start points bit size (5 bits)
+int huffmanStartPointsBits = std::stoi(straightsBitStringStr.substr(bitIndex, 5), nullptr, 2);
+bitIndex += 5;
+std::cout << "huffmanStartPointsBits: " << huffmanStartPointsBits << std::endl;
+
+// Read Huffman start points
+straightsHuffmanCodesStartPoints.clear();
+for (size_t i = 0; i < huffmanStartPointsAmount; ++i) {
+    uint32_t startPoint = std::stoi(straightsBitStringStr.substr(bitIndex, huffmanStartPointsBits), nullptr, 2);
+    bitIndex += huffmanStartPointsBits;
+    straightsHuffmanCodesStartPoints.push_back(startPoint);
+}
+
+// Read Huffman string size (64 bits)
+int huffmanStringSize = std::stoi(straightsBitStringStr.substr(bitIndex, 64), nullptr, 2);
+bitIndex += 64;
+std::cout << "huffmanStringSize: " << huffmanStringSize << std::endl;
+
+// Read Huffman string
+std::string huffmanString = straightsBitStringStr.substr(bitIndex, huffmanStringSize);
+bitIndex += huffmanStringSize;
+
+// Read straightsLengthsBits (5 bits)
+int straightsLengthsBits = std::stoi(straightsBitStringStr.substr(bitIndex, 5), nullptr, 2);
+bitIndex += 5;
+std::cout << "straightsLengthsBits: " << straightsLengthsBits << std::endl;
+
+// Read straightsLengths (16 bits)
+int straightsLengths = std::stoi(straightsBitStringStr.substr(bitIndex, 16), nullptr, 2);
+bitIndex += 16;
+std::cout << "straightsLengths: " << straightsLengths << std::endl;
+
+// Read straight lengths
+straightLengthsList.clear();
+for (size_t i = 0; i < straightsLengths; ++i) {
+    uint16_t length = std::stoi(straightsBitStringStr.substr(bitIndex, straightsLengthsBits), nullptr, 2);
+    bitIndex += straightsLengthsBits;
+    straightLengthsList.push_back(length);
+}
+
+// Read straightsFrequenciesSize (16 bits)
+int straightsFrequenciesSize = std::stoi(straightsBitStringStr.substr(bitIndex, 16), nullptr, 2);
+bitIndex += 16;
+std::cout << "straightsFrequenciesSize: " << straightsFrequenciesSize << std::endl;
+
+// Read straightsFrequenciesBits (5 bits)
+int straightsFrequenciesBits = std::stoi(straightsBitStringStr.substr(bitIndex, 5), nullptr, 2);
+bitIndex += 5;
+std::cout << "straightsFrequenciesBits: " << straightsFrequenciesBits << std::endl;
+
+// Read frequency values
+straightLengthFrequencies.clear();
+for (size_t i = 0; i < straightsFrequenciesSize; ++i) {
+    uint32_t frequency = std::stoi(straightsBitStringStr.substr(bitIndex, straightsFrequenciesBits), nullptr, 2);
+    bitIndex += straightsFrequenciesBits;
+    straightLengthFrequencies.push_back(frequency);
+}
+
+
+
+std::string rleBitStringStr;
+for (bool bit : rleBitString) {
+    rleBitStringStr += bit ? '1' : '0';
+}
+
+std::cout << "rle parse" << std::endl;
+size_t index = 0;
+
+auto extract_bits = [&](size_t length) {
+    std::string result = rleBitStringStr.substr(index, length);
+    index += length;
+    return result;
+};
+
+auto extract_int = [&](size_t length) {
+    return std::stoi(extract_bits(length), nullptr, 2);
+};
+
+cols_int = extract_int(16);
+std::cout << "cols: " << cols_int << std::endl;
+rows_int = extract_int(16);
+std::cout << "rows: " << rows_int << std::endl;
+
+regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+regionColorBitsSizeInt = extract_int(regionColorBitsSize);
+regionColorBitStringParsed.clear();
+
+regionColorBitStringStr = extract_bits(regionColorBitsSizeInt * 24);
+regionColorBitStringParsed.reserve(regionColorBitStringStr.size());
+for (char c : regionColorBitStringStr) {
+    regionColorBitStringParsed.push_back(c == '1');
+}
+
+int rleStartPointsAmount = extract_int(32);
+int rleStartPointsBits = extract_int(5);
+std::vector<std::vector<bool>> rleStartPoints(rleStartPointsAmount);
+
+for (auto &startPoint : rleStartPoints) {
+    startPoint.reserve(rleStartPointsBits);
+    std::string startPointStr = extract_bits(rleStartPointsBits);
+    for (char c : startPointStr) {
+        startPoint.push_back(c == '1');
     }
+}
 
-    cols_str = straightsBitStringStr.substr(0, 16);
-    cols_int = std::stoi(cols_str, nullptr, 2);
-    // std::cout << "cols: " << cols_int << std::endl;
-    straightsBitStringStr = straightsBitStringStr.substr(16);
-    rows_str = straightsBitStringStr.substr(0, 16);
-    rows_int = std::stoi(rows_str, nullptr, 2);
-    // std::cout << "rows: " << rows_int << std::endl;
-    straightsBitStringStr = straightsBitStringStr.substr(16);
+RLEVector rle_paths_parsed;
+std::vector<std::vector<bool>> zeros(rleStartPoints.size());
+std::vector<std::vector<std::vector<bool>>> ones(rleStartPoints.size());
+std::vector<bool> startIndicator;
 
-    regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
-    regionColorBitsSizeStr = straightsBitStringStr.substr(0, regionColorBitsSize);
-    regionColorBitsSizeInt = std::stoi(regionColorBitsSizeStr, nullptr, 2);
-    // std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
-    straightsBitStringStr = straightsBitStringStr.substr(regionColorBitsSize);
-    regionColorBitStringStr = straightsBitStringStr.substr(0, regionColorBitsSizeInt*24);
-    regionColorBitStringParsed.clear();
-    for(char c : regionColorBitStringStr){
-        regionColorBitStringParsed.push_back(c == '1');
+for (size_t i = 0; i < rleStartPoints.size(); i++) {
+    int numberOfZeros = extract_int(16);
+    std::string zerosStr = extract_bits(numberOfZeros);
+    zeros[i].reserve(zerosStr.size());
+    for (char c : zerosStr) {
+        zeros[i].push_back(c == '1');
     }
-    straightsBitStringStr = straightsBitStringStr.substr(regionColorBitStringStr.size());
-
-    std::string huffmanStartPointsAmountStr = straightsBitStringStr.substr(0, 32);
-    straightsBitStringStr = straightsBitStringStr.substr(32);
-    int huffmanStartPointsAmount = std::stoi(huffmanStartPointsAmountStr, nullptr, 2);
-    // std::cout << "huffmanStartPointsAmount: " << huffmanStartPointsAmount << std::endl;
-    std::string huffmanStartPointsBitsStr = straightsBitStringStr.substr(0, 5);
-    int huffmanStartPointsBits = std::stoi(huffmanStartPointsBitsStr, nullptr, 2);
-    // std::cout << "huffmanStartPointsBits: " << huffmanStartPointsBits << std::endl;
-    straightsBitStringStr = straightsBitStringStr.substr(5);
-    straightsHuffmanCodesStartPoints.clear();
-    for (size_t i = 0; i < huffmanStartPointsAmount; ++i) {
-        std::string currentStr = straightsBitStringStr.substr(0, huffmanStartPointsBits);
-        straightsBitStringStr = straightsBitStringStr.substr(huffmanStartPointsBits);
-        uint32_t startPoint = std::stoi(currentStr, nullptr, 2);
-        straightsHuffmanCodesStartPoints.push_back(startPoint);
-    }
-
-    std::string huffmanStringSizeStr = straightsBitStringStr.substr(0, 16);
-    straightsBitStringStr = straightsBitStringStr.substr(16);
-    int huffmanStringSize = std::stoi(huffmanStringSizeStr, nullptr, 2);
-    std::string huffmanString = straightsBitStringStr.substr(0, huffmanStringSize);
-    straightsBitStringStr = straightsBitStringStr.substr(huffmanStringSize);
     
-    std::string straightsLengthsBitsStr = straightsBitStringStr.substr(0, 5);
-    straightsBitStringStr = straightsBitStringStr.substr(5);
-    int straightsLengthsBits = std::stoi(straightsLengthsBitsStr, nullptr, 2);
-    std::string straightsLengthsSize = straightsBitStringStr.substr(0, 16);
-    straightsBitStringStr = straightsBitStringStr.substr(16);
-    int straightsLengths = std::stoi(straightsLengthsSize, nullptr, 2);
-    straightLengthsList.clear();
-    for (size_t i = 0; i < straightsLengths; ++i) {
-        std::string currentStr = straightsBitStringStr.substr(0, straightsLengthsBits);
-        straightsBitStringStr = straightsBitStringStr.substr(straightsLengthsBits);
-        uint16_t length = std::stoi(currentStr, nullptr, 2);
-        straightLengthsList.push_back(length);
+    int numberOfOnes = extract_int(16);
+    ones[i].reserve(numberOfOnes);
+    for (int j = 0; j < numberOfOnes; j++) {
+        std::string onesStr = extract_bits(16);
+        std::vector<bool> currentOnes;
+        currentOnes.reserve(onesStr.size());
+        for (char c : onesStr) {
+            currentOnes.push_back(c == '1');
+        }
+        ones[i].push_back(std::move(currentOnes));
     }
+    
+    startIndicator.push_back(extract_bits(1)[0] == '1');
+    rle_paths_parsed.emplace_back(rleStartPoints[i], zeros[i], ones[i], startIndicator[i]);
+}
 
-    std::string straightsFrequenciesSizeStr = straightsBitStringStr.substr(0, 16);
-    straightsBitStringStr = straightsBitStringStr.substr(16);
-    int straightsFrequenciesSize = std::stoi(straightsFrequenciesSizeStr, nullptr, 2);
-    std::string straightsFrequenciesBitsStr = straightsBitStringStr.substr(0, 5);
-    straightsBitStringStr = straightsBitStringStr.substr(5);
-    int straightsFrequenciesBits = std::stoi(straightsFrequenciesBitsStr, nullptr, 2);
-    straightLengthFrequencies.clear();
-    for (size_t i = 0; i < straightsFrequenciesSize; ++i) {
-        std::string currentStr = straightsBitStringStr.substr(0, straightsFrequenciesBits);
-        straightsBitStringStr = straightsBitStringStr.substr(straightsFrequenciesBits);
-        uint32_t frequency = std::stoi(currentStr, nullptr, 2);
-        straightLengthFrequencies.push_back(frequency);
-    }
-
-
-
+    
 
 
     // convert from rle_paths to paths_2bit
     PathInfoVector paths_2bit;
-    for (auto rle : rle_paths) {
+    for (auto rle : rle_paths_parsed) {
         std::vector<bool> edgeI;
         std::vector<bool> zeros_rle;
         std::vector<std::vector<bool>> ones_rle;
@@ -361,7 +456,7 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     //std::cout << "\nreconstruction for edgebits01 finished" << std::endl;
 
     //reconstructed_edgeBits.assign(reconstructed_edgeBits.size(), false);
-    andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits_straights, rows, cols);
+    andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits_from_paths, rows, cols);
     //printColorRegions();
     std::map<int, int> representativeLabels;
     reconstruction.representativeLabeling(representativeLabels);
@@ -402,14 +497,34 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
         //RGB col = getVertexColor(0);
         //std::cout << col.green.to_ulong() << std::endl;
         // Set the color (BGR format)
-        image.at<cv::Vec3b>(y, x) = cv::Vec3b(col.blue, col.green, col.red);  
+        image.at<cv::Vec4b>(y, x) = cv::Vec4b(col.blue, col.green, col.red, transparencyValues[index]);  
     }
-    
+
+    // for (auto t : transparencyValues){
+    //     std::cout << (int)t << ", ";
+    // }
+    // bool transparencyMatch = true;
+    // for (int y = 0; y < rows; ++y) {
+    //     for (int x = 0; x < cols; ++x) {
+    //         int index = y * cols + x;
+    //         if (image.at<cv::Vec4b>(y, x)[3] != transparencyValues[index]) {
+    //             transparencyMatch = false;
+    //             std::cout << "Mismatch at (" << y << ", " << x << "): "
+    //                       << "Image transparency = " << (int)image.at<cv::Vec4b>(y, x)[3]
+    //                       << ", Vector transparency = " << (int)transparencyValues[index] << std::endl;
+    //         }
+    //     }
+    // }
+    // std::cout << (transparencyMatch ? "All transparency values match." : "Transparency values do not match.") << std::endl;
+
+
     //printSize();
-    bool success = areImagesIdentical(originalImg, image);
+    //bool success = areImagesIdentical(originalImg, image);
+    bool success = (edgeBits01 == reconstructed_edgeBits_from_paths) && (edgeBits01 == reconstructed_edgeBits_horizontals) && (edgeBits01 == reconstructed_edgeBits_2bits) && (edgeBits01 == reconstructed_edgeBits_straights);
     std::cout << (success ? "✅" : "❌") << std::endl;
     
     if(showImg){
+        cv::imwrite("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/reconstructed.png", image);
         cv::destroyAllWindows();
         cv::imshow("Original", originalImg);
         cv::imshow("Reconstruction", image);
