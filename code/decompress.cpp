@@ -13,7 +13,7 @@
 #include "compress.h"
 #include "huffman.h"
 
-bool reconstructImage(CompressedImage compImg, bool showImg){
+decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     cv::Mat originalImg = compImg.originalImage;
     std::vector<bool> edgeBits01 = compImg.edgeBits01;
     std::vector<RGB> regionColors = compImg.colorVector;
@@ -26,6 +26,12 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     std::vector<bool> regionColorBitString = compImg.regionColorBitString;
     int rows = originalImg.rows;
     int cols = originalImg.cols;
+
+    long long tree_decompression_time = 0;
+    long long old_decompression_time = 0;
+    long long rle_decompression_time = 0;
+    long long straights_huffman_decompression_time = 0;
+    long long reduced_edgebits_decompression_time = 0;
 
     std::vector<bool> straightsHuffmanCodesBitString;// = compImg.straightsHuffmanCodesBitString;
     std::vector<uint32_t> straightsHuffmanCodesStartPoints;// = compImg.straightsHuffmanCodesStartPoints;
@@ -47,6 +53,7 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     
 
     // parse tree path bitstring
+    auto start = std::chrono::high_resolution_clock::now();
     std::string pathsBitStringStr;
     for (bool bit : pathsBitString) {
         pathsBitStringStr += bit ? "1" : "0";
@@ -103,6 +110,8 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
         startPoints.push_back(startPoint);
     }
     std::cout << "start points size: " << startPoints.size() << std::endl;
+    auto end = std::chrono::high_resolution_clock::now();
+    tree_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     //std::vector<std::vector<bool>> directions = directionsVectorFromBitstring(directionsBitstring, directionBitsSize);
     
@@ -126,57 +135,61 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
 
     size_t bitIndex = 0;
 
-    // Parse reduced edge bits bitstring
-
-    // Convert vector<bool> to string efficiently
-    std::string reducedEdgeBitsBitStringStr;
-    reducedEdgeBitsBitStringStr.reserve(reducedEdgeBitsBitString.size());
-    for (bool bit : reducedEdgeBitsBitString) {
-        reducedEdgeBitsBitStringStr += bit ? '1' : '0';
-    }
+    // // Parse reduced edge bits bitstring
+    // start = std::chrono::high_resolution_clock::now();
+    // // Convert vector<bool> to string efficiently
+    // std::string reducedEdgeBitsBitStringStr;
+    // reducedEdgeBitsBitStringStr.reserve(reducedEdgeBitsBitString.size());
+    // for (bool bit : reducedEdgeBitsBitString) {
+    //     reducedEdgeBitsBitStringStr += bit ? '1' : '0';
+    // }
     
-    // Parse cols and rows
-    cols_int = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 16), nullptr, 2);
-    bitIndex += 16;
-    rows_int = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 16), nullptr, 2);
-    bitIndex += 16;
+    // // Parse cols and rows
+    // cols_int = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 16), nullptr, 2);
+    // bitIndex += 16;
+    // rows_int = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 16), nullptr, 2);
+    // bitIndex += 16;
     
-    std::cout << "rows: " << rows_int << std::endl;
+    // std::cout << "rows: " << rows_int << std::endl;
     
-    // Compute region color bits size
-    regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
-    regionColorBitsSizeInt = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, regionColorBitsSize), nullptr, 2);
-    bitIndex += regionColorBitsSize;
+    // // Compute region color bits size
+    // regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+    // regionColorBitsSizeInt = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, regionColorBitsSize), nullptr, 2);
+    // bitIndex += regionColorBitsSize;
     
-    std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
+    // std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
     
-    // Parse region color bits
-    regionColorBitStringParsed.reserve(regionColorBitsSizeInt * 24);
-    for (size_t i = 0; i < regionColorBitsSizeInt * 24; ++i) {
-        regionColorBitStringParsed.push_back(reducedEdgeBitsBitStringStr[bitIndex++] == '1');
-    }
+    // // Parse region color bits
+    // regionColorBitStringParsed.reserve(regionColorBitsSizeInt * 24);
+    // for (size_t i = 0; i < regionColorBitsSizeInt * 24; ++i) {
+    //     regionColorBitStringParsed.push_back(reducedEdgeBitsBitStringStr[bitIndex++] == '1');
+    // }
     
-    // Parse horizontal bits amount
-    int horizontalBitsAmount = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 32), nullptr, 2);
-    bitIndex += 32;
+    // // Parse horizontal bits amount
+    // int horizontalBitsAmount = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 32), nullptr, 2);
+    // bitIndex += 32;
     
-    // Parse horizontal bits
-    for (size_t i = 0; i < horizontalBitsAmount; ++i) {
-        horizontalBits[i] = (reducedEdgeBitsBitStringStr[bitIndex++] == '1');
-    }
+    // // Parse horizontal bits
+    // for (size_t i = 0; i < horizontalBitsAmount; ++i) {
+    //     horizontalBits[i] = (reducedEdgeBitsBitStringStr[bitIndex++] == '1');
+    // }
     
-    // Parse reduced vertical bits amount
-    int reducedVerticalBitsAmount = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 32), nullptr, 2);
-    bitIndex += 32;
+    // // Parse reduced vertical bits amount
+    // int reducedVerticalBitsAmount = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, 32), nullptr, 2);
+    // bitIndex += 32;
     
-    // Parse reduced vertical bits
-    for (size_t i = 0; i < reducedVerticalBitsAmount; ++i) {
-        reducedVerticalBits[i] = (reducedEdgeBitsBitStringStr[bitIndex++] == '1');
-    }
+    // // Parse reduced vertical bits
+    // for (size_t i = 0; i < reducedVerticalBitsAmount; ++i) {
+    //     reducedVerticalBits[i] = (reducedEdgeBitsBitStringStr[bitIndex++] == '1');
+    // }
     
+    // end = std::chrono::high_resolution_clock::now();
+    // reduced_edgebits_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     // // Parse edgebits bitstring
+    // start = std::chrono::high_resolution_clock::now();
     // bitIndex = 0;
+    // std::vector<bool> reconsctructedEdgeBits(edgeBits01.size(), false);
 
     // // Convert vector<bool> to string efficiently
     // std::string edgeBitsBitStringStr;
@@ -221,17 +234,15 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
 
     // // Parse edge bits
     // for (size_t i = 0; i < edgeBitsAmount; i++) {
-    //     edgeBits01[i] = edgeBitsBitStringStr[bitIndex++] == '1';
+    //     reconsctructedEdgeBits[i] = edgeBitsBitStringStr[bitIndex++] == '1';
     // }
-
-
-
-
-
+    // end = std::chrono::high_resolution_clock::now();
+    // old_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
 
 
     std::cout << "parse huffman straights bitstring" << std::endl;
+    start = std::chrono::high_resolution_clock::now();
     bitIndex = 0;
 
     // Convert bool vector to a string representation (can be avoided if direct bit operations are used)
@@ -325,8 +336,11 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
         straightLengthFrequencies.push_back(frequency);
     }
 
+    end = std::chrono::high_resolution_clock::now();
+    straights_huffman_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
 
+    start = std::chrono::high_resolution_clock::now();
     std::string rleBitStringStr;
     for (bool bit : rleBitString) {
         rleBitStringStr += bit ? '1' : '0';
@@ -419,8 +433,12 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
         std::vector<bool> directions2bits = reconstructRLE(zeros_rle, ones_rle_16, start);
         paths_2bit.emplace_back(boolVectorToInt(edgeI), getDirectionFromIndex(boolVectorToInt(edgeI), rows, cols), directions2bits);
     }
+    
+    end = std::chrono::high_resolution_clock::now();
+    rle_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     // create huffman tree from lengths and frequencies 
+    start = std::chrono::high_resolution_clock::now();
     map<int,int> straightLengths;
     for (size_t i = 0; i < straightLengthsList.size(); ++i) {
         straightLengths[straightLengthsList[i]] = straightLengthFrequencies[i];
@@ -457,6 +475,8 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
         std::vector<bool> count = intToBool(straightsLengthsDecoded[i]);
         straightsDecoded.push_back(std::make_tuple(startEdge, count));
     }
+    end = std::chrono::high_resolution_clock::now();
+    straights_huffman_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     // for(auto& straight : straights){
     //     std::cout << "Start Edge: " << boolVectorToInt(std::get<0>(straight)) << ", Count: " << boolVectorToInt(std::get<1>(straight)) << std::endl;
@@ -512,7 +532,6 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
 
     int numberOfPaths = paths.size();
 
-    auto start = std::chrono::high_resolution_clock::now();
 
     std::vector<bool> reconstructed_edgeBits_from_paths(edgeBitsSize, false);
     int i = 0;
@@ -531,6 +550,7 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     //     i++;
     // }
 
+    start = std::chrono::high_resolution_clock::now();
     reconstructed_edgeBits_from_paths.assign(edgeBitsSize, false);
     visited.assign(edgeBitsSize, false);
     std::queue<bool> directionQueue;
@@ -540,16 +560,27 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     for(size_t i = 0; i < startPoints.size(); i++){
         reconstruct_edgeBits_iterative(startPoints[i], getDirectionFromIndex(startPoints[i], rows, cols), reconstructed_edgeBits_from_paths, cols, rows, visited, directionQueue);
     }
+    end = std::chrono::high_resolution_clock::now();
+    tree_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     
 
     //reconstruct edgebits from horizontals/verticals
+    start = std::chrono::high_resolution_clock::now();
     std::vector<bool> reconstructed_edgeBits_horizontals = reconstruct_edgeBits_from_Horizontals(horizontalBits, reducedVerticalBits, cols, rows);
-
+    end = std::chrono::high_resolution_clock::now();
+    reduced_edgebits_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    
     // reconstruct from 2-bit paths
+    start = std::chrono::high_resolution_clock::now();
     std::vector<bool> reconstructed_edgeBits_2bits = reconstruct_edgeBits2bits(paths_2bit, edgeBitsSize, cols, rows);
+    end = std::chrono::high_resolution_clock::now();
+    rle_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     // reconstruct from straights
+    start = std::chrono::high_resolution_clock::now();
     std::vector<bool> reconstructed_edgeBits_straights = reconstructStraights(straightsDecoded, edgeBitsSize, cols, rows);
+    end = std::chrono::high_resolution_clock::now();
+    straights_huffman_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     // Print the decoded straights
     // std::cout << "Decoded Straights size: " << straightsDecoded.size() << std::endl;
     // empty reconstruction
@@ -564,6 +595,7 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     //std::cout << "\nreconstruction for edgebits01 finished" << std::endl;
 
     //reconstructed_edgeBits.assign(reconstructed_edgeBits.size(), false);
+    start = std::chrono::high_resolution_clock::now();
     andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits_from_paths, rows, cols);
     //printColorRegions();
     std::map<int, int> representativeLabels;
@@ -625,6 +657,12 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
     // }
     // std::cout << (transparencyMatch ? "All transparency values match." : "Transparency values do not match.") << std::endl;
 
+    end = std::chrono::high_resolution_clock::now();
+    tree_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    old_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    rle_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    straights_huffman_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    reduced_edgebits_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     //printSize();
     //bool success = areImagesIdentical(originalImg, image);
@@ -638,12 +676,20 @@ bool reconstructImage(CompressedImage compImg, bool showImg){
         cv::imshow("Reconstruction", image);
         cv::waitKey(0);
     }
-    
 
     // delete huffman tree from memory 
     deleteHuffmanTree(reconstructedRoot);
+
+    decompInfo decomp_info = 
+    {success, 
+    tree_decompression_time,
+    old_decompression_time,
+    rle_decompression_time,
+    straights_huffman_decompression_time,
+    reduced_edgebits_decompression_time
+    };
     
-    return success;
+    return decomp_info;
 }
 
 /**

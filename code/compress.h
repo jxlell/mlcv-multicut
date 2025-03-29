@@ -42,6 +42,13 @@ struct CompressedImage{
     double reducedEdgeBitsCompressionRate;
 
     std::vector<uint8_t> transparencyValues;
+
+    long long tree_compression_time;
+    long long old_compression_time;
+    long long rle_compression_time;
+    // long long straights_compression_time;
+    long long straights_huffman_compression_time;
+    long long reduced_edgebits_compression_time;
 };
 
 //std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights, std::vector<bool>> compress(const std::string& imagePath);
