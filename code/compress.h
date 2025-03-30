@@ -18,9 +18,12 @@ struct CompressedImage{
     std::vector<bool> pathsBitString;
     cv::Mat originalImage;
     PathInfoVector pathInfoVector2bit;
+    std::vector<bool> paths2bitBitString;
+    std::vector<bool> paths2bitRLEBitString;
     RLEVector rleVector;
-    std::vector<bool> rleBitString;
+    // std::vector<bool> rleBitString;
     Straights straights;
+    std::vector<bool> straightsNoHuffBitString;
     std::vector<bool> regionColorBitString;
 
     std::vector<bool> straightsHuffmanCodesBitString;
@@ -40,15 +43,16 @@ struct CompressedImage{
     double straightsCompressionRate;
     double straightsHuffmanCompressionRate; 
     double reducedEdgeBitsCompressionRate;
-
+    double paths2bit_compression_rate;
     std::vector<uint8_t> transparencyValues;
 
     long long tree_compression_time;
     long long old_compression_time;
     long long rle_compression_time;
-    // long long straights_compression_time;
+    long long straights_compression_time;
     long long straights_huffman_compression_time;
     long long reduced_edgebits_compression_time;
+    long long paths2bit_compression_time;
 };
 
 //std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights, std::vector<bool>> compress(const std::string& imagePath);

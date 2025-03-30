@@ -21,9 +21,12 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     PathInfoVector paths = compImg.paths;
     std::vector<bool> pathsBitString = compImg.pathsBitString;
     PathInfoVector paths_2bit_nonRLE = compImg.pathInfoVector2bit; // unused
+    std::vector<bool> paths2bitBitString = compImg.paths2bitBitString;
+    std::vector<bool> paths2bitRLEBitString = compImg.paths2bitRLEBitString;
     RLEVector rle_paths = compImg.rleVector;
-    std::vector<bool> rleBitString = compImg.rleBitString;
+    // std::vector<bool> rleBitString = compImg.rleBitString;
     Straights straights = compImg.straights;
+    std::vector<bool> straightsNoHuffBitString = compImg.straightsNoHuffBitString;
     std::vector<bool> regionColorBitString = compImg.regionColorBitString;
     int rows = originalImg.rows;
     int cols = originalImg.cols;
@@ -33,6 +36,8 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     long long rle_decompression_time = 0;
     long long straights_huffman_decompression_time = 0;
     long long reduced_edgebits_decompression_time = 0;
+    long long paths_2bits_decompression_time = 0;
+    long long straights_decompression_time = 0;
 
     std::vector<bool> straightsHuffmanCodesBitString;// = compImg.straightsHuffmanCodesBitString;
     std::vector<uint32_t> straightsHuffmanCodesStartPoints;// = compImg.straightsHuffmanCodesStartPoints;
@@ -59,9 +64,6 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     for (bool bit : pathsBitString) {
         pathsBitStringStr += bit ? "1" : "0";
     }
-
-    std::cout << "length of pathsBitStringStr: " << pathsBitStringStr.size() << std::endl;
-    std::cout << "bitstring compression rate: " << (rows * cols * 24) / (double)pathsBitStringStr.size() << std::endl;
 
     std::cout << "improvement over old edgebits: " << ((double)edgeBits01.size() / (double)(horizontalBits.size() + reducedVerticalBits.size()) - 1) << std::endl;
 
@@ -243,7 +245,228 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     old_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
 
+    //reconstruct 2bitpaths from paths_2bit_bitstring
+    std::cout << "parse 2bitpaths bitstring" << std::endl;
+    start = std::chrono::high_resolution_clock::now();
+    PathInfoVector paths_2bit_from_bitstring;
+    std::string paths2bitBitStringStr;
+    for (bool bit : paths2bitBitString) {
+        paths2bitBitStringStr += bit ? "1" : "0";
+    }
+    bitIndex = 0;
 
+    // Extract cols
+    cols_str = paths2bitBitStringStr.substr(bitIndex, 16);
+    cols_int = std::stoi(cols_str, nullptr, 2);
+    bitIndex += 16;
+    std::cout << "cols: " << cols_int << std::endl;
+
+    // Extract rows
+    rows_str = paths2bitBitStringStr.substr(bitIndex, 16);
+    rows_int = std::stoi(rows_str, nullptr, 2);
+    bitIndex += 16;
+    std::cout << "rows: " << rows_int << std::endl;
+
+    // Compute region color bits size
+    regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+    regionColorBitsSizeStr = edgeBitsBitStringStr.substr(bitIndex, regionColorBitsSize);
+    regionColorBitsSizeInt = std::stoi(regionColorBitsSizeStr, nullptr, 2);
+    bitIndex += regionColorBitsSize;
+
+    std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
+
+    // Parse region color bit string
+    regionColorBitStringStr = edgeBitsBitStringStr.substr(bitIndex, regionColorBitsSizeInt * 24);
+    regionColorBitStringParsed.clear();
+    regionColorBitStringParsed.reserve(regionColorBitsSizeInt * 24);
+    for (char c : regionColorBitStringStr) {
+        regionColorBitStringParsed.push_back(c == '1');
+    }
+    bitIndex += regionColorBitStringStr.size();
+
+    // Extract paths2bitAmount (number of paths)
+    std::string paths2bitAmountStr = paths2bitBitStringStr.substr(bitIndex, 32);
+    int paths2bitAmount = std::stoi(paths2bitAmountStr, nullptr, 2);
+    bitIndex += 32;
+    std::cout << "paths2bitAmount: " << paths2bitAmount << std::endl;
+
+    // Extract paths2bitStartPointsBits (how many bits each start point takes)
+    std::string paths2bitStartPointsBitsStr = paths2bitBitStringStr.substr(bitIndex, 5);
+    int paths2bitStartPointsBits = std::stoi(paths2bitStartPointsBitsStr, nullptr, 2);
+    bitIndex += 5;
+    std::cout << "paths2bitStartPointsBits: " << paths2bitStartPointsBits << std::endl;
+
+    std::vector<int> startPoints2Bits;
+    for (int i = 0; i < paths2bitAmount; i++) {
+        std::string startPointStr = paths2bitBitStringStr.substr(bitIndex, paths2bitStartPointsBits);
+        int startPoint = std::stoi(startPointStr, nullptr, 2);
+        startPoints2Bits.push_back(startPoint);
+        bitIndex += paths2bitStartPointsBits;
+    }
+
+
+    // Parse paths (2-bit directions until "00" delimiter)
+    for (int i = 0; i < paths2bitAmount; i++) {
+        std::vector<bool> pathDirections;
+        
+        while (bitIndex + 2 <= paths2bitBitStringStr.size()) {
+            std::string dir = paths2bitBitStringStr.substr(bitIndex, 2);
+            bitIndex += 2;
+
+            if (dir == "00") break; // Stop at delimiter
+
+            pathDirections.push_back(dir[0] == '1');
+            pathDirections.push_back(dir[1] == '1');
+        }
+
+        // Add parsed data to vector
+        paths_2bit_from_bitstring.emplace_back(startPoints2Bits[i], getDirectionFromIndex(startPoints2Bits[i], rows_int, cols_int), pathDirections);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    paths_2bits_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+
+
+    // Compare paths_2bit_from_bitstring and paths_2bit_nonRLE
+    bool pathsMatch = (paths_2bit_from_bitstring == paths_2bit_nonRLE);
+
+    std::cout << "Do paths_2bit_from_bitstring and paths_2bit_nonRLE match? " 
+              << (pathsMatch ? "YES" : "NO") << std::endl;
+
+
+    // reconstruct only directions from rle bitstring
+    start = std::chrono::high_resolution_clock::now();
+    bitIndex = 0;
+    std::vector<std::vector<bool>> reconstructedPaths;
+
+    while (bitIndex + 2 <= paths2bitRLEBitString.size()) {
+        std::vector<bool> path;
+
+        while (bitIndex + 2 <= paths2bitRLEBitString.size()) {
+            // Read direction (2 bits)
+            bool bit1 = paths2bitRLEBitString[bitIndex];
+            bool bit2 = paths2bitRLEBitString[bitIndex + 1];
+            bitIndex += 2;
+
+            // Stop if delimiter "00"
+            if (!bit1 && !bit2) break;
+
+            // Read count bit size (5 bits)
+            std::vector<bool> countBitsSizeVec(paths2bitRLEBitString.begin() + bitIndex, paths2bitRLEBitString.begin() + bitIndex + 5);
+            int countBitsSize = boolVectorToInt(countBitsSizeVec);
+            bitIndex += 5;
+
+            // Read count (variable length)
+            std::vector<bool> countBits(paths2bitRLEBitString.begin() + bitIndex, paths2bitRLEBitString.begin() + bitIndex + countBitsSize);
+            int count = boolVectorToInt(countBits);
+            bitIndex += countBitsSize;
+
+            // Reconstruct repeated direction
+            for (int j = 0; j < count; j++) {
+                path.push_back(bit1);
+                path.push_back(bit2);
+            }
+        }
+
+        reconstructedPaths.push_back(path);
+    }
+    PathInfoVector pathsFromRLE;
+    // use startPoints2Bits, reconstructedPaths to get new pathsFromRLE vector
+    for (size_t i = 0; i < startPoints2Bits.size(); ++i) {
+        pathsFromRLE.emplace_back(
+            startPoints2Bits[i], 
+            getDirectionFromIndex(startPoints2Bits[i], rows_int, cols_int), 
+            reconstructedPaths[i]
+        );
+    }
+    end = std::chrono::high_resolution_clock::now();
+    rle_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "match?: " << (pathsFromRLE == paths_2bit_nonRLE) << std::endl;
+
+
+    // reconstruct no huffman straights 
+    bitIndex = 0;
+    Straights straightsNoHuff;
+    start = std::chrono::high_resolution_clock::now();
+    std::cout << "no huff straights reconstruction" << std::endl;
+    std::string straightsNoHuffBitStringStr;
+    for (bool bit : straightsNoHuffBitString) {
+        straightsNoHuffBitStringStr += bit ? '1' : '0';
+    }
+    std::cout << "size: " << straightsNoHuffBitStringStr.size() << std::endl;
+    // Extract cols
+    cols_str = straightsNoHuffBitStringStr.substr(bitIndex, 16);
+    cols_int = std::stoi(cols_str, nullptr, 2);
+    bitIndex += 16;
+    std::cout << "cols: " << cols_int << std::endl;
+
+    // Extract rows
+    rows_str = straightsNoHuffBitStringStr.substr(bitIndex, 16);
+    rows_int = std::stoi(rows_str, nullptr, 2);
+    bitIndex += 16;
+    std::cout << "rows: " << rows_int << std::endl;
+
+    // Compute region color bits size
+    regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+    regionColorBitsSizeStr = edgeBitsBitStringStr.substr(bitIndex, regionColorBitsSize);
+    regionColorBitsSizeInt = std::stoi(regionColorBitsSizeStr, nullptr, 2);
+    bitIndex += regionColorBitsSize;
+
+    std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
+
+    // Parse region color bit string
+    regionColorBitStringStr = edgeBitsBitStringStr.substr(bitIndex, regionColorBitsSizeInt * 24);
+    regionColorBitStringParsed.clear();
+    regionColorBitStringParsed.reserve(regionColorBitsSizeInt * 24);
+    for (char c : regionColorBitStringStr) {
+        regionColorBitStringParsed.push_back(c == '1');
+    }
+    bitIndex += regionColorBitStringStr.size();
+    std::cout << "parsed region color" << std::endl;
+
+    // Extract straights amount
+    std::string straightsAmountStr = straightsNoHuffBitStringStr.substr(bitIndex, 32);
+    int straightsAmount = std::stoi(straightsAmountStr, nullptr, 2);
+    bitIndex += 32;
+    std::cout << "extracted straights amounts" << std::endl;
+
+    // extract start points 
+    std::string straightsNoHuffStartPointBits = straightsNoHuffBitStringStr.substr(bitIndex, 5);
+    int straightsNoHuffStartPointBitsInt = std::stoi(straightsNoHuffStartPointBits, nullptr, 2);
+    bitIndex += 5;
+    std::vector<std::vector<bool>> noHuffStartPoints;
+    for(int i = 0; i < straightsAmount; i++){
+        std::string startPointStr = straightsNoHuffBitStringStr.substr(bitIndex, straightsNoHuffStartPointBitsInt);
+        int startPoint = std::stoi(startPointStr, nullptr, 2);
+        bitIndex += straightsNoHuffStartPointBitsInt;
+        noHuffStartPoints.push_back(intToBool(startPoint));
+        // std::cout << "start point: " << startPoint << std::endl;
+    }
+    std::cout << "extracted start points" << std::endl;
+
+    // extract lengths
+    std::string straightsNoHuffLengthsBits = straightsNoHuffBitStringStr.substr(bitIndex, 5);
+    int straightsNoHuffLengthsBitsInt = std::stoi(straightsNoHuffLengthsBits, nullptr, 2);
+    bitIndex += 5;
+    std::cout << "extracted start bits" << std::endl;
+    std::vector<std::vector<bool>> noHuffLengths;
+    for(int i = 0; i < straightsAmount; i++){
+        std::string lengthStr = straightsNoHuffBitStringStr.substr(bitIndex, straightsNoHuffLengthsBitsInt);
+        int length = std::stoi(lengthStr, nullptr, 2);
+        bitIndex += straightsNoHuffLengthsBitsInt;
+        noHuffLengths.push_back(intToBool(length));
+        // std::cout << "length: " << length << std::endl;
+    }
+    // Combine noHuffStartPoints and noHuffLengths into straightsNoHuff
+    for (size_t i = 0; i < noHuffStartPoints.size(); ++i) {
+        straightsNoHuff.push_back(std::make_tuple(noHuffStartPoints[i], noHuffLengths[i]));
+    }
+    end = std::chrono::high_resolution_clock::now();
+    straights_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "ho huff reconstruction match?: " << (straightsNoHuff == straights) << std::endl;
+
+
+    // reconstruct huffman straights 
     std::cout << "parse huffman straights bitstring" << std::endl;
     start = std::chrono::high_resolution_clock::now();
     bitIndex = 0;
@@ -343,102 +566,102 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     straights_huffman_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
 
-    start = std::chrono::high_resolution_clock::now();
-    std::string rleBitStringStr;
-    for (bool bit : rleBitString) {
-        rleBitStringStr += bit ? '1' : '0';
-    }
+    // start = std::chrono::high_resolution_clock::now();
+    // std::string rleBitStringStr;
+    // for (bool bit : rleBitString) {
+    //     rleBitStringStr += bit ? '1' : '0';
+    // }
 
-    std::cout << "rle parse" << std::endl;
-    size_t index = 0;
+    // std::cout << "rle parse" << std::endl;
+    // size_t index = 0;
 
-    auto extract_bits = [&](size_t length) {
-        std::string result = rleBitStringStr.substr(index, length);
-        index += length;
-        return result;
-    };
+    // auto extract_bits = [&](size_t length) {
+    //     std::string result = rleBitStringStr.substr(index, length);
+    //     index += length;
+    //     return result;
+    // };
 
-    auto extract_int = [&](size_t length) {
-        return std::stoi(extract_bits(length), nullptr, 2);
-    };
+    // auto extract_int = [&](size_t length) {
+    //     return std::stoi(extract_bits(length), nullptr, 2);
+    // };
 
-    cols_int = extract_int(16);
-    std::cout << "cols: " << cols_int << std::endl;
-    rows_int = extract_int(16);
-    std::cout << "rows: " << rows_int << std::endl;
+    // cols_int = extract_int(16);
+    // std::cout << "cols: " << cols_int << std::endl;
+    // rows_int = extract_int(16);
+    // std::cout << "rows: " << rows_int << std::endl;
 
-    regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
-    regionColorBitsSizeInt = extract_int(regionColorBitsSize);
-    regionColorBitStringParsed.clear();
+    // regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+    // regionColorBitsSizeInt = extract_int(regionColorBitsSize);
+    // regionColorBitStringParsed.clear();
 
-    regionColorBitStringStr = extract_bits(regionColorBitsSizeInt * 24);
-    regionColorBitStringParsed.reserve(regionColorBitStringStr.size());
-    for (char c : regionColorBitStringStr) {
-        regionColorBitStringParsed.push_back(c == '1');
-    }
+    // regionColorBitStringStr = extract_bits(regionColorBitsSizeInt * 24);
+    // regionColorBitStringParsed.reserve(regionColorBitStringStr.size());
+    // for (char c : regionColorBitStringStr) {
+    //     regionColorBitStringParsed.push_back(c == '1');
+    // }
 
-    int rleStartPointsAmount = extract_int(32);
-    int rleStartPointsBits = extract_int(5);
-    std::vector<std::vector<bool>> rleStartPoints(rleStartPointsAmount);
+    // int rleStartPointsAmount = extract_int(32);
+    // int rleStartPointsBits = extract_int(5);
+    // std::vector<std::vector<bool>> rleStartPoints(rleStartPointsAmount);
 
-    for (auto &startPoint : rleStartPoints) {
-        startPoint.reserve(rleStartPointsBits);
-        std::string startPointStr = extract_bits(rleStartPointsBits);
-        for (char c : startPointStr) {
-            startPoint.push_back(c == '1');
-        }
-    }
+    // for (auto &startPoint : rleStartPoints) {
+    //     startPoint.reserve(rleStartPointsBits);
+    //     std::string startPointStr = extract_bits(rleStartPointsBits);
+    //     for (char c : startPointStr) {
+    //         startPoint.push_back(c == '1');
+    //     }
+    // }
 
-    RLEVector rle_paths_parsed;
-    std::vector<std::vector<bool>> zeros(rleStartPoints.size());
-    std::vector<std::vector<std::vector<bool>>> ones(rleStartPoints.size());
-    std::vector<bool> startIndicator;
+    // RLEVector rle_paths_parsed;
+    // std::vector<std::vector<bool>> zeros(rleStartPoints.size());
+    // std::vector<std::vector<std::vector<bool>>> ones(rleStartPoints.size());
+    // std::vector<bool> startIndicator;
 
-    for (size_t i = 0; i < rleStartPoints.size(); i++) {
-        int numberOfZeros = extract_int(16);
-        std::string zerosStr = extract_bits(numberOfZeros);
-        zeros[i].reserve(zerosStr.size());
-        for (char c : zerosStr) {
-            zeros[i].push_back(c == '1');
-        }
+    // for (size_t i = 0; i < rleStartPoints.size(); i++) {
+    //     int numberOfZeros = extract_int(16);
+    //     std::string zerosStr = extract_bits(numberOfZeros);
+    //     zeros[i].reserve(zerosStr.size());
+    //     for (char c : zerosStr) {
+    //         zeros[i].push_back(c == '1');
+    //     }
         
-        int numberOfOnes = extract_int(16);
-        ones[i].reserve(numberOfOnes);
-        for (int j = 0; j < numberOfOnes; j++) {
-            std::string onesStr = extract_bits(16);
-            std::vector<bool> currentOnes;
-            currentOnes.reserve(onesStr.size());
-            for (char c : onesStr) {
-                currentOnes.push_back(c == '1');
-            }
-            ones[i].push_back(std::move(currentOnes));
-        }
+    //     int numberOfOnes = extract_int(16);
+    //     ones[i].reserve(numberOfOnes);
+    //     for (int j = 0; j < numberOfOnes; j++) {
+    //         std::string onesStr = extract_bits(16);
+    //         std::vector<bool> currentOnes;
+    //         currentOnes.reserve(onesStr.size());
+    //         for (char c : onesStr) {
+    //             currentOnes.push_back(c == '1');
+    //         }
+    //         ones[i].push_back(std::move(currentOnes));
+    //     }
         
-        startIndicator.push_back(extract_bits(1)[0] == '1');
-        rle_paths_parsed.emplace_back(rleStartPoints[i], zeros[i], ones[i], startIndicator[i]);
-    }
+    //     startIndicator.push_back(extract_bits(1)[0] == '1');
+    //     rle_paths_parsed.emplace_back(rleStartPoints[i], zeros[i], ones[i], startIndicator[i]);
+    // }
 
     
 
 
-    // convert from rle_paths to paths_2bit
-    PathInfoVector paths_2bit;
-    for (auto rle : rle_paths_parsed) {
-        std::vector<bool> edgeI;
-        std::vector<bool> zeros_rle;
-        std::vector<std::vector<bool>> ones_rle;
-        std::vector<uint16_t> ones_rle_16;
-        bool start;
-        std::tie(edgeI, zeros_rle, ones_rle, start) = rle;
-        for (std::vector<bool> vec: ones_rle) {
-            ones_rle_16.push_back(boolVectorToInt(vec));
-        }
-        std::vector<bool> directions2bits = reconstructRLE(zeros_rle, ones_rle_16, start);
-        paths_2bit.emplace_back(boolVectorToInt(edgeI), getDirectionFromIndex(boolVectorToInt(edgeI), rows, cols), directions2bits);
-    }
+    // // convert from rle_paths to paths_2bit
+    // PathInfoVector paths_2bit;
+    // for (auto rle : rle_paths_parsed) {
+    //     std::vector<bool> edgeI;
+    //     std::vector<bool> zeros_rle;
+    //     std::vector<std::vector<bool>> ones_rle;
+    //     std::vector<uint16_t> ones_rle_16;
+    //     bool start;
+    //     std::tie(edgeI, zeros_rle, ones_rle, start) = rle;
+    //     for (std::vector<bool> vec: ones_rle) {
+    //         ones_rle_16.push_back(boolVectorToInt(vec));
+    //     }
+    //     std::vector<bool> directions2bits = reconstructRLE(zeros_rle, ones_rle_16, start);
+    //     paths_2bit.emplace_back(boolVectorToInt(edgeI), getDirectionFromIndex(boolVectorToInt(edgeI), rows, cols), directions2bits);
+    // }
     
-    end = std::chrono::high_resolution_clock::now();
-    rle_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    // end = std::chrono::high_resolution_clock::now();
+    // rle_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     // create huffman tree from lengths and frequencies 
     start = std::chrono::high_resolution_clock::now();
@@ -480,6 +703,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     }
     end = std::chrono::high_resolution_clock::now();
     straights_huffman_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
 
     // for(auto& straight : straights){
     //     std::cout << "Start Edge: " << boolVectorToInt(std::get<0>(straight)) << ", Count: " << boolVectorToInt(std::get<1>(straight)) << std::endl;
@@ -573,11 +797,23 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     end = std::chrono::high_resolution_clock::now();
     reduced_edgebits_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     
-    // reconstruct from 2-bit paths
+    // reconstruct from 2-bit paths (from first RLE)
     start = std::chrono::high_resolution_clock::now();
-    std::vector<bool> reconstructed_edgeBits_2bits = reconstruct_edgeBits2bits(paths_2bit, edgeBitsSize, cols, rows);
+    std::vector<bool> reconstructed_edgeBits_2bits = reconstruct_edgeBits2bits(pathsFromRLE, edgeBitsSize, cols, rows);
     end = std::chrono::high_resolution_clock::now();
     rle_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+    // reconstruct from original 2bitpaths
+    start = std::chrono::high_resolution_clock::now();
+    std::vector<bool> reconstructed_edgeBits_2bits_original = reconstruct_edgeBits2bits(paths_2bit_from_bitstring, edgeBitsSize, cols_int, rows_int);
+    end = std::chrono::high_resolution_clock::now();
+    paths_2bits_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+    // reconstruct from no nuff straights
+    start = std::chrono::high_resolution_clock::now();
+    std::vector<bool> reconstructed_edgeBits_straights_no_huff = reconstructStraights(straightsNoHuff, edgeBitsSize, cols, rows);
+    end = std::chrono::high_resolution_clock::now();
+    straights_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     // reconstruct from straights
     start = std::chrono::high_resolution_clock::now();
@@ -669,7 +905,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
 
     //printSize();
     //bool success = areImagesIdentical(originalImg, image);
-    bool success = (edgeBits01 == reconstructed_edgeBits_from_paths) && (edgeBits01 == reconstructed_edgeBits_horizontals) && (edgeBits01 == reconstructed_edgeBits_2bits) && (edgeBits01 == reconstructed_edgeBits_straights) && (edgeBits01 == edgeBitsFromBitString);
+    bool success = (edgeBits01 == reconstructed_edgeBits_from_paths) && (edgeBits01 == reconstructed_edgeBits_horizontals) && (edgeBits01 == reconstructed_edgeBits_2bits) && (edgeBits01 == reconstructed_edgeBits_straights) && (edgeBits01 == edgeBitsFromBitString) && (edgeBits01 == reconstructed_edgeBits_2bits_original) && (edgeBits01 == reconstructed_edgeBits_straights_no_huff);
     std::cout << (success ? "✅" : "❌") << std::endl;
     
     if(showImg){
@@ -689,7 +925,9 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     old_decompression_time,
     rle_decompression_time,
     straights_huffman_decompression_time,
-    reduced_edgebits_decompression_time
+    reduced_edgebits_decompression_time,
+    straights_decompression_time,
+    paths_2bits_decompression_time
     };
     
     return decomp_info;
@@ -877,3 +1115,4 @@ std::vector<std::vector<bool>> directionsVectorFromBitstring(std::string directi
     }
     return directions;
 }
+
