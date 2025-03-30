@@ -25,6 +25,8 @@ using namespace std;
  */
 int main() {
 
+      auto completeStart = std::chrono::high_resolution_clock::now();
+
     bool compression_successful = true;
 
     vector<double> tree_compression_rates;
@@ -33,6 +35,7 @@ int main() {
     vector<double> straights_compress_rates;
     vector<double> straights_huffman_compress_rates;
     vector<double> reducedEdgeBitsCompressionRates;
+    vector<double> paths2bit_compression_rates;
     vector<long long> compression_times;
     vector<long long> decompression_times;
     vector<double> multicut_percentages;
@@ -46,6 +49,8 @@ int main() {
     vector<double> straights_compression_rates_total;
     vector<double> straights_huffman_compression_rates_total;
     vector<double> reduced_edgebits_compression_rates_total;
+    vector<double> paths2bit_compression_rates_total;
+
     vector<long long> compression_times_total;
     vector<long long> decompression_times_total;
     vector<double> multicut_percentages_total;
@@ -58,12 +63,14 @@ int main() {
     vector<long long> old_compression_times_total;
     vector<long long> rle_compression_times;
     vector<long long> rle_compression_times_total;
-    // vector<long long> straights_compress_times;
-    // vector<long long> straights_compress_times_total;
+    vector<long long> straights_compress_times;
+    vector<long long> straights_compress_times_total;
     vector<long long> straights_huffman_compression_times;
     vector<long long> straights_huffman_compression_times_total;
     vector<long long> reduced_edgebits_compression_times;
     vector<long long> reduced_edgebits_compression_times_total;
+      vector<long long> paths_2bits_compression_times;
+      vector<long long> paths_2bits_compression_times_total;
 
     vector<long long> tree_decompression_times;
     vector<long long> tree_decompression_times_total;
@@ -71,12 +78,14 @@ int main() {
     vector<long long> old_decompression_times_total;
     vector<long long> rle_decompression_times;
     vector<long long> rle_decompression_times_total;
-    // vector<long long> straights_compress_times;
-    // vector<long long> straights_compress_times_total;
+    vector<long long> straights_decompress_times;
+    vector<long long> straights_decompress_times_total;
     vector<long long> straights_huffman_decompression_times;
     vector<long long> straights_huffman_decompression_times_total;
     vector<long long> reduced_edgebits_decompression_times;
     vector<long long> reduced_edgebits_decompression_times_total;
+      vector<long long> paths_2bits_decompression_times;
+      vector<long long> paths_2bits_decompression_times_total;
 
     vector<string> filenames;
     vector<string> categories;
@@ -85,18 +94,18 @@ int main() {
 
     std::unordered_set<std::string> category_set = {
         "icon_64",
-      //   "icon_512",
-        // "photo_kodak",
-        // "photo_tecnick",
+        "icon_512",
+        "photo_kodak",
+        "photo_tecnick",
         "photo_wikipedia",
-      //   "pngimg",
-      //   "screenshot_web",
-        // "screenshot_game",
-        // "textures_photo",
-        // "textures_pk",
-        // "textures_pk01",
-        // "textures_pk02",
-        // "textures_plants"
+        "pngimg",
+        "screenshot_web",
+        "screenshot_game",
+        "textures_photo",
+        "textures_pk",
+        "textures_pk01",
+        "textures_pk02",
+        "textures_plants"
     };
 
     std::ifstream inputFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/singlefile.txt");
@@ -164,10 +173,10 @@ int main() {
             tree_compression_times.push_back(compImg.tree_compression_time);
             old_compression_times.push_back(compImg.old_compression_time);
             rle_compression_times.push_back(compImg.rle_compression_time);
-            //straights_compress_times.push_back(compImg.straights_compression_time);
+            straights_compress_times.push_back(compImg.straights_compression_time);
             straights_huffman_compression_times.push_back(compImg.straights_huffman_compression_time);
             reduced_edgebits_compression_times.push_back(compImg.reduced_edgebits_compression_time);
-
+            paths_2bits_compression_times.push_back(compImg.paths2bit_compression_time);
             compression_times.push_back(compression_time);
             //compression_times_total.push_back(comp.getCompressionTime());
 
@@ -185,6 +194,7 @@ int main() {
             straights_compress_rates.push_back(compImg.straightsCompressionRate);
             straights_huffman_compress_rates.push_back(compImg.straightsHuffmanCompressionRate);
 
+            paths2bit_compression_rates.push_back(compImg.paths2bit_compression_rate);
             
             //cv::Mat img;
             //img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
@@ -200,10 +210,10 @@ int main() {
             tree_decompression_times.push_back(decomp_info.tree_decompression_time);
             old_decompression_times.push_back(decomp_info.old_decompression_time);
             rle_decompression_times.push_back(decomp_info.rle_decompression_time);
-            //straights_compress_times.push_back(compImg.straights_compression_time);
+            straights_decompress_times.push_back(decomp_info.straights_decompression_time);
             straights_huffman_decompression_times.push_back(decomp_info.straights_huffman_decompression_time);
             reduced_edgebits_decompression_times.push_back(decomp_info.reduced_edgebits_decompression_time);
-            
+            paths_2bits_decompression_times.push_back(decomp_info.path2bits_decompression_time);
 
             progress++;
             //std::cout << progress << "/" << imgCount << std::endl;
@@ -265,6 +275,9 @@ int main() {
         straights_huffman_compression_rates_total.insert(straights_huffman_compression_rates_total.end(), straights_huffman_compress_rates.begin(), straights_huffman_compress_rates.end());
         straights_huffman_compress_rates.clear();
 
+        paths2bit_compression_rates_total.insert(paths2bit_compression_rates_total.end(), paths2bit_compression_rates.begin(), paths2bit_compression_rates.end());
+        paths2bit_compression_rates.clear();
+
         tree_compression_times_total.insert(tree_compression_times_total.end(), tree_compression_times.begin(), tree_compression_times.end());
         tree_compression_times.clear();
 
@@ -274,14 +287,17 @@ int main() {
         rle_compression_times_total.insert(rle_compression_times_total.end(), rle_compression_times.begin(), rle_compression_times.end());
         rle_compression_times.clear();
 
-        // straights_compress_times_total.insert(straights_compress_times_total.end(), straights_compress_times.begin(), straights_compress_times.end());
-        // straights_compress_times.clear();
+        straights_compress_times_total.insert(straights_compress_times_total.end(), straights_compress_times.begin(), straights_compress_times.end());
+        straights_compress_times.clear();
 
         straights_huffman_compression_times_total.insert(straights_huffman_compression_times_total.end(), straights_huffman_compression_times.begin(), straights_huffman_compression_times.end());
         straights_huffman_compression_times.clear();
 
         reduced_edgebits_compression_times_total.insert(reduced_edgebits_compression_times_total.end(), reduced_edgebits_compression_times.begin(), reduced_edgebits_compression_times.end());
         reduced_edgebits_compression_times.clear();
+
+        paths_2bits_compression_times_total.insert(paths_2bits_compression_times_total.end(), paths_2bits_compression_times.begin(), paths_2bits_compression_times.end());
+        paths_2bits_compression_times.clear();
 
         tree_decompression_times_total.insert(tree_decompression_times_total.end(), tree_decompression_times.begin(), tree_decompression_times.end());
         tree_decompression_times.clear();
@@ -292,8 +308,8 @@ int main() {
         rle_decompression_times_total.insert(rle_decompression_times_total.end(), rle_decompression_times.begin(), rle_decompression_times.end());
         rle_decompression_times.clear();
 
-        // straights_compress_times_total.insert(straights_compress_times_total.end(), straights_compress_times.begin(), straights_compress_times.end());
-        // straights_compress_times.clear();
+        straights_decompress_times_total.insert(straights_decompress_times_total.end(), straights_decompress_times.begin(), straights_decompress_times.end());
+        straights_decompress_times.clear();
 
         straights_huffman_decompression_times_total.insert(straights_huffman_decompression_times_total.end(), straights_huffman_decompression_times.begin(), straights_huffman_decompression_times.end());
         straights_huffman_decompression_times.clear();
@@ -301,107 +317,125 @@ int main() {
         reduced_edgebits_decompression_times_total.insert(reduced_edgebits_decompression_times_total.end(), reduced_edgebits_decompression_times.begin(), reduced_edgebits_decompression_times.end());
         reduced_edgebits_decompression_times.clear();
 
+      paths_2bits_decompression_times_total.insert(paths_2bits_decompression_times_total.end(), paths_2bits_decompression_times.begin(), paths_2bits_decompression_times.end());
+      paths_2bits_decompression_times.clear();
+
 
         // multicut_percentages.clear();
         // disconnected_components.clear();
         pixel_sizes.clear();
     }
 
-    if(writeToFile){
-        ofstream csvFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results.csv");
-        if (!csvFile.is_open()) {
+if(writeToFile){
+      ofstream csvFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results.csv");
+      if (!csvFile.is_open()) {
             cerr << "Error: Unable to open CSV file for writing." << endl;
             return -1;
-        }
+      }
 
-        if (!(filenames.size() == categories.size() &&
-          filenames.size() == old_compression_rates_total.size() &&
-          filenames.size() == tree_compression_rates_total.size() &&
-          filenames.size() == rle_compression_rates_total.size() &&
-          filenames.size() == straights_huffman_compression_rates_total.size() &&
-          filenames.size() == reduced_edgebits_compression_rates_total.size() &&
-          filenames.size() == tree_compression_times_total.size() &&
-          filenames.size() == tree_decompression_times_total.size() &&
-          filenames.size() == old_compression_times_total.size() &&
-          filenames.size() == old_decompression_times_total.size() &&
-          filenames.size() == rle_compression_times_total.size() &&
-          filenames.size() == rle_decompression_times_total.size() &&
-          filenames.size() == straights_huffman_compression_times_total.size() &&
-          filenames.size() == straights_huffman_decompression_times_total.size() &&
-          filenames.size() == reduced_edgebits_compression_times_total.size() &&
-          filenames.size() == reduced_edgebits_decompression_times_total.size())) {
-        std::cerr << "Error: Vector size mismatch." << std::endl;
+      if (!(filenames.size() == categories.size() &&
+        filenames.size() == old_compression_rates_total.size() &&
+        filenames.size() == tree_compression_rates_total.size() &&
+        filenames.size() == rle_compression_rates_total.size() &&
+        filenames.size() == straights_huffman_compression_rates_total.size() &&
+        filenames.size() == reduced_edgebits_compression_rates_total.size() &&
+        filenames.size() == paths2bit_compression_rates_total.size() &&
+        filenames.size() == tree_compression_times_total.size() &&
+        filenames.size() == tree_decompression_times_total.size() &&
+        filenames.size() == old_compression_times_total.size() &&
+        filenames.size() == old_decompression_times_total.size() &&
+        filenames.size() == rle_compression_times_total.size() &&
+        filenames.size() == rle_decompression_times_total.size() &&
+        filenames.size() == straights_huffman_compression_times_total.size() &&
+        filenames.size() == straights_huffman_decompression_times_total.size() &&
+        filenames.size() == reduced_edgebits_compression_times_total.size() &&
+        filenames.size() == reduced_edgebits_decompression_times_total.size() &&
+        filenames.size() == paths_2bits_compression_times_total.size() &&
+        filenames.size() == paths_2bits_decompression_times_total.size())) {
+      std::cerr << "Error: Vector size mismatch." << std::endl;
 
-        if (filenames.size() != categories.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      if (filenames.size() != categories.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", categories.size() = " << categories.size() << std::endl;
-        }
-        if (filenames.size() != old_compression_rates_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != old_compression_rates_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", old_compression_rates_total.size() = " << old_compression_rates_total.size() << std::endl;
-        }
-        if (filenames.size() != tree_compression_rates_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != tree_compression_rates_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", tree_compression_rates_total.size() = " << tree_compression_rates_total.size() << std::endl;
-        }
-        if (filenames.size() != rle_compression_rates_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != rle_compression_rates_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", rle_compression_rates_total.size() = " << rle_compression_rates_total.size() << std::endl;
-        }
-        if (filenames.size() != straights_huffman_compression_rates_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != straights_huffman_compression_rates_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", straights_huffman_compression_rates_total.size() = " << straights_huffman_compression_rates_total.size() << std::endl;
-        }
-        if (filenames.size() != reduced_edgebits_compression_rates_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != reduced_edgebits_compression_rates_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", reduced_edgebits_compression_rates_total.size() = " << reduced_edgebits_compression_rates_total.size() << std::endl;
-        }
-        if (filenames.size() != tree_compression_times_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != paths2bit_compression_rates_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+              << ", paths2bit_compression_rates_total.size() = " << paths2bit_compression_rates_total.size() << std::endl;
+      }
+      if (filenames.size() != tree_compression_times_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", tree_compression_times_total.size() = " << tree_compression_times_total.size() << std::endl;
-        }
-        if (filenames.size() != tree_decompression_times_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != tree_decompression_times_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", tree_decompression_times_total.size() = " << tree_decompression_times_total.size() << std::endl;
-        }
-        if (filenames.size() != old_compression_times_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != old_compression_times_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", old_compression_times_total.size() = " << old_compression_times_total.size() << std::endl;
-        }
-        if (filenames.size() != old_decompression_times_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != old_decompression_times_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", old_decompression_times_total.size() = " << old_decompression_times_total.size() << std::endl;
-        }
-        if (filenames.size() != rle_compression_times_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != rle_compression_times_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", rle_compression_times_total.size() = " << rle_compression_times_total.size() << std::endl;
-        }
-        if (filenames.size() != rle_decompression_times_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != rle_decompression_times_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", rle_decompression_times_total.size() = " << rle_decompression_times_total.size() << std::endl;
-        }
-        if (filenames.size() != straights_huffman_compression_times_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != straights_huffman_compression_times_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", straights_huffman_compression_times_total.size() = " << straights_huffman_compression_times_total.size() << std::endl;
-        }
-        if (filenames.size() != straights_huffman_decompression_times_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != straights_huffman_decompression_times_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", straights_huffman_decompression_times_total.size() = " << straights_huffman_decompression_times_total.size() << std::endl;
-        }
-        if (filenames.size() != reduced_edgebits_compression_times_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != reduced_edgebits_compression_times_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", reduced_edgebits_compression_times_total.size() = " << reduced_edgebits_compression_times_total.size() << std::endl;
-        }
-        if (filenames.size() != reduced_edgebits_decompression_times_total.size()) {
-        std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+      }
+      if (filenames.size() != reduced_edgebits_decompression_times_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
               << ", reduced_edgebits_decompression_times_total.size() = " << reduced_edgebits_decompression_times_total.size() << std::endl;
-        }
+      }
+      if (filenames.size() != paths_2bits_compression_times_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+              << ", paths_2bits_compression_times_total.size() = " << paths_2bits_compression_times_total.size() << std::endl;
+      }
+      if (filenames.size() != paths_2bits_decompression_times_total.size()) {
+      std::cerr << "Mismatch: filenames.size() = " << filenames.size() 
+              << ", paths_2bits_decompression_times_total.size() = " << paths_2bits_decompression_times_total.size() << std::endl;
+      }
 
-        return -1;
-    }
+      return -1;
+}
 
 
-        csvFile << "filename,category,old_rate,tree_rate,rle_rate,straights_huffman_rate,reduced_edgebits_rate,tree_comp_time,tree_decomp_time,old_comp_time, old_decomp_time,rle_comp_time,rle_decomp_time,straights_comp_time,straights_decomp_time,reduced_comp_time,reduced_decomp_time\n";
+        csvFile << "filename,category,old_rate,tree_rate,rle_rate,straights_rate,straights_huffman_rate,reduced_edgebits_rate,paths_2bit_rate,tree_comp_time,tree_decomp_time,old_comp_time, old_decomp_time,rle_comp_time,rle_decomp_time,straights_comp_time,straights_decomp_time,huffman_comp_time,huffman_decomp_time,reduced_comp_time,reduced_decomp_time,paths_2bit_comp_time,paths_2bit_decomp_time\n";
         for (size_t i = 0; i < filenames.size(); ++i) {
             csvFile << filenames[i] << ","
                     << categories[i] << ","
@@ -409,20 +443,24 @@ int main() {
                     << old_compression_rates_total[i] << ","
                     << tree_compression_rates_total[i] << ","
                     << rle_compression_rates_total[i] << ","
-                    //  << straights_compression_rates_total[i] << ","
+                     << straights_compression_rates_total[i] << ","
                     << straights_huffman_compression_rates_total[i] << ","
                     << reduced_edgebits_compression_rates_total[i] << ","
+                    << paths2bit_compression_rates_total[i] << ","
                     << tree_compression_times_total[i] << ","
                     << tree_decompression_times_total[i] << ","
                     << old_compression_times_total[i] << ","
                     << old_decompression_times_total[i] << ","
                     << rle_compression_times_total[i] << ","
                     << rle_decompression_times_total[i] << ","
-                    // << straights_compress_times_total[i] << ","
+                    << straights_compress_times_total[i] << ","
+                    << straights_decompress_times_total[i] << ","
                     << straights_huffman_compression_times_total[i] << ","
                     << straights_huffman_decompression_times_total[i] << ","
                     << reduced_edgebits_compression_times_total[i] << ","
-                    << reduced_edgebits_decompression_times_total[i] << "\n";
+                    << reduced_edgebits_decompression_times_total[i] << ","
+                    << paths_2bits_compression_times_total[i] << ","
+                    << paths_2bits_decompression_times_total[i] << "\n";
 
 
                     //<< decompression_times_total[i] << "\n";
@@ -430,6 +468,10 @@ int main() {
 
         csvFile.close();
     }
-    
+
+    auto completeEnd = std::chrono::high_resolution_clock::now();
+    auto completeTime = std::chrono::duration_cast<std::chrono::milliseconds>(completeEnd - completeStart).count();
+    std::cout << "Total time: " << completeTime << " ms" << std::endl;
+
     return 0;
 }
