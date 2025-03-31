@@ -17,6 +17,18 @@
 
 CompressedImage compress(const std::string& imagePath){
     cv::Mat img = cv::imread(imagePath, cv::IMREAD_COLOR);
+
+    // Direction testDir = getDirectionFromIndex(36,5,5);
+    // std::cout << "testDir: " << directionToString(testDir) << std::endl;
+
+    // std::cout << getPixelIndexFromEdgeIndex(39, 5, 5).first << std::endl;
+    // std::cout << getPixelIndexFromEdgeIndex(39, 5, 5).second << std::endl;
+    // std::cout << getPixelIndexFromEdgeIndex(31, 7, 3).first << std::endl;
+    // std::cout << getPixelIndexFromEdgeIndex(31, 7, 3).second << std::endl;
+    
+    // std::cout << "Stopping program for testing." << std::endl;
+    // exit(0);
+
     cv::Mat img_transparent = cv::imread(imagePath, cv::IMREAD_UNCHANGED);
     std::cout << "reading transparency" << std::endl;
     std::cout << "channels: " << img_transparent.channels() << std::endl;
@@ -33,6 +45,9 @@ CompressedImage compress(const std::string& imagePath){
     else {
         transparencyValues = std::vector<uint8_t>(img.rows * img.cols, 255);
     }
+
+
+    
 
     std::vector<bool> edgeBits01((img.cols-1)*img.rows + img.cols*(img.rows-1), false);
     std::vector<bool> edgeBitsBitString;
@@ -187,6 +202,7 @@ CompressedImage compress(const std::string& imagePath){
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     std::cout << "time to set paths: " << duration.count() << "ms" << std::endl;
     tree_compression_time = duration.count();
+    tree_compression_time += old_compression_time;
 
     bits = 0;
     bits += calculateBoolVectorStorage(regionColorBitString);
@@ -218,6 +234,7 @@ CompressedImage compress(const std::string& imagePath){
     end = std::chrono::high_resolution_clock::now();
     rle_compression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     paths2bit_compression_time = rle_compression_time;
+    paths2bit_compression_time += old_compression_time;
 
     start = std::chrono::high_resolution_clock::now();
     // set reduced edge bits bitstring

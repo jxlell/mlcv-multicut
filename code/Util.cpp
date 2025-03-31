@@ -164,6 +164,7 @@ Direction getDirectionFromIndex(int index, int rows, int cols){
 
     if(index>2*cols*rows-cols-rows-cols){
         verticalDir = Direction::UP;
+        return verticalDir;
     }else{
         verticalDir = Direction::DOWN;
     }
@@ -382,4 +383,33 @@ int mapVerticalToEdgebitsIndex(int verticalIndex, int cols, int rows){
     edgebitsIndex = (cols - 1 + rows) * row * (col + 1) + cols - 1;
 
     return edgebitsIndex;
+}
+
+
+std::pair<int,int> getPixelIndexFromEdgeIndex(int edgeIndex, int cols, int rows){
+    if(edgeIndex < 0 || edgeIndex >= (2 * cols * cols) - rows - cols){
+        return std::make_pair(-1, -1);
+    }
+    
+    bool horizontal;
+    Direction dir = getDirectionFromIndex(edgeIndex, rows, cols);
+    if(dir == Direction::UP || dir == Direction::DOWN){
+        horizontal = false;
+    }else{
+        horizontal = true;
+    }
+    // std::cout << (horizontal ? "horizontal" : "vertical") << std::endl;
+    int row = edgeIndex / (2 * cols - 1);
+    int col = (edgeIndex % (2 * cols - 1)) / 2;
+    if(!horizontal && row == rows - 1){
+        col = edgeIndex % (2 * cols - 1);
+    }
+
+    int pixelIndex = row * cols + col;
+
+    if(!horizontal){
+        return std::make_pair(pixelIndex, pixelIndex + 1);
+    }
+
+    return std::make_pair(pixelIndex, pixelIndex + cols);
 }

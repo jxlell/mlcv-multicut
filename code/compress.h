@@ -74,5 +74,4 @@ double getMulticutPercentage(std::vector<bool> edgeBits01);
 void getAnomalies(std::vector<bool> edgeBits01, cv::Mat img);
 
 
-
 #endif // COMPRESS_H

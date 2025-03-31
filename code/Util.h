@@ -62,4 +62,7 @@ void writeToOutput(const std::filesystem::path& p1, const std::vector<T>& values
 }
 int countImgFiles(const std::filesystem::path& parentDir, std::unordered_set<std::string> category_set);
 int countDirectImgFiles(const std::filesystem::path& parentDir);
+std::pair<int,int> getPixelIndexFromEdgeIndex(int edgeIndex, int cols, int rows);
+
+
 #endif // UTIL_H

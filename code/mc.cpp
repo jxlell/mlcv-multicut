@@ -88,19 +88,19 @@ std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std
     
         left = false;
         if(!visited[neighborLeft]){
-            left = edgeBits01[neighborLeft];
+            left = edgeBitFromIndex(neighborLeft, cols, rows, img);
             directionVector.push_back(left);
             visited[neighborLeft] = true;
         }
         front = false;
         if(!visited[neighborFront]){
-            front = edgeBits01[neighborFront];
+            front = edgeBitFromIndex(neighborFront, cols, rows, img);
             directionVector.push_back(front);
             visited[neighborFront] = true;
         }
         right = false;
         if(!visited[neighborRight]){
-            right = edgeBits01[neighborRight];
+            right = edgeBitFromIndex(neighborRight, cols, rows, img);
             directionVector.push_back(right);
             visited[neighborRight] = true;
         }
@@ -198,4 +198,11 @@ std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std
     }
     //directionVector.resize(vecIndex);
     return directionVector;
+}
+
+
+bool edgeBitFromIndex(int index, int cols, int rows, cv::Mat img){
+    int index1, index2;
+    std::tie(index1, index2) = getPixelIndexFromEdgeIndex(index, cols, rows);
+    return !compareRGB(getVertexColor(index1, img.cols*img.rows, img), getVertexColor(index2, img.cols*img.rows, img));
 }

@@ -31,23 +31,66 @@ def plot_compression_rates(csv_file, category_filter=None):
     df_sorted = df.sort_values(by='old_rate')  # Sort by 'old_rate'
 
     filenames = df_sorted['filename']
+    categories = df_sorted['category']
     old_rates = df_sorted['old_rate']
-    path_rates = df_sorted['path_rate']
+    path_rates = df_sorted['tree_rate']
     rle_rates = df_sorted['rle_rate']
     straights_rates = df_sorted['straights_rate']
     straights_huffman_rates = df_sorted['straights_huffman_rate']
-    new_edgebits_rates = df_sorted['new_edgebits_rate']
+    new_edgebits_rates = df_sorted['reduced_edgebits_rate']
+    path_2bit_rates = df_sorted['paths_2bit_rate']
+
+    # Find filenames, categories, and rates of maximum rates for each rate type
+    max_old_rate_file = filenames[old_rates.idxmax()]
+    max_old_rate_category = categories[old_rates.idxmax()]
+    max_old_rate_value = old_rates.max()
+
+    max_path_rate_file = filenames[path_rates.idxmax()]
+    max_path_rate_category = categories[path_rates.idxmax()]
+    max_path_rate_value = path_rates.max()
+
+    max_rle_rate_file = filenames[rle_rates.idxmax()]
+    max_rle_rate_category = categories[rle_rates.idxmax()]
+    max_rle_rate_value = rle_rates.max()
+
+    max_straights_rate_file = filenames[straights_rates.idxmax()]
+    max_straights_rate_category = categories[straights_rates.idxmax()]
+    max_straights_rate_value = straights_rates.max()
+
+    max_straights_huffman_rate_file = filenames[straights_huffman_rates.idxmax()]
+    max_straights_huffman_rate_category = categories[straights_huffman_rates.idxmax()]
+    max_straights_huffman_rate_value = straights_huffman_rates.max()
+
+    max_new_edgebits_rate_file = filenames[new_edgebits_rates.idxmax()]
+    max_new_edgebits_rate_category = categories[new_edgebits_rates.idxmax()]
+    max_new_edgebits_rate_value = new_edgebits_rates.max()
+
+    max_path_2bit_rate_file = filenames[path_2bit_rates.idxmax()]
+    max_path_2bit_rate_category = categories[path_2bit_rates.idxmax()]
+    max_path_2bit_rate_value = path_2bit_rates.max()
+
+    # Print filenames, categories, and rates of maximum rates
+    print(f"Filename with max edge bits rate: {max_old_rate_file}, Category: {max_old_rate_category}, Rate: {max_old_rate_value}")
+    print(f"Filename with max reduced edgebits rate: {max_new_edgebits_rate_file}, Category: {max_new_edgebits_rate_category}, Rate: {max_new_edgebits_rate_value}")
+    print(f"Filename with max tree rate: {max_path_rate_file}, Category: {max_path_rate_category}, Rate: {max_path_rate_value}")
+    print(f"Filename with max 2-bit paths rate: {max_path_2bit_rate_file}, Category: {max_path_2bit_rate_category}, Rate: {max_path_2bit_rate_value}")
+    print(f"Filename with max RLE rate: {max_rle_rate_file}, Category: {max_rle_rate_category}, Rate: {max_rle_rate_value}")
+    print(f"Filename with max straights rate: {max_straights_rate_file}, Category: {max_straights_rate_category}, Rate: {max_straights_rate_value}")
+    print(f"Filename with max straights+huffman rate: {max_straights_huffman_rate_file}, Category: {max_straights_huffman_rate_category}, Rate: {max_straights_huffman_rate_value}")
+
+    size = 18
+    opacity = 0.8
 
     plt.figure(figsize=(12, 6))
-    plt.scatter(filenames, old_rates, label='Old Rate', marker='x', alpha=1, s=3) #scatter
-    #plt.plot(filenames, old_rates, label='Old Rate', marker='o') #line plot
-    # plt.scatter(filenames, path_rates, label='Path Rate', marker='o', s=3)
-    # plt.scatter(filenames, rle_rates, label='RLE Rate', marker='o', s=3)
-    # plt.scatter(filenames, straights_rates, label='Straights Rate', marker='x', alpha=1, s=3) #scatter
-    # plt.scatter(filenames, straights_huffman_rates, label='Straights Huffman Rate', marker='x', alpha=1, s=3)
-    plt.scatter(filenames, new_edgebits_rates, label='new edgebits rates', marker='x', alpha=1, s=3)
+    plt.scatter(filenames, old_rates, label='edge bits', marker='x', alpha=opacity, s=size)
+    plt.scatter(filenames, new_edgebits_rates, label='reduced edge bits', marker='x', alpha=opacity, s=size)
+    plt.scatter(filenames, path_rates, label='tree', marker='x', alpha=opacity, s=size)
+    plt.scatter(filenames, path_2bit_rates, label='2-bit paths', marker='x', alpha=opacity, s=size)
+    plt.scatter(filenames, rle_rates, label='2-bit paths + RLE', marker='x', alpha=opacity, s=size)
+    plt.scatter(filenames, straights_rates, label='Straights', marker='x', alpha=opacity, s=size)
+    plt.scatter(filenames, straights_huffman_rates, label='Straights + Huffman', marker='x', alpha=opacity, s=size)
     plt.xticks([])
-    # plt.yscale('log')
+    plt.yscale('log')
 
     plt.xlabel('Filename (Sorted by Old Rate)')
     plt.ylabel('Compression Rate')
