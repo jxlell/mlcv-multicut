@@ -94,18 +94,18 @@ int main() {
 
     std::unordered_set<std::string> category_set = {
         "icon_64",
-        "icon_512",
-        "photo_kodak",
-        "photo_tecnick",
-        "photo_wikipedia",
-        "pngimg",
-        "screenshot_web",
-        "screenshot_game",
-        "textures_photo",
-        "textures_pk",
-        "textures_pk01",
-        "textures_pk02",
-        "textures_plants"
+      //   "icon_512",
+      //   "photo_kodak",
+      //   "photo_tecnick",
+      //   "photo_wikipedia",
+      //   "pngimg",
+      //   "screenshot_web",
+      //   "screenshot_game",
+      //   "textures_photo",
+      //   "textures_pk",
+      //   "textures_pk01",
+      //   "textures_pk02",
+      //   "textures_plants"
     };
 
     std::ifstream inputFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/singlefile.txt");
@@ -123,12 +123,13 @@ int main() {
     inputFile.close();
 
     // control parameters 
-    bool single_image = true;
+    bool single_image = false;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
     //showImg = false;
     bool writeToFile = true;
     writeToFile = !single_image;
+    writeToFile = false;
 
     std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
     int imgCount = countImgFiles(parentDir, category_set);

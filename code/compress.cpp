@@ -46,11 +46,32 @@ CompressedImage compress(const std::string& imagePath){
         transparencyValues = std::vector<uint8_t>(img.rows * img.cols, 255);
     }
 
+    struct methods{
+        bool useEdgebits = true;
+        bool useReducedEdgebits = true;
+        bool useTree = true;
+        bool use2bits = true;
+        bool useRLE = true;
+        bool useStraights = true;
+        bool useHuffman = true;
+    };
+
+    methods compressionMethods = {
+        true, // useEdgebits
+        true, // useReducedEdgebits
+        true, // useTree
+        true, // use2bits
+        true, // useRLE
+        true, // useStraights
+        true  // useHuffman
+    };  
+
 
     
 
     std::vector<bool> edgeBits01((img.cols-1)*img.rows + img.cols*(img.rows-1), false);
     std::vector<bool> edgeBitsBitString;
+    std::vector<bool> reducedEdgeBitsBitString;
     std::vector<int> neighborsOffsets = {img.cols, 1};
     std::vector<RGB> regionColors;
     PathInfoVector paths;
@@ -59,6 +80,7 @@ CompressedImage compress(const std::string& imagePath){
     std::vector<bool> paths2bitBitString;
     RLEVector rle_paths;
     std::vector<bool> rleBitString;
+    std::vector<bool> paths2bitRLEBitString;
     Straights straights;
     std::vector<bool> straightsNoHuffBitString;
     std::vector<bool> straightsBitString;
@@ -76,47 +98,18 @@ CompressedImage compress(const std::string& imagePath){
     long long reduced_edgebits_compression_time = 0;
     long long paths2bit_compression_time = 0;
 
+    double oldCompressionRate = 0;
+    double newEdgeBitsCompressionRate = 0;
+    double pathCompressionRate = 0;
+    double paths2bit_compression_rate = 0;
+    double rleCompressionRate = 0;
+    double straightsCompressionRate = 0;
+    double straightsHuffmanCompressionRate = 0;
+
     auto start = std::chrono::high_resolution_clock::now();
-    edgeBits01 = setEdgeBits(img, edgeBits01, neighborsOffsets);
     auto end = std::chrono::high_resolution_clock::now();
-    old_compression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    std::vector<bool> verticalBits;
-    std::vector<bool> horizontalBits;
-    std::vector<bool> reducedHoroizontalBits;
-    std::vector<bool> reducedVerticalBits;
-    std::vector<bool> reducedEdgeBitsBitString;
-    //std::vector<bool> verticalBits = setVerticalBits(img);
+
     start = std::chrono::high_resolution_clock::now();
-    horizontalBits = setHorizontalBits(img);
-    // std::cout << "horizontal bits: ";
-    // for (bool b : horizontalBits){
-    //     std::cout << b;
-    // }
-    // std::cout << std::endl;
-    //reducedHoroizontalBits = reduceHorizontalBits(img);
-    reducedVerticalBits = reduceVerticalBits(img, edgeBits01);
-    end = std::chrono::high_resolution_clock::now();
-    reduced_edgebits_compression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    // std::cout << "reduced verticals: ";
-    // for (bool b : reducedVerticalBits){
-    //     std::cout << b;
-    // }
-    // std::cout << std::endl;
-
-    // set reduced edge bits bitstring
-
-
-
-    // double multicutPercentage = getMulticutPercentage(edgeBits01);
-    // std::cout << "Percentage of edge bits set to 1: " << multicutPercentage << "%" << std::endl;
-    
-    //getAnomalies(edgeBits01, img);
-
-    int startPointBits = std::ceil(std::log2(edgeBits01.size()));
-    // std::cout << "startPointBits: " << startPointBits << std::endl;
-    
-    int bits = 0;
-
     regionColors = setRegions(img, neighborsOffsets, img.cols * img.rows);
     // std::cout << "size of regionColors: " << regionColors.size() << std::endl;
     std::set<RGB, RGBComparator> regionColorsSet;
@@ -125,403 +118,337 @@ CompressedImage compress(const std::string& imagePath){
     }
     // std::cout << "Number of unique colors: " << regionColorsSet.size() << std::endl;
     auto regionColorBitString = boolVectorFromRGBVector(regionColors);
-    // std::cout << "size of regionColorBitString: " << regionColorBitString.size() << std::endl;
-    //calculate old compression rate
-    bits += calculateBoolVectorStorage(regionColorBitString);
-    bits += edgeBits01.size();
-    bits += 32;
-    //TODO: ensure bits != 0
-    double oldCompressionRate = static_cast<double>(img.rows*img.cols*24) / bits;
-    std::cout << "Old Compression Rate: " << oldCompressionRate << std::endl;
-
-    bits = 0;
-    bits += calculateBoolVectorStorage(regionColorBitString);
-    bits += horizontalBits.size() + reducedVerticalBits.size();
-    bits += 32;
-    double newEdgeBitsCompressionRate = static_cast<double>(img.rows*img.cols*24) / bits;
-    std::cout << "reduced edgebits comp rate" << newEdgeBitsCompressionRate << std::endl;
-
-    start = std::chrono::high_resolution_clock::now();
-    paths = setPaths(edgeBits01, img);
-    //set bitstring for paths 
-
-    std::vector<bool> cols_bitstring = intToBool(img.cols, 16);
-    std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
-    pathsBitString.insert(pathsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
-    pathsBitString.insert(pathsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
-    // std::cout << "region color bitstring size: " << regionColorBitString.size()/24 << std::endl;
-    int regionColorsInt = regionColorBitString.size()/24;
-    int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows));
-    // std::cout << "region color bits size: " << regionColorBitsSize << std::endl;
-    std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
-    pathsBitString.insert(pathsBitString.end(), regionColorBits.begin(), regionColorBits.end());
-    pathsBitString.insert(pathsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
-
-
-    //int disconnectedComponentsBits = std::ceil(std::log2(img.cols * img.rows / 2));
-    int disconnectedComponentsBits = std::log2(std::ceil(static_cast<double>(img.cols)/2) * std::ceil(static_cast<double>(img.rows)/2));
-    // std::cout << "paths size: " << paths.size() << std::endl;
-    std::vector<bool> numberOfDisconnectedComponents = intToBool(paths.size(), disconnectedComponentsBits);
-    // std::cout << "disconnected comp bits: " << disconnectedComponentsBits << std::endl;
-    std::vector<bool> startPointBitsVector = intToBool(startPointBits, 5);
-    // add number of components to bitstring
-    pathsBitString.insert(pathsBitString.end(), numberOfDisconnectedComponents.begin(), numberOfDisconnectedComponents.end());
-    // add number of bits for start points to bitstring
-    pathsBitString.insert(pathsBitString.end(), startPointBitsVector.begin(), startPointBitsVector.end());
-    for (auto& path : paths){
-        auto& startEdge = std::get<0>(path);
-        std::vector<bool> startBool = intToBool(startEdge,startPointBits);
-        pathsBitString.insert(pathsBitString.end(), startBool.begin(), startBool.end());
-        // std::cout << "direction size: " << std::get<2>(path).size() << std::endl;
-        // std::cout << "startEdge: " << startEdge << ", path: " << std::endl;
-        // int i = 0;
-        // for (bool bit : std::get<2>(path)) {
-        //     std::cout << bit;
-        //     // if(++i % 3 == 0){
-        //     //     std::cout << "-";
-        //     // }
-        // }
-        // std::cout << std::endl;
-    }
-    for(auto& path : paths){
-        // add direction vector to bitstring, delimited by 000
-        pathsBitString.insert(pathsBitString.end(), std::get<2>(path).begin(), std::get<2>(path).end());
-    }
-
-    // std::cout << "bits for startpoints: " << startPointBits << std::endl;
-    // std::cout << "paths bitstring: ";
-    // for (bool b : pathsBitString){
-    //     std::cout << b;
-    // }
-    // std::cout << std::endl;
-
-    // std::cout << "paths bitstring size: " << pathsBitString.size() << std::endl;
-
-
     end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    std::cout << "time to set paths: " << duration.count() << "ms" << std::endl;
-    tree_compression_time = duration.count();
-    tree_compression_time += old_compression_time;
-
-    bits = 0;
-    bits += calculateBoolVectorStorage(regionColorBitString);
-    bits += paths.size() * startPointBits + 24*8; // bits for start points
-    for (auto path : paths) {
-        bits += std::get<2>(path).size();
-        bits += 24*8; // overhead
-    }
-    // add bits for cols and rows integers
-    bits += 16 + 24*8; // 32 bits for cols
-    bits += 16 + 24*8; // 32 bits for rows
-    // std::cout << "bits for paths: " << bits << std::endl;
-
-    double pathCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
-    pathCompressionRate = (img.rows * img.cols * 24) / (double)pathsBitString.size();
-    std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;
-
-    start = std::chrono::high_resolution_clock::now();
-    auto _2bitpaths = set2BitPaths(edgeBits01, img);
-    paths_2bit = std::get<0>(_2bitpaths);
-    // edgeI,  zeros,          ones,           start
-    // 32 bit, 1bit (vector),  16bit (vector), 1bit
-    rle_paths = std::get<1>(_2bitpaths);
-    std::vector<uint32_t> rleStartPoints;
-    for (auto rle : rle_paths) {
-        rleStartPoints.push_back(boolVectorToInt(std::get<0>(rle)));
-        // std::cout << "start: " << boolVectorToInt(std::get<0>(rle)) << std::endl;
-    }
-    end = std::chrono::high_resolution_clock::now();
-    rle_compression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    paths2bit_compression_time = rle_compression_time;
-    paths2bit_compression_time += old_compression_time;
-
-    start = std::chrono::high_resolution_clock::now();
-    // set reduced edge bits bitstring
-    reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
-    reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
-    reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), regionColorBits.begin(), regionColorBits.end());
-    reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
-
-    int horizontalBitsAmount = horizontalBits.size();
-    std::vector<bool> horizontalBitsAmountVector = intToBool(horizontalBitsAmount, 32);
-    reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), horizontalBitsAmountVector.begin(), horizontalBitsAmountVector.end());
-    for(auto bit : horizontalBits){
-        reducedEdgeBitsBitString.push_back(bit);
-    }
-    int reducedVerticalBitsAmount = reducedVerticalBits.size();
-    std::vector<bool> reducedVerticalBitsAmountVector = intToBool(reducedVerticalBitsAmount, 32);
-    reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), reducedVerticalBitsAmountVector.begin(), reducedVerticalBitsAmountVector.end());
-    for(auto bit : reducedVerticalBits){
-        reducedEdgeBitsBitString.push_back(bit);
-    }
-    end = std::chrono::high_resolution_clock::now();
-    reduced_edgebits_compression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    newEdgeBitsCompressionRate = (img.rows * img.cols * 24) / (double)(reducedEdgeBitsBitString.size());
-
-    // set edgebits bitstring
-    start = std::chrono::high_resolution_clock::now();
-    edgeBitsBitString.insert(edgeBitsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
-    edgeBitsBitString.insert(edgeBitsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
-    edgeBitsBitString.insert(edgeBitsBitString.end(), regionColorBits.begin(), regionColorBits.end());
-    edgeBitsBitString.insert(edgeBitsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
-
-    int edgeBitsAmount = edgeBits01.size();
-    std::vector<bool> edgeBitsAmountVector = intToBool(edgeBitsAmount, 32);
-    edgeBitsBitString.insert(edgeBitsBitString.end(), edgeBitsAmountVector.begin(), edgeBitsAmountVector.end());
-    for(auto bit : edgeBits01){
-        edgeBitsBitString.push_back(bit);
-    }
-    end = std::chrono::high_resolution_clock::now();
-    old_compression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    oldCompressionRate = (img.rows * img.cols * 24) / (double)(edgeBitsBitString.size());
+    auto regionColorBitStringTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
 
-    // set paths_2bit bitstring
-    int paths2BitStringNoDirSize = 0;
-    start = std::chrono::high_resolution_clock::now();
-    paths2bitBitString.insert(paths2bitBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
-    paths2bitBitString.insert(paths2bitBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
-    paths2bitBitString.insert(paths2bitBitString.end(), regionColorBits.begin(), regionColorBits.end());
-    paths2bitBitString.insert(paths2bitBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
-    int paths2bitAmount = paths_2bit.size();
-    std::vector<bool> paths2bitAmountVector = intToBool(paths2bitAmount, 32);
-    paths2bitBitString.insert(paths2bitBitString.end(), paths2bitAmountVector.begin(), paths2bitAmountVector.end());
-    int paths2bitStartPointsBits = std::ceil(std::log2(edgeBits01.size()));
-    std::vector<bool> paths2bitStartPointsBitsVector = intToBool(paths2bitStartPointsBits, 5);
-    paths2bitBitString.insert(paths2bitBitString.end(), paths2bitStartPointsBitsVector.begin(), paths2bitStartPointsBitsVector.end());
-    for (auto path : paths_2bit){
-        std::vector<bool> startBool = intToBool(std::get<0>(path), paths2bitStartPointsBits);
-        paths2bitBitString.insert(paths2bitBitString.end(), startBool.begin(), startBool.end());
-    }
-    paths2BitStringNoDirSize = paths2bitBitString.size();
-    auto endNoDir = std::chrono::high_resolution_clock::now();
-    auto durationNoDir = std::chrono::duration_cast<std::chrono::milliseconds>(endNoDir - start);
-    for(auto path : paths_2bit){
-        paths2bitBitString.insert(paths2bitBitString.end(), std::get<2>(path).begin(), std::get<2>(path).end());
-        paths2bitBitString.push_back(false);
-        paths2bitBitString.push_back(false);
-        // paths2bitBitString.push_back(false);
-    }
+    if(compressionMethods.useEdgebits){
+        start = std::chrono::high_resolution_clock::now();
+        edgeBits01 = setEdgeBits(img, edgeBits01, neighborsOffsets);
+        // set edgebits bitstring
+        std::vector<bool> cols_bitstring = intToBool(img.cols, 16);
+        std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
+        int regionColorsInt = regionColorBitString.size()/24;
+        int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows));
+        // std::cout << "region color bits size: " << regionColorBitsSize << std::endl;
+        std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
+        edgeBitsBitString.insert(edgeBitsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
+        edgeBitsBitString.insert(edgeBitsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
+        edgeBitsBitString.insert(edgeBitsBitString.end(), regionColorBits.begin(), regionColorBits.end());
+        edgeBitsBitString.insert(edgeBitsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
+
+        int edgeBitsAmount = edgeBits01.size();
+        std::vector<bool> edgeBitsAmountVector = intToBool(edgeBitsAmount, 32);
+        edgeBitsBitString.insert(edgeBitsBitString.end(), edgeBitsAmountVector.begin(), edgeBitsAmountVector.end());
+        for(auto bit : edgeBits01){
+            edgeBitsBitString.push_back(bit);
+        }
+        end = std::chrono::high_resolution_clock::now();
+        old_compression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        oldCompressionRate = (img.rows * img.cols * 24) / (double)(edgeBitsBitString.size());
+
+    }   
+    std::vector<bool> verticalBits;
+    std::vector<bool> horizontalBits;
+    std::vector<bool> reducedHoroizontalBits;
+    std::vector<bool> reducedVerticalBits;
     
-    end = std::chrono::high_resolution_clock::now();
-    paths2bit_compression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    double paths2bit_compression_rate = static_cast<double>(img.cols * img.rows * 24) / (paths2bitBitString.size());
+    //std::vector<bool> verticalBits = setVerticalBits(img);
+    // double multicutPercentage = getMulticutPercentage(edgeBits01);
+    // std::cout << "Percentage of edge bits set to 1: " << multicutPercentage << "%" << std::endl;
 
-    std::vector<bool> paths2bitRLEBitString;
-    start = std::chrono::high_resolution_clock::now();
-    for (auto& path : paths_2bit) {
-        std::vector<bool>& directions = std::get<2>(path);
+    if(compressionMethods.useReducedEdgebits){
+        start = std::chrono::high_resolution_clock::now();
+        horizontalBits = setHorizontalBits(img);
+        reducedVerticalBits = reduceVerticalBits(img, edgeBits01);
+        
+        // set reduced edge bits bitstring
+        std::vector<bool> cols_bitstring = intToBool(img.cols, 16);
+        std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
+        reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
+        reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
+        int regionColorsInt = regionColorBitString.size()/24;
+        int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows));
+        // std::cout << "region color bits size: " << regionColorBitsSize << std::endl;
+        std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
+        reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), regionColorBits.begin(), regionColorBits.end());
+        reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
+    
+        int horizontalBitsAmount = horizontalBits.size();
+        std::vector<bool> horizontalBitsAmountVector = intToBool(horizontalBitsAmount, 32);
+        reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), horizontalBitsAmountVector.begin(), horizontalBitsAmountVector.end());
+        for(auto bit : horizontalBits){
+            reducedEdgeBitsBitString.push_back(bit);
+        }
+        int reducedVerticalBitsAmount = reducedVerticalBits.size();
+        std::vector<bool> reducedVerticalBitsAmountVector = intToBool(reducedVerticalBitsAmount, 32);
+        reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), reducedVerticalBitsAmountVector.begin(), reducedVerticalBitsAmountVector.end());
+        for(auto bit : reducedVerticalBits){
+            reducedEdgeBitsBitString.push_back(bit);
+        }
+        newEdgeBitsCompressionRate = (img.rows * img.cols * 24) / (double)(reducedEdgeBitsBitString.size());    
+        end = std::chrono::high_resolution_clock::now();
+        reduced_edgebits_compression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    }
 
-        size_t i = 0;
-        while (i < directions.size()) {
-            // Extract 2-bit direction
-            bool bit1 = directions[i];
-            bool bit2 = directions[i + 1];
-            std::vector<bool> dir = {bit1, bit2};
-            i += 2;
+    if(compressionMethods.useTree){
+        
+        start = std::chrono::high_resolution_clock::now();
+        paths = setPaths(edgeBits01, img);
+        //set bitstring for paths 
 
-            // Count repetitions
-            int count = 1;
-            while (i + 1 < directions.size() && directions[i] == bit1 && directions[i + 1] == bit2) {
-                count++;
-                i += 2;
-            }
+        std::vector<bool> cols_bitstring = intToBool(img.cols, 16);
+        std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
+        pathsBitString.insert(pathsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
+        pathsBitString.insert(pathsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
+        // std::cout << "region color bitstring size: " << regionColorBitString.size()/24 << std::endl;
+        int regionColorsInt = regionColorBitString.size()/24;
+        int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows));
+        // std::cout << "region color bits size: " << regionColorBitsSize << std::endl;
+        std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
+        pathsBitString.insert(pathsBitString.end(), regionColorBits.begin(), regionColorBits.end());
+        pathsBitString.insert(pathsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
 
-            // Compute count bit size (store it explicitly)
-            int countBitsSize = std::ceil(std::log2(count + 1));
-            std::vector<bool> countBitsSizeVec = intToBool(countBitsSize, 5); // Always 5 bits
 
-            // Store direction (2 bits)
-            paths2bitRLEBitString.push_back(bit1);
-            paths2bitRLEBitString.push_back(bit2);
-
-            // Store count bit size (5 bits)
-            paths2bitRLEBitString.insert(paths2bitRLEBitString.end(), countBitsSizeVec.begin(), countBitsSizeVec.end());
-
-            // Store count (variable length)
-            std::vector<bool> countBits = intToBool(count, countBitsSize);
-            paths2bitRLEBitString.insert(paths2bitRLEBitString.end(), countBits.begin(), countBits.end());
+        //int disconnectedComponentsBits = std::ceil(std::log2(img.cols * img.rows / 2));
+        int disconnectedComponentsBits = std::log2(std::ceil(static_cast<double>(img.cols)/2) * std::ceil(static_cast<double>(img.rows)/2));
+        // std::cout << "paths size: " << paths.size() << std::endl;
+        std::vector<bool> numberOfDisconnectedComponents = intToBool(paths.size(), disconnectedComponentsBits);
+        // std::cout << "disconnected comp bits: " << disconnectedComponentsBits << std::endl;
+        int startPointBits = std::ceil(std::log2(edgeBits01.size()));
+        std::vector<bool> startPointBitsVector = intToBool(startPointBits, 5);
+        // add number of components to bitstring
+        pathsBitString.insert(pathsBitString.end(), numberOfDisconnectedComponents.begin(), numberOfDisconnectedComponents.end());
+        // add number of bits for start points to bitstring
+        pathsBitString.insert(pathsBitString.end(), startPointBitsVector.begin(), startPointBitsVector.end());
+        for (auto& path : paths){
+            auto& startEdge = std::get<0>(path);
+            std::vector<bool> startBool = intToBool(startEdge,startPointBits);
+            pathsBitString.insert(pathsBitString.end(), startBool.begin(), startBool.end());
+            // std::cout << "direction size: " << std::get<2>(path).size() << std::endl;
+            // std::cout << "startEdge: " << startEdge << ", path: " << std::endl;
+            // int i = 0;
+            // for (bool bit : std::get<2>(path)) {
+            //     std::cout << bit;
+            //     // if(++i % 3 == 0){
+            //     //     std::cout << "-";
+            //     // }
+            // }
+            // std::cout << std::endl;
+        }
+        for(auto& path : paths){
+            // add direction vector to bitstring, delimited by 000
+            pathsBitString.insert(pathsBitString.end(), std::get<2>(path).begin(), std::get<2>(path).end());
         }
 
-        // Append "00" as delimiter
-        paths2bitRLEBitString.push_back(false);
-        paths2bitRLEBitString.push_back(false);
+
+        end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        std::cout << "time to set paths: " << duration.count() << "ms" << std::endl;
+        tree_compression_time = duration.count();
+        pathCompressionRate = (img.rows * img.cols * 24) / (double)pathsBitString.size();
+        std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;
     }
-    end = std::chrono::high_resolution_clock::now();
-    rle_compression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    rle_compression_time += durationNoDir.count();
 
-    double rleCompressionRate = static_cast<double>(img.cols * img.rows * 24) / (paths2bitRLEBitString.size() + paths2BitStringNoDirSize);
-    std::cout << "new rle comp rate: " << rleCompressionRate << std::endl;
+    if(compressionMethods.use2bits){
+        start = std::chrono::high_resolution_clock::now();
+        auto _2bitpaths = set2BitPaths(edgeBits01, img);
+        paths_2bit = std::get<0>(_2bitpaths);
+        // edgeI,  zeros,          ones,           start
+        // 32 bit, 1bit (vector),  16bit (vector), 1bit
+        rle_paths = std::get<1>(_2bitpaths);
+        std::vector<uint32_t> rleStartPoints;
+        for (auto rle : rle_paths) {
+            rleStartPoints.push_back(boolVectorToInt(std::get<0>(rle)));
+            // std::cout << "start: " << boolVectorToInt(std::get<0>(rle)) << std::endl;
+        }
+            
+        // set paths_2bit bitstring
+        int paths2BitStringNoDirSize = 0;
+        start = std::chrono::high_resolution_clock::now();
+        std::vector<bool> cols_bitstring = intToBool(img.cols, 16);
+        std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
+        int regionColorsInt = regionColorBitString.size()/24;
+        int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows));
+        std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
+        paths2bitBitString.insert(paths2bitBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
+        paths2bitBitString.insert(paths2bitBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
+        paths2bitBitString.insert(paths2bitBitString.end(), regionColorBits.begin(), regionColorBits.end());
+        paths2bitBitString.insert(paths2bitBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
+        int paths2bitAmount = paths_2bit.size();
+        std::vector<bool> paths2bitAmountVector = intToBool(paths2bitAmount, 32);
+        paths2bitBitString.insert(paths2bitBitString.end(), paths2bitAmountVector.begin(), paths2bitAmountVector.end());
+        int paths2bitStartPointsBits = std::ceil(std::log2(edgeBits01.size()));
+        std::vector<bool> paths2bitStartPointsBitsVector = intToBool(paths2bitStartPointsBits, 5);
+        paths2bitBitString.insert(paths2bitBitString.end(), paths2bitStartPointsBitsVector.begin(), paths2bitStartPointsBitsVector.end());
+        for (auto path : paths_2bit){
+            std::vector<bool> startBool = intToBool(std::get<0>(path), paths2bitStartPointsBits);
+            paths2bitBitString.insert(paths2bitBitString.end(), startBool.begin(), startBool.end());
+        }
+        paths2BitStringNoDirSize = paths2bitBitString.size();
+        auto endNoDir = std::chrono::high_resolution_clock::now();
+        auto durationNoDir = std::chrono::duration_cast<std::chrono::milliseconds>(endNoDir - start);
+        for(auto path : paths_2bit){
+            paths2bitBitString.insert(paths2bitBitString.end(), std::get<2>(path).begin(), std::get<2>(path).end());
+            paths2bitBitString.push_back(false);
+            paths2bitBitString.push_back(false);
+            // paths2bitBitString.push_back(false);
+        }
+        
+        end = std::chrono::high_resolution_clock::now();
+        paths2bit_compression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        paths2bit_compression_rate = static_cast<double>(img.cols * img.rows * 24) / (paths2bitBitString.size());
 
+        // set rle bitstring
+        start = std::chrono::high_resolution_clock::now();
+        for (auto& path : paths_2bit) {
+            std::vector<bool>& directions = std::get<2>(path);
 
-    // // set rle bitstring
-    // start = std::chrono::high_resolution_clock::now();
-    // rleBitString.insert(rleBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
-    // rleBitString.insert(rleBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
-    // rleBitString.insert(rleBitString.end(), regionColorBits.begin(), regionColorBits.end());
-    // rleBitString.insert(rleBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
+            size_t i = 0;
+            while (i < directions.size()) {
+                // Extract 2-bit direction
+                bool bit1 = directions[i];
+                bool bit2 = directions[i + 1];
+                std::vector<bool> dir = {bit1, bit2};
+                i += 2;
 
-    // std::vector<bool> rleStartPointsAmount = intToBool(rle_paths.size(), 32);
-    // rleBitString.insert(rleBitString.end(), rleStartPointsAmount.begin(), rleStartPointsAmount.end());
-    // int rleStartPointsBits = std::ceil(std::log2(edgeBits01.size()));
-    // std::vector<bool> rleStartPointsBitsVector = intToBool(rleStartPointsBits, 5);
-    // rleBitString.insert(rleBitString.end(), rleStartPointsBitsVector.begin(), rleStartPointsBitsVector.end());
-    // for(auto& startPoint : rleStartPoints){
-    //     std::vector<bool> startPointBits = intToBool(startPoint, rleStartPointsBits);
-    //     rleBitString.insert(rleBitString.end(), startPointBits.begin(), startPointBits.end());
-    // }
+                // Count repetitions
+                int count = 1;
+                while (i + 1 < directions.size() && directions[i] == bit1 && directions[i + 1] == bit2) {
+                    count++;
+                    i += 2;
+                }
 
-    // for(auto rle : rle_paths){
-    //     int numberOfZeros = std::get<1>(rle).size();
-    //     std::vector<bool> zerosAmount = intToBool(numberOfZeros, 16);
-    //     rleBitString.insert(rleBitString.end(), zerosAmount.begin(), zerosAmount.end());
-    //     for(auto zero : std::get<1>(rle)){
-    //         rleBitString.push_back(zero);
-    //     }
-    //     int numberOfOnes = std::get<2>(rle).size();
-    //     std::vector<bool> onesAmount = intToBool(numberOfOnes, 16);
-    //     rleBitString.insert(rleBitString.end(), onesAmount.begin(), onesAmount.end());
-    //     for(auto one : std::get<2>(rle)){
-    //         std::vector<bool> oneBits = intToBool(boolVectorToInt(one), 16);
-    //         rleBitString.insert(rleBitString.end(), oneBits.begin(), oneBits.end());
-    //     }
-    //     rleBitString.push_back(std::get<3>(rle));
-    // }
-    // end = std::chrono::high_resolution_clock::now();
-    // rle_compression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+                // Compute count bit size (store it explicitly)
+                int countBitsSize = std::ceil(std::log2(count + 1));
+                std::vector<bool> countBitsSizeVec = intToBool(countBitsSize, 5); // Always 5 bits
 
-    // int rleBitstringSize = rleBitString.size();
-    // std::cout << "RLE compression rate (bitstring): " << (img.cols * img.rows * 24) / (double)rleBitstringSize << std::endl;
+                // Store direction (2 bits)
+                paths2bitRLEBitString.push_back(bit1);
+                paths2bitRLEBitString.push_back(bit2);
 
-    // // calculate storage size for RLE-paths
-    // bits = 0;
-    // bits += calculateBoolVectorStorage(regionColorBitString);
-    // bits += rle_paths.size() * 32 + 24*8; // 32 bits for start points
-    // bits += rle_paths.size() + 24*8; // 1 bit to indicate if ones or zeros vector starts 
+                // Store count bit size (5 bits)
+                paths2bitRLEBitString.insert(paths2bitRLEBitString.end(), countBitsSizeVec.begin(), countBitsSizeVec.end());
 
-    // for(auto rle : rle_paths){
-    //     bits += std::get<1>(rle).size();
-    //     bits += 24*8; // overhead
-    //     bits += std::get<2>(rle).size() * 16;
-    //     bits += 24*8; // overhead
-    // }
-    // double rleCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
-    // // std::cout << "RLE Compression Rate: " << rleCompressionRate << std::endl;
+                // Store count (variable length)
+                std::vector<bool> countBits = intToBool(count, countBitsSize);
+                paths2bitRLEBitString.insert(paths2bitRLEBitString.end(), countBits.begin(), countBits.end());
+            }
 
-    // // calculate storage size for paths (2bit-directions)
-    // bits = 0;
-    // bits += calculateBoolVectorStorage(regionColorBitString);
-    // bits += paths_2bit.size() * 16 + 24*8; // start points
-    // //direction vector 
-    // for(auto path : paths_2bit){
-    //     bits += std::get<2>(path).size();
-    //     bits += 24*8; // overhead 
-    // }
+            // Append "00" as delimiter
+            paths2bitRLEBitString.push_back(false);
+            paths2bitRLEBitString.push_back(false);
+        }
 
-    // pathCompressionRate = static_cast<double>(img.cols * img.rows * 24) / bits;
-    // std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;
+        rleCompressionRate = static_cast<double>(img.cols * img.rows * 24) / (paths2bitRLEBitString.size() + paths2BitStringNoDirSize);
+        // std::cout << "new rle comp rate: " << rleCompressionRate << std::endl;
+        // std::cout << "paths2bitRLEBitString size: " << paths2bitRLEBitString.size() << std::endl;
+        end = std::chrono::high_resolution_clock::now();
+        rle_compression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        rle_compression_time += durationNoDir.count();
+    }
 
+    if(compressionMethods.useStraights){
+        start = std::chrono::high_resolution_clock::now();
+        std::tie(straights, straightsHuffmanCodesBitString, straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies) = setStraights(edgeBits01, img);
+        end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        std::cout << "time to set straights: " << duration.count() << "ms" << std::endl;
+        straights_huffman_compression_time = duration.count();
+        straights_compression_time = duration.count();
     
-    start = std::chrono::high_resolution_clock::now();
-    std::tie(straights, straightsHuffmanCodesBitString, straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies) = setStraights(edgeBits01, img);
-    end = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    std::cout << "time to set straights: " << duration.count() << "ms" << std::endl;
-    straights_huffman_compression_time = duration.count();
-    straights_compression_time = duration.count();
-
-
-
-    // set straights bitstring (no huffman)
-    start = std::chrono::high_resolution_clock::now();
-    // cols, rows, regionColors
-    straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
-    straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
-    straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), regionColorBits.begin(), regionColorBits.end());
-    straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
-
-    // list start points 
-    std::vector<bool> huffmanStartPointsAmount = intToBool(straightsHuffmanCodesStartPoints.size(), 32);
-    straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), huffmanStartPointsAmount.begin(), huffmanStartPointsAmount.end());
-    int huffmanStartPointsBits = std::ceil(std::log2(edgeBits01.size()));
-    std::vector<bool> huffmanStartPointsBitsVector = intToBool(huffmanStartPointsBits, 5);
-    straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), huffmanStartPointsBitsVector.begin(), huffmanStartPointsBitsVector.end());
-    for(auto& startPoint : straightsHuffmanCodesStartPoints){
-        std::vector<bool> startPointBits = intToBool(startPoint, huffmanStartPointsBits);
-        straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), startPointBits.begin(), startPointBits.end());
-    }
-
-    // list lengths
-    int straightBits = std::ceil(std::log2(std::max(img.cols, img.rows)));
-    std::vector<bool> straightBitsVector = intToBool(straightBits, 5);
-    straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), straightBitsVector.begin(), straightBitsVector.end());
-    for(auto straight : straights){
-        auto& count = std::get<1>(straight);
-        std::vector<bool> countBits = intToBool(boolVectorToInt(count), straightBits);
-        straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), countBits.begin(), countBits.end());
-    }
-    std::cout << "straights (no huff) comp rate: " << (img.rows * img.cols * 24) / (double)straightsNoHuffBitString.size() << std::endl;
-    end = std::chrono::high_resolution_clock::now();
-    straights_compression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    double straightsCompressionRate = (img.rows * img.cols * 24) / (double)straightsNoHuffBitString.size();
-
-    // ---------------
-    //set bitstring for straights (huffman)
-
-    start = std::chrono::high_resolution_clock::now();
-    // cols, rows, regionColors
-    straightsBitString.insert(straightsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
-    straightsBitString.insert(straightsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
-    straightsBitString.insert(straightsBitString.end(), regionColorBits.begin(), regionColorBits.end());
-    straightsBitString.insert(straightsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
-
-    // list start points 
-    huffmanStartPointsAmount = intToBool(straightsHuffmanCodesStartPoints.size(), 32);
-    straightsBitString.insert(straightsBitString.end(), huffmanStartPointsAmount.begin(), huffmanStartPointsAmount.end());
-    huffmanStartPointsBits = std::ceil(std::log2(edgeBits01.size()));
-    huffmanStartPointsBitsVector = intToBool(huffmanStartPointsBits, 5);
-    straightsBitString.insert(straightsBitString.end(), huffmanStartPointsBitsVector.begin(), huffmanStartPointsBitsVector.end());
-    for(auto& startPoint : straightsHuffmanCodesStartPoints){
-        std::vector<bool> startPointBits = intToBool(startPoint, huffmanStartPointsBits);
-        straightsBitString.insert(straightsBitString.end(), startPointBits.begin(), startPointBits.end());
-    }
-
-    // length of huffman bitstring + huffman bitstring
-    std::vector<bool> huffmanCodesBitstringSize = intToBool(straightsHuffmanCodesBitString.size(), 64);
-    straightsBitString.insert(straightsBitString.end(), huffmanCodesBitstringSize.begin(), huffmanCodesBitstringSize.end());
-    straightsBitString.insert(straightsBitString.end(), straightsHuffmanCodesBitString.begin(), straightsHuffmanCodesBitString.end());
     
-    // lengths
-    int straightsLenghtsBits = std::ceil(std::log2(std::max(img.cols, img.rows)));
-    std::vector<bool> straightsLengthsBitsVector = intToBool(straightsLenghtsBits, 5);
-    straightsBitString.insert(straightsBitString.end(), straightsLengthsBitsVector.begin(), straightsLengthsBitsVector.end());
-    std::vector<bool> straightLengthsListSize = intToBool(straightLengthsList.size(), 16);
-    straightsBitString.insert(straightsBitString.end(), straightLengthsListSize.begin(), straightLengthsListSize.end());
-    for(auto& length : straightLengthsList){
-        std::vector<bool> lengthBits = intToBool(length, straightsLenghtsBits);
-        straightsBitString.insert(straightsBitString.end(), lengthBits.begin(), lengthBits.end());
+    
+        // set straights bitstring (no huffman)
+        start = std::chrono::high_resolution_clock::now();
+        // cols, rows, regionColors
+        std::vector<bool> cols_bitstring = intToBool(img.cols, 16);
+        std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
+        int regionColorsInt = regionColorBitString.size()/24;
+        int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows));
+        std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
+        straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
+        straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
+        straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), regionColorBits.begin(), regionColorBits.end());
+        straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
+    
+        // list start points 
+        std::vector<bool> huffmanStartPointsAmount = intToBool(straightsHuffmanCodesStartPoints.size(), 32);
+        straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), huffmanStartPointsAmount.begin(), huffmanStartPointsAmount.end());
+        int huffmanStartPointsBits = std::ceil(std::log2(edgeBits01.size()));
+        std::vector<bool> huffmanStartPointsBitsVector = intToBool(huffmanStartPointsBits, 5);
+        straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), huffmanStartPointsBitsVector.begin(), huffmanStartPointsBitsVector.end());
+        for(auto& startPoint : straightsHuffmanCodesStartPoints){
+            std::vector<bool> startPointBits = intToBool(startPoint, huffmanStartPointsBits);
+            straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), startPointBits.begin(), startPointBits.end());
+        }
+    
+        // list lengths
+        int straightBits = std::ceil(std::log2(std::max(img.cols, img.rows)));
+        std::vector<bool> straightBitsVector = intToBool(straightBits, 5);
+        straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), straightBitsVector.begin(), straightBitsVector.end());
+        for(auto straight : straights){
+            auto& count = std::get<1>(straight);
+            std::vector<bool> countBits = intToBool(boolVectorToInt(count), straightBits);
+            straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), countBits.begin(), countBits.end());
+        }
+        std::cout << "straights (no huff) comp rate: " << (img.rows * img.cols * 24) / (double)straightsNoHuffBitString.size() << std::endl;
+        end = std::chrono::high_resolution_clock::now();
+        straights_compression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        straightsCompressionRate = (img.rows * img.cols * 24) / (double)straightsNoHuffBitString.size();
+    
+        // ---------------
+        //set bitstring for straights (huffman)
+    
+        start = std::chrono::high_resolution_clock::now();
+        // cols, rows, regionColors
+        straightsBitString.insert(straightsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
+        straightsBitString.insert(straightsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
+        straightsBitString.insert(straightsBitString.end(), regionColorBits.begin(), regionColorBits.end());
+        straightsBitString.insert(straightsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
+    
+        // list start points 
+        huffmanStartPointsAmount = intToBool(straightsHuffmanCodesStartPoints.size(), 32);
+        straightsBitString.insert(straightsBitString.end(), huffmanStartPointsAmount.begin(), huffmanStartPointsAmount.end());
+        huffmanStartPointsBits = std::ceil(std::log2(edgeBits01.size()));
+        huffmanStartPointsBitsVector = intToBool(huffmanStartPointsBits, 5);
+        straightsBitString.insert(straightsBitString.end(), huffmanStartPointsBitsVector.begin(), huffmanStartPointsBitsVector.end());
+        for(auto& startPoint : straightsHuffmanCodesStartPoints){
+            std::vector<bool> startPointBits = intToBool(startPoint, huffmanStartPointsBits);
+            straightsBitString.insert(straightsBitString.end(), startPointBits.begin(), startPointBits.end());
+        }
+    
+        // length of huffman bitstring + huffman bitstring
+        std::vector<bool> huffmanCodesBitstringSize = intToBool(straightsHuffmanCodesBitString.size(), 64);
+        straightsBitString.insert(straightsBitString.end(), huffmanCodesBitstringSize.begin(), huffmanCodesBitstringSize.end());
+        straightsBitString.insert(straightsBitString.end(), straightsHuffmanCodesBitString.begin(), straightsHuffmanCodesBitString.end());
+        
+        // lengths
+        int straightsLenghtsBits = std::ceil(std::log2(std::max(img.cols, img.rows)));
+        std::vector<bool> straightsLengthsBitsVector = intToBool(straightsLenghtsBits, 5);
+        straightsBitString.insert(straightsBitString.end(), straightsLengthsBitsVector.begin(), straightsLengthsBitsVector.end());
+        std::vector<bool> straightLengthsListSize = intToBool(straightLengthsList.size(), 16);
+        straightsBitString.insert(straightsBitString.end(), straightLengthsListSize.begin(), straightLengthsListSize.end());
+        for(auto& length : straightLengthsList){
+            std::vector<bool> lengthBits = intToBool(length, straightsLenghtsBits);
+            straightsBitString.insert(straightsBitString.end(), lengthBits.begin(), lengthBits.end());
+        }
+    
+        // frequencies
+        std::vector<bool> straightLengthFrequenciesSize = intToBool(straightLengthFrequencies.size(), 16);
+        straightsBitString.insert(straightsBitString.end(), straightLengthFrequenciesSize.begin(), straightLengthFrequenciesSize.end());
+        int straightsFrequenciesBits = std::ceil(std::log2(img.cols * img.rows));
+        std::vector<bool> straightLengthFrequenciesBits = intToBool(straightsFrequenciesBits, 5);
+        straightsBitString.insert(straightsBitString.end(), straightLengthFrequenciesBits.begin(), straightLengthFrequenciesBits.end());
+        for(auto& frequency : straightLengthFrequencies){
+            std::vector<bool> frequencyBits = intToBool(frequency, straightsFrequenciesBits);
+            straightsBitString.insert(straightsBitString.end(), frequencyBits.begin(), frequencyBits.end());
+        }
+        end = std::chrono::high_resolution_clock::now();
+        straights_huffman_compression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        straightsHuffmanCompressionRate = (img.rows * img.cols * 24) / (double)straightsBitString.size();
     }
-
-    // frequencies
-    std::vector<bool> straightLengthFrequenciesSize = intToBool(straightLengthFrequencies.size(), 16);
-    straightsBitString.insert(straightsBitString.end(), straightLengthFrequenciesSize.begin(), straightLengthFrequenciesSize.end());
-    int straightsFrequenciesBits = std::ceil(std::log2(img.cols * img.rows));
-    std::vector<bool> straightLengthFrequenciesBits = intToBool(straightsFrequenciesBits, 5);
-    straightsBitString.insert(straightsBitString.end(), straightLengthFrequenciesBits.begin(), straightLengthFrequenciesBits.end());
-    for(auto& frequency : straightLengthFrequencies){
-        std::vector<bool> frequencyBits = intToBool(frequency, straightsFrequenciesBits);
-        straightsBitString.insert(straightsBitString.end(), frequencyBits.begin(), frequencyBits.end());
-    }
-    end = std::chrono::high_resolution_clock::now();
-    straights_huffman_compression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    double straightsHuffmanCompressionRate = (img.rows * img.cols * 24) / (double)straightsBitString.size();
-
-    // calc comp rate 
-    int straightsBitstringSize = straightsBitString.size();
-    straightsHuffmanCompressionRate = (img.rows * img.cols * 24) / (double)straightsBitstringSize;
-    std::cout << "Straights huffman Compression Rate: " << straightsHuffmanCompressionRate << std::endl;
+    
 
 
     return {regionColors, edgeBits01, edgeBitsBitString, paths, pathsBitString, img, paths_2bit, paths2bitBitString, paths2bitRLEBitString, rle_paths, 
