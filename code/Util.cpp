@@ -387,7 +387,7 @@ int mapVerticalToEdgebitsIndex(int verticalIndex, int cols, int rows){
 
 
 std::pair<int,int> getPixelIndexFromEdgeIndex(int edgeIndex, int cols, int rows){
-    if(edgeIndex < 0 || edgeIndex >= (2 * cols * cols) - rows - cols){
+    if(edgeIndex < 0 || edgeIndex >= (2 * rows * cols) - rows - cols){
         return std::make_pair(-1, -1);
     }
     

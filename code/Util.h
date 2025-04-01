@@ -13,6 +13,16 @@
 #include <unordered_set>
 
 
+struct methods{
+    bool useEdgebits = true;
+    bool useReducedEdgebits = true;
+    bool useTree = true;
+    bool use2bits = true;
+    bool useRLE = true;
+    bool useStraights = true;
+    bool useHuffman = true;
+};
+
 andres::Partition<int> getRegions(std::vector<bool>& edgeBitsVector, int rows, int cols);
 int getNeighbor(int currentEdge, Direction currentDirection, int neighborIndex, int cols, int rows);
 Direction nextDirection(Direction dir);

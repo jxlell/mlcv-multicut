@@ -93,13 +93,13 @@ int main() {
 
 
     std::unordered_set<std::string> category_set = {
-        "icon_64",
+      //   "icon_64",
       //   "icon_512",
       //   "photo_kodak",
       //   "photo_tecnick",
       //   "photo_wikipedia",
       //   "pngimg",
-      //   "screenshot_web",
+        "screenshot_web",
       //   "screenshot_game",
       //   "textures_photo",
       //   "textures_pk",
@@ -123,7 +123,7 @@ int main() {
     inputFile.close();
 
     // control parameters 
-    bool single_image = false;
+    bool single_image = true;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
     //showImg = false;

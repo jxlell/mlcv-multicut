@@ -46,15 +46,7 @@ CompressedImage compress(const std::string& imagePath){
         transparencyValues = std::vector<uint8_t>(img.rows * img.cols, 255);
     }
 
-    struct methods{
-        bool useEdgebits = true;
-        bool useReducedEdgebits = true;
-        bool useTree = true;
-        bool use2bits = true;
-        bool useRLE = true;
-        bool useStraights = true;
-        bool useHuffman = true;
-    };
+
 
     methods compressionMethods = {
         true, // useEdgebits
@@ -123,6 +115,7 @@ CompressedImage compress(const std::string& imagePath){
 
 
     if(compressionMethods.useEdgebits){
+        std::cout << "setting edgebits" << std::endl;
         start = std::chrono::high_resolution_clock::now();
         edgeBits01 = setEdgeBits(img, edgeBits01, neighborsOffsets);
         // set edgebits bitstring
@@ -158,6 +151,7 @@ CompressedImage compress(const std::string& imagePath){
     // std::cout << "Percentage of edge bits set to 1: " << multicutPercentage << "%" << std::endl;
 
     if(compressionMethods.useReducedEdgebits){
+        std::cout << "setting reduced edgebits" << std::endl;
         start = std::chrono::high_resolution_clock::now();
         horizontalBits = setHorizontalBits(img);
         reducedVerticalBits = reduceVerticalBits(img, edgeBits01);
@@ -192,7 +186,7 @@ CompressedImage compress(const std::string& imagePath){
     }
 
     if(compressionMethods.useTree){
-        
+        std::cout << "setting paths" << std::endl;
         start = std::chrono::high_resolution_clock::now();
         paths = setPaths(edgeBits01, img);
         //set bitstring for paths 
@@ -211,8 +205,8 @@ CompressedImage compress(const std::string& imagePath){
 
 
         //int disconnectedComponentsBits = std::ceil(std::log2(img.cols * img.rows / 2));
-        int disconnectedComponentsBits = std::log2(std::ceil(static_cast<double>(img.cols)/2) * std::ceil(static_cast<double>(img.rows)/2));
-        // std::cout << "paths size: " << paths.size() << std::endl;
+        int disconnectedComponentsBits = std::max(static_cast<double>(std::max(img.cols, img.rows)), std::max(static_cast<double>(1), std::log2(std::ceil(static_cast<double>(img.cols)/2) * std::ceil(static_cast<double>(img.rows)/2))));
+        std::cout << "paths size: " << paths.size() << std::endl;
         std::vector<bool> numberOfDisconnectedComponents = intToBool(paths.size(), disconnectedComponentsBits);
         // std::cout << "disconnected comp bits: " << disconnectedComponentsBits << std::endl;
         int startPointBits = std::ceil(std::log2(edgeBits01.size()));
@@ -451,7 +445,8 @@ CompressedImage compress(const std::string& imagePath){
     
 
 
-    return {regionColors, edgeBits01, edgeBitsBitString, paths, pathsBitString, img, paths_2bit, paths2bitBitString, paths2bitRLEBitString, rle_paths, 
+    return {compressionMethods,
+        regionColors, edgeBits01, edgeBitsBitString, paths, pathsBitString, img, paths_2bit, paths2bitBitString, paths2bitRLEBitString, rle_paths, 
         // rleBitString,
         straights, straightsNoHuffBitString,
     regionColorBitString, straightsHuffmanCodesBitString, 

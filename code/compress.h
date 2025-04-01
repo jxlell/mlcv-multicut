@@ -11,6 +11,7 @@
 
 
 struct CompressedImage{
+    methods compressionMethods;
     std::vector<RGB> colorVector;
     std::vector<bool> edgeBits01;
     std::vector<bool> edgeBitsBitString;
