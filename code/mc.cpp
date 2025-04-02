@@ -45,7 +45,7 @@ andres::Partition<int> getRegionsFromImage(cv::Mat img, std::vector<int> neighbo
     return region;
 }
 
-std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std::vector<bool>& visited, cv::Mat img, std::vector<bool>& edgeBits01) {
+std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std::vector<bool>& visited, cv::Mat img, std::vector<bool>& edgeBits01, int& threeBitDirBitCount) {
     std::vector<bool> directionVector;
     int cols = img.cols;
     int rows = img.rows;
@@ -104,6 +104,7 @@ std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std
             directionVector.push_back(right);
             visited[neighborRight] = true;
         }
+        threeBitDirBitCount += 3;
 
         if(right){
             pendingEdges.push(std::make_pair(neighborRight, nextDirection(currentDir)));

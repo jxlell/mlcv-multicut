@@ -90,6 +90,8 @@ CompressedImage compress(const std::string& imagePath){
     long long reduced_edgebits_compression_time = 0;
     long long paths2bit_compression_time = 0;
 
+    long long regionColorsBitStringTime = 0;
+
     double oldCompressionRate = 0;
     double newEdgeBitsCompressionRate = 0;
     double pathCompressionRate = 0;
@@ -103,6 +105,21 @@ CompressedImage compress(const std::string& imagePath){
 
     start = std::chrono::high_resolution_clock::now();
     regionColors = setRegions(img, neighborsOffsets, img.cols * img.rows);
+    // std::vector<RGB> regionColorsFromDFS = getRegionsFromImageSearch(img);
+    // std::cout << "Region Colors from setRegions:" << std::endl;
+    // for (const auto& color : regionColors) {
+    //     std::cout << "(" << static_cast<int>(color.red) << ", " 
+    //               << static_cast<int>(color.green) << ", " 
+    //               << static_cast<int>(color.blue) << ")" << std::endl;
+    // }
+
+    // std::cout << "Region Colors from DFS:" << std::endl;
+    // for (const auto& color : regionColorsFromDFS) {
+    //     std::cout << "(" << static_cast<int>(color.red) << ", " 
+    //               << static_cast<int>(color.green) << ", " 
+    //               << static_cast<int>(color.blue) << ")" << std::endl;
+    // }
+
     // std::cout << "size of regionColors: " << regionColors.size() << std::endl;
     std::set<RGB, RGBComparator> regionColorsSet;
     for (auto color : regionColors) {
@@ -111,7 +128,7 @@ CompressedImage compress(const std::string& imagePath){
     // std::cout << "Number of unique colors: " << regionColorsSet.size() << std::endl;
     auto regionColorBitString = boolVectorFromRGBVector(regionColors);
     end = std::chrono::high_resolution_clock::now();
-    auto regionColorBitStringTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    regionColorsBitStringTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
 
     if(compressionMethods.useEdgebits){
@@ -190,7 +207,11 @@ CompressedImage compress(const std::string& imagePath){
         start = std::chrono::high_resolution_clock::now();
         paths = setPaths(edgeBits01, img);
         //set bitstring for paths 
-
+        int totalDirectionBits = 0;
+        for (const auto& path : paths) {
+            totalDirectionBits += std::get<2>(path).size();
+        }
+        std::cout << "Total direction bits in paths: " << totalDirectionBits << std::endl;
         std::vector<bool> cols_bitstring = intToBool(img.cols, 16);
         std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
         pathsBitString.insert(pathsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
@@ -203,9 +224,10 @@ CompressedImage compress(const std::string& imagePath){
         pathsBitString.insert(pathsBitString.end(), regionColorBits.begin(), regionColorBits.end());
         pathsBitString.insert(pathsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
 
+        std::cout << "size after cols+rows+region color: " << pathsBitString.size() << std::endl;
 
         //int disconnectedComponentsBits = std::ceil(std::log2(img.cols * img.rows / 2));
-        int disconnectedComponentsBits = std::max(static_cast<double>(std::max(img.cols, img.rows)), std::max(static_cast<double>(1), std::log2(std::ceil(static_cast<double>(img.cols)/2) * std::ceil(static_cast<double>(img.rows)/2))));
+        int disconnectedComponentsBits = std::max(static_cast<double>(std::ceil(std::log2(std::max(img.cols, img.rows)))), std::max(static_cast<double>(1), std::log2(std::ceil(static_cast<double>(img.cols)/2) * std::ceil(static_cast<double>(img.rows)/2))));
         std::cout << "paths size: " << paths.size() << std::endl;
         std::vector<bool> numberOfDisconnectedComponents = intToBool(paths.size(), disconnectedComponentsBits);
         // std::cout << "disconnected comp bits: " << disconnectedComponentsBits << std::endl;
@@ -234,6 +256,12 @@ CompressedImage compress(const std::string& imagePath){
             // add direction vector to bitstring, delimited by 000
             pathsBitString.insert(pathsBitString.end(), std::get<2>(path).begin(), std::get<2>(path).end());
         }
+        // std::cout << "paths bitstring: ";
+        // int i = 0;
+        // for(bool bit : pathsBitString){
+        //     std::cout << bit;
+        // }
+        // std::cout << std::endl;
 
 
         end = std::chrono::high_resolution_clock::now();
@@ -248,6 +276,25 @@ CompressedImage compress(const std::string& imagePath){
         start = std::chrono::high_resolution_clock::now();
         auto _2bitpaths = set2BitPaths(edgeBits01, img);
         paths_2bit = std::get<0>(_2bitpaths);
+        // for (const auto& path : paths_2bit) {
+        //     uint32_t edgeI;
+        //     Direction dir;
+        //     std::vector<bool> directions2bits;
+
+        //     std::tie(edgeI, dir, directions2bits) = path;
+
+        //     std::cout << "Start Edge: " << edgeI << ", Start Direction: " << static_cast<int>(dir) << ", Path: ";
+        //     for (bool bit : directions2bits) {
+        //         std::cout << bit;
+        //     }
+        //     std::cout << std::endl;
+        // }
+        int totalDirectionBits = 0;
+        for (const auto& path : paths_2bit) {
+            totalDirectionBits += std::get<2>(path).size();
+        }
+        std::cout << "Total direction bits in 2-bit paths: " << totalDirectionBits << std::endl;
+        std::cout << "paths_2bit size: " << paths_2bit.size() << std::endl;
         // edgeI,  zeros,          ones,           start
         // 32 bit, 1bit (vector),  16bit (vector), 1bit
         rle_paths = std::get<1>(_2bitpaths);
@@ -269,6 +316,7 @@ CompressedImage compress(const std::string& imagePath){
         paths2bitBitString.insert(paths2bitBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
         paths2bitBitString.insert(paths2bitBitString.end(), regionColorBits.begin(), regionColorBits.end());
         paths2bitBitString.insert(paths2bitBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
+        std::cout << "size after cols+rows+region color: " << paths2bitBitString.size() << std::endl;
         int paths2bitAmount = paths_2bit.size();
         std::vector<bool> paths2bitAmountVector = intToBool(paths2bitAmount, 32);
         paths2bitBitString.insert(paths2bitBitString.end(), paths2bitAmountVector.begin(), paths2bitAmountVector.end());
@@ -288,6 +336,11 @@ CompressedImage compress(const std::string& imagePath){
             paths2bitBitString.push_back(false);
             // paths2bitBitString.push_back(false);
         }
+        // std::cout << "paths2bit bitstring: ";
+        // for(bool bit : paths2bitBitString){
+        //     std::cout << bit;
+        // }
+        // std::cout << std::endl;
         
         end = std::chrono::high_resolution_clock::now();
         paths2bit_compression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -443,6 +496,13 @@ CompressedImage compress(const std::string& imagePath){
         straightsHuffmanCompressionRate = (img.rows * img.cols * 24) / (double)straightsBitString.size();
     }
     
+    tree_compression_time += regionColorsBitStringTime;
+    old_compression_time += regionColorsBitStringTime;
+    rle_compression_time += regionColorsBitStringTime;
+    straights_compression_time += regionColorsBitStringTime;
+    straights_huffman_compression_time += regionColorsBitStringTime;
+    reduced_edgebits_compression_time += regionColorsBitStringTime;
+    paths2bit_compression_time += regionColorsBitStringTime;
 
 
     return {compressionMethods,
@@ -580,11 +640,76 @@ std::vector<RGB> setRegions(cv::Mat img, std::vector<int> neighborsOffsets, int 
     return regionColors;
 }
 
+// DFS to get color region indices and their colors
+std::vector<RGB> getRegionsFromImageSearch(cv::Mat img) {
+    int rows = img.rows;
+    int cols = img.cols;
+    int vertices = rows * cols;
+
+    std::vector<bool> visited(vertices, false);
+    std::vector<int> regionIndices;  // Stores starting indices of regions
+    std::vector<RGB> regionColors;   // Stores corresponding region colors
+
+    for (int index = 0; index < vertices; index++) {
+        if (visited[index]) continue;  // Skip already visited pixels
+
+        // Start DFS from this new region
+        std::stack<int> stack;
+        stack.push(index);
+        visited[index] = true;
+        regionIndices.push_back(index);  // Store the new region start index
+
+        RGB regionColor = getVertexColor(index, vertices, img);
+        regionColors.push_back(regionColor);  // Store the region color
+
+        while (!stack.empty()) {
+            int current = stack.top();
+            stack.pop();
+
+            int col = current % cols;
+            int row = current / cols;
+
+            // Check right neighbor
+            int right = current + 1;
+            if (col < cols - 1 && !visited[right] && compareRGB(regionColor, getVertexColor(right, vertices, img))) {
+                stack.push(right);
+                visited[right] = true;
+            }
+
+            // Check below neighbor
+            int below = current + cols;
+            if (row < rows - 1 && !visited[below] && compareRGB(regionColor, getVertexColor(below, vertices, img))) {
+                stack.push(below);
+                visited[below] = true;
+            }
+
+            // Check left neighbor
+            int left = current - 1;
+            if (col > 0 && !visited[left] && compareRGB(regionColor, getVertexColor(left, vertices, img))) {
+                stack.push(left);
+                visited[left] = true;
+            }
+
+            // Check above neighbor
+            int above = current - cols;
+            if (row > 0 && !visited[above] && compareRGB(regionColor, getVertexColor(above, vertices, img))) {
+                stack.push(above);
+                visited[above] = true;
+            }
+        }
+    }
+
+    return regionColors;  
+}
+
+
+
 PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img){
     int edgeI = 0;
     int dfsI = 0;
     std::vector<bool> visited(edgeBits01.size(), false);
     PathInfoVector paths;
+    int threeBitCount = 0;
     
     for (bool edge : edgeBits01){
         // skip non-multicut edges or previously visited edges ||
@@ -608,7 +733,7 @@ PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img){
 
         std::vector<bool> directionVector;
         //directionVector = dfs_paths_recursive(edgeI, visited, currentDir, directionVector);
-        directionVector = dfs_paths_iterative(edgeI, currentDir, visited, img, edgeBits01);
+        directionVector = dfs_paths_iterative(edgeI, currentDir, visited, img, edgeBits01, threeBitCount);
         // directionVector.push_back(false);
         // directionVector.push_back(false);
         // directionVector.push_back(false);
@@ -617,6 +742,8 @@ PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img){
 
         edgeI++;
     }
+
+    std::cout << "-->>>for 3 bit directions: " << threeBitCount << std::endl;
     //std::cout << "edgeI: " << edgeI << std::endl;
     //std::cout << "number of edges: " << 2*rows*cols - cols - rows << std::endl;
 

@@ -1,0 +1,2 @@
+filename,category,old_rate,tree_rate,rle_rate,straights_rate,straights_huffman_rate,reduced_edgebits_rate,paths_2bit_rate,tree_comp_time,tree_decomp_time,old_comp_time, old_decomp_time,rle_comp_time,rle_decomp_time,straights_comp_time,straights_decomp_time,huffman_comp_time,huffman_decomp_time,reduced_comp_time,reduced_decomp_time,paths_2bit_comp_time,paths_2bit_decomp_time
+tree5x5.png,test_img,2.92683,3.2967,2.28137,2.18978,1.58311,2.55319,2.63158,0,0,0,0,0,0,0,0,0,0,0,0,0,0

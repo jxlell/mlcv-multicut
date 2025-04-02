@@ -93,14 +93,14 @@ int main() {
 
 
     std::unordered_set<std::string> category_set = {
-      //   "icon_64",
+        "icon_64",
       //   "icon_512",
       //   "photo_kodak",
       //   "photo_tecnick",
       //   "photo_wikipedia",
       //   "pngimg",
-        "screenshot_web",
-      //   "screenshot_game",
+      //   "screenshot_web",
+        "screenshot_game",
       //   "textures_photo",
       //   "textures_pk",
       //   "textures_pk01",
@@ -123,7 +123,7 @@ int main() {
     inputFile.close();
 
     // control parameters 
-    bool single_image = true;
+    bool single_image = false;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
     //showImg = false;
@@ -328,7 +328,12 @@ int main() {
     }
 
 if(writeToFile){
-      ofstream csvFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results.csv");
+      ofstream csvFile;
+      if(single_image){
+            csvFile.open("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_single.csv");
+      } else {
+            csvFile.open("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results.csv");
+      }
       if (!csvFile.is_open()) {
             cerr << "Error: Unable to open CSV file for writing." << endl;
             return -1;

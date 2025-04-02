@@ -413,3 +413,21 @@ std::pair<int,int> getPixelIndexFromEdgeIndex(int edgeIndex, int cols, int rows)
 
     return std::make_pair(pixelIndex, pixelIndex + cols);
 }
+
+int getEdgeIndexFromPixelIndices(int pixelIndex1, int pixelIndex2, int cols, int rows){
+    if(pixelIndex1 < 0 || pixelIndex2 < 0 || pixelIndex1 >= rows * cols || pixelIndex2 >= rows * cols){
+        return -1;
+    }
+    int row1 = pixelIndex1 / cols;
+    int col1 = pixelIndex1 % cols;
+    int row2 = pixelIndex2 / cols;
+    int col2 = pixelIndex2 % cols;
+
+    if(row1 == row2 && abs(col1 - col2) == 1){
+        return (row1 * (2 * cols - 1)) + (col1 + col2) - 1;
+    }else if(col1 == col2 && abs(row1 - row2) == 1){
+        return (row1 * (2 * cols - 1)) + (col1 + col2);
+    }
+    
+    return -1;
+}

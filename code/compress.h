@@ -73,6 +73,7 @@ double getOldCompressionRate(cv::Mat img, std::vector<RGB> regionColors);
 double getStraightsCompressionRate(std::vector<RGB> regionColors, Straights straights, cv::Mat img);
 double getMulticutPercentage(std::vector<bool> edgeBits01);
 void getAnomalies(std::vector<bool> edgeBits01, cv::Mat img);
+std::vector<RGB> getRegionsFromImageSearch(cv::Mat img);
 
 
 #endif // COMPRESS_H

@@ -118,7 +118,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
 
 
         //int disconnectedComponentsBits = std::ceil(std::log2(cols * rows / 2));
-        int disconnectedComponentsBits = std::max(static_cast<double>(std::max(cols_int, rows_int)), std::max(static_cast<double>(1), std::log2(std::ceil(static_cast<double>(cols_int)/2) * std::ceil(static_cast<double>(rows_int)/2))));
+        int disconnectedComponentsBits = std::max(static_cast<double>(std::ceil(std::log2(std::max(cols_int, rows_int)))), std::max(static_cast<double>(1), std::log2(std::ceil(static_cast<double>(cols_int)/2) * std::ceil(static_cast<double>(rows_int)/2))));
         std::cout << "disconnect bits: " << disconnectedComponentsBits << std::endl;
         // std::cout << "Paths bitstring: " << pathsBitStringStr << std::endl;
         std::string numberOfComponentsStr = pathsBitStringStr.substr(0,disconnectedComponentsBits);

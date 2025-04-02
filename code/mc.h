@@ -9,7 +9,7 @@
 
 RGB getVertexColor(int v, int vertices, cv::Mat img, bool invert=false);
 andres::Partition<int> getRegionsFromImage(cv::Mat img, std::vector<int> neighborsOffsets, int vertices);
-std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std::vector<bool>& visited, cv::Mat img, std::vector<bool>& edgeBits01);
+std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std::vector<bool>& visited, cv::Mat img, std::vector<bool>& edgeBits01, int& threeBitDirBitCount);
 bool edgeBitFromIndex(int index, int cols, int rows, cv::Mat img);
 
 
