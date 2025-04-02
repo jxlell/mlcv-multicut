@@ -156,7 +156,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         }
         end = std::chrono::high_resolution_clock::now();
         tree_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
+        std::cout << "time to reconstruct tree edge bits from paths: " << tree_decompression_time << "ms" << std::endl;
     }
     
     size_t bitIndex = 0;
@@ -731,54 +731,65 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     //std::cout << "size of directionbits: " << directionBitsSize << std::endl;
 
 
+
     //std::cout << "\nreconstruction for edgebits01 finished" << std::endl;
 
     //reconstructed_edgeBits.assign(reconstructed_edgeBits.size(), false);
     start = std::chrono::high_resolution_clock::now();
-    andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits_from_paths, rows_int, cols_int);
     
-    //printColorRegions();
-    std::map<int, int> representativeLabels;
-    reconstruction.representativeLabeling(representativeLabels);
-    //std::vector<int> reps;
-    //reconstruction.representatives(std::back_inserter(reps));
-    for (int index = 0; index < rows * cols; ++index) {
 
-        //std::cout << reconstruction.find(index) << ", ";
+    // reconstruct with UnionFind
+    // andres::Partition<int> reconstruction = getRegions(reconstructed_edgeBits_from_paths, rows_int, cols_int);
+    
+    // //printColorRegions();
+    // std::map<int, int> representativeLabels;
+    // reconstruction.representativeLabeling(representativeLabels);
+    // //std::vector<int> reps;
+    // //reconstruction.representatives(std::back_inserter(reps));
+    // for (int index = 0; index < rows * cols; ++index) {
 
-        // Calculate row and column indices from the linear index
-        int y = index / cols;
-        int x = index % cols;
-        if(index%100 == 0){
-            //printProgressBar(index, rows*cols);
-        }
-        // get color
-        int region = reconstruction.find(index);
-        int continuousLabel = representativeLabels[region];
+    //     //std::cout << reconstruction.find(index) << ", ";
 
-        // an welchem index steht nummer "region" im vector der representatives
+    //     // Calculate row and column indices from the linear index
+    //     int y = index / cols;
+    //     int x = index % cols;
+    //     if(index%100 == 0){
+    //         //printProgressBar(index, rows*cols);
+    //     }
+    //     // get color
+    //     int region = reconstruction.find(index);
+    //     int continuousLabel = representativeLabels[region];
+
+    //     // an welchem index steht nummer "region" im vector der representatives
         
-        /*
-        //quadratic runtime?
-        auto it = std::find(reps.begin(), reps.end(), region);
-        std::size_t indexInReps;
+    //     /*
+    //     //quadratic runtime?
+    //     auto it = std::find(reps.begin(), reps.end(), region);
+    //     std::size_t indexInReps;
 
-        if (it != reps.end()) {
-            indexInReps = std::distance(reps.begin(), it);
-            //std::cout << "Index of region " << region << " in reps: " << indexInReps << std::endl;
-        }
-        */
+    //     if (it != reps.end()) {
+    //         indexInReps = std::distance(reps.begin(), it);
+    //         //std::cout << "Index of region " << region << " in reps: " << indexInReps << std::endl;
+    //     }
+    //     */
         
 
-        //RGB col = regionColors[indexInReps];
-        RGB col = regionColorsFromBitString[continuousLabel];
+    //     //RGB col = regionColors[indexInReps];
+    //     RGB col = regionColorsFromBitString[continuousLabel];
 
 
-        //RGB col = getVertexColor(0);
-        //std::cout << col.green.to_ulong() << std::endl;
-        // Set the color (BGR format)
-        image.at<cv::Vec4b>(y, x) = cv::Vec4b(col.blue, col.green, col.red, transparencyValues[index]);  
-    }
+    //     //RGB col = getVertexColor(0);
+    //     //std::cout << col.green.to_ulong() << std::endl;
+    //     // Set the color (BGR format)
+    //     image.at<cv::Vec4b>(y, x) = cv::Vec4b(col.blue, col.green, col.red, transparencyValues[index]);  
+    // }
+    // end = std::chrono::high_resolution_clock::now();
+    // std::cout << "UF reconstruction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
+    // reconstruct with dfs
+    start = std::chrono::high_resolution_clock::now();
+    image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, regionColorsFromBitString, transparencyValues);
+    end = std::chrono::high_resolution_clock::now();
+    std::cout << "DFS reconstruction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
 
     // for (auto t : transparencyValues){
     //     std::cout << (int)t << ", ";
@@ -851,6 +862,12 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
 
     success = areImagesIdentical(originalImg, reconstructedBGR);
 
+    // std::cout << "channels for original image: " << originalImg.channels() << std::endl;
+    // cv::Vec4b firstPixel = image.at<cv::Vec4b>(0, 0);
+    // std::cout << "First pixel RGBA values: R=" << (int)firstPixel[2]
+    //           << ", G=" << (int)firstPixel[1]
+    //           << ", B=" << (int)firstPixel[0]
+    //           << ", A=" << (int)firstPixel[3] << std::endl;
     // // List pixel colors (r, g, b) from each image
     // std::cout << "Original Image Pixel Colors (R, G, B):" << std::endl;
     // for (int y = 0; y < originalImg.rows; ++y) {

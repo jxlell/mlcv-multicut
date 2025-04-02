@@ -17,6 +17,11 @@
 
 CompressedImage compress(const std::string& imagePath){
     cv::Mat img = cv::imread(imagePath, cv::IMREAD_COLOR);
+    // condition never met, since IMREAD_COLOR cannot be 16U
+    if (img.depth() == CV_16U) {
+        std::cout << "Image depth rgb image : " << img.depth() << std::endl;
+        img.convertTo(img, CV_8U, 1.0 / 256.0); // Scale down to 0-255 range
+    }
 
     // Direction testDir = getDirectionFromIndex(36,5,5);
     // std::cout << "testDir: " << directionToString(testDir) << std::endl;
@@ -30,6 +35,11 @@ CompressedImage compress(const std::string& imagePath){
     // exit(0);
 
     cv::Mat img_transparent = cv::imread(imagePath, cv::IMREAD_UNCHANGED);
+    if (img_transparent.depth() == CV_16U) {
+        std::cout << "Image depth transparent image: " << img_transparent.depth() << std::endl;
+        img_transparent.convertTo(img_transparent, CV_8U, 1.0 / 256.0); // Scale down to 0-255 range
+        cv::imwrite("code/output_files/converted_image.png", img_transparent);
+    }
     std::cout << "reading transparency" << std::endl;
     std::cout << "channels: " << img_transparent.channels() << std::endl;
     std::vector<uint8_t> transparencyValues;
@@ -103,9 +113,21 @@ CompressedImage compress(const std::string& imagePath){
     auto start = std::chrono::high_resolution_clock::now();
     auto end = std::chrono::high_resolution_clock::now();
 
+    // start = std::chrono::high_resolution_clock::now();
+    // regionColors = setRegions(img, neighborsOffsets, img.cols * img.rows);
+    // end = std::chrono::high_resolution_clock::now();
+    // std::cout << "UF set regions time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
     start = std::chrono::high_resolution_clock::now();
-    regionColors = setRegions(img, neighborsOffsets, img.cols * img.rows);
-    // std::vector<RGB> regionColorsFromDFS = getRegionsFromImageSearch(img);
+    regionColors = getRegionsFromImageSearch(img);
+    end = std::chrono::high_resolution_clock::now();
+    std::cout << "dfs set regions time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
+    // for (size_t i = 0; i < std::min(regionColors.size(), static_cast<size_t>(10)); ++i) {
+    //     const auto& color = regionColors[i];
+    //     std::cout << "Region Color " << i + 1 << ": ("
+    //               << static_cast<int>(color.red) << ", "
+    //               << static_cast<int>(color.green) << ", "
+    //               << static_cast<int>(color.blue) << ")" << std::endl;
+    // }
     // std::cout << "Region Colors from setRegions:" << std::endl;
     // for (const auto& color : regionColors) {
     //     std::cout << "(" << static_cast<int>(color.red) << ", " 
@@ -266,7 +288,7 @@ CompressedImage compress(const std::string& imagePath){
 
         end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        std::cout << "time to set paths: " << duration.count() << "ms" << std::endl;
+        std::cout << "time to construct tree paths: " << duration.count() << "ms" << std::endl;
         tree_compression_time = duration.count();
         pathCompressionRate = (img.rows * img.cols * 24) / (double)pathsBitString.size();
         std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;

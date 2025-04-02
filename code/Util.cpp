@@ -415,19 +415,76 @@ std::pair<int,int> getPixelIndexFromEdgeIndex(int edgeIndex, int cols, int rows)
 }
 
 int getEdgeIndexFromPixelIndices(int pixelIndex1, int pixelIndex2, int cols, int rows){
-    if(pixelIndex1 < 0 || pixelIndex2 < 0 || pixelIndex1 >= rows * cols || pixelIndex2 >= rows * cols){
-        return -1;
-    }
-    int row1 = pixelIndex1 / cols;
-    int col1 = pixelIndex1 % cols;
-    int row2 = pixelIndex2 / cols;
-    int col2 = pixelIndex2 % cols;
+    // if(pixelIndex1 < 0 || pixelIndex2 < 0 || pixelIndex1 >= rows * cols || pixelIndex2 >= rows * cols){
+    //     return -1;
+    // }
+    // int row1 = pixelIndex1 / cols;
+    // int col1 = pixelIndex1 % cols;
+    // int row2 = pixelIndex2 / cols;
+    // int col2 = pixelIndex2 % cols;
 
-    if(row1 == row2 && abs(col1 - col2) == 1){
-        return (row1 * (2 * cols - 1)) + (col1 + col2) - 1;
-    }else if(col1 == col2 && abs(row1 - row2) == 1){
-        return (row1 * (2 * cols - 1)) + (col1 + col2);
-    }
+    // if(row1 == row2 && abs(col1 - col2) == 1){
+    //     return (row1 * (2 * cols - 1)) + (col1 + col2) - 1;
+    // }else if(col1 == col2 && abs(row1 - row2) == 1){
+    //     return (row1 * (2 * cols - 1)) + (col1 + col2);
+    // }
     
     return -1;
+}
+
+cv::Mat setRegionColorsFromImageSearch(cv::Mat img, std::vector<bool>& edgeBits, std::vector<RGB>& regionColors, std::vector<uint8_t>& transparencyValues){
+    int rows = img.rows;
+    int cols = img.cols;
+    int vertices = rows * cols;
+    cv::Mat image(img.rows, img.cols, CV_8UC4, cv::Scalar(0, 0, 0, 0)); 
+    std::stack<int> stack;
+    std::vector<bool> visited(vertices, false);
+    int regionIndex = 0;
+    for(int index = 0; index < vertices; index++){
+        if(visited[index]){
+            continue;
+        }
+        stack.push(index);
+
+        RGB currentColor = regionColors[regionIndex];
+        regionIndex++;
+
+        while(!stack.empty()){
+            int current = stack.top();
+            stack.pop();
+            visited[current] = true;
+            int row = current / cols;
+            int col = current % cols;
+            image.at<cv::Vec4b>(row, col) = cv::Vec4b(currentColor.blue, currentColor.green, currentColor.red, transparencyValues[current]);
+
+            // check right neighbor
+            int right = current + 1;
+            if (col < cols - 1 && !visited[right] && getEdgeBitFromList(current, right, edgeBits, rows, cols) == 0) {
+                stack.push(right);
+                visited[right] = true;
+            }
+
+            // check below neighbor
+            int below = current + cols;
+            if (row < rows - 1 && !visited[below] && getEdgeBitFromList(current, below, edgeBits, rows, cols) == 0) {
+                stack.push(below);
+                visited[below] = true;
+            }
+
+            // check left neighbor
+            int left = current - 1;
+            if (col > 0 && !visited[left] && getEdgeBitFromList(current, left, edgeBits, rows, cols) == 0) {
+                stack.push(left);
+                visited[left] = true;
+            }
+
+            // check above neighbor
+            int above = current - cols;
+            if (row > 0 && !visited[above] && getEdgeBitFromList(current, above, edgeBits, rows, cols) == 0) {
+                stack.push(above);
+                visited[above] = true;
+            }
+        }
+    }
+    return image;
 }

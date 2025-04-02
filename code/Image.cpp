@@ -60,3 +60,68 @@ bool areImagesIdentical(cv::Mat& image1, cv::Mat& image2) {
     return true;
 }
 
+// bool areImagesIdentical(cv::Mat& image1, cv::Mat& image2) {
+//     if (image1.size() != image2.size()) {
+//         std::cout << "Image sizes do not match." << std::endl;
+//         return false;
+//     }
+
+//     int minChannels = std::min(image1.channels(), image2.channels()); // Compare only common channels
+
+//     std::vector<cv::Mat> channels1, channels2;
+//     cv::split(image1, channels1);
+//     cv::split(image2, channels2);
+
+//     bool identical = true;
+
+//     for (int i = 0; i < minChannels; i++) {  
+//         bool sizeMismatch = channels1[i].size() != channels2[i].size();
+//         bool typeMismatch = channels1[i].type() != channels2[i].type();
+
+//         if (sizeMismatch || typeMismatch) {
+//             std::cout << "Channel " << i << " mismatch: ";
+//             if (sizeMismatch) {
+//                 std::cout << "size mismatch ("
+//                           << channels1[i].size() << " vs " << channels2[i].size() << ")";
+//             }
+//             if (sizeMismatch && typeMismatch) {
+//                 std::cout << ", ";
+//             }
+//             if (typeMismatch) {
+//                 std::cout << "type mismatch ("
+//                           << channels1[i].type() << " vs " << channels2[i].type() << ")";
+//             }
+//             std::cout << std::endl;
+
+//             identical = false;
+//             continue;  
+//         }
+
+//         cv::Mat diff;
+//         cv::compare(channels1[i], channels2[i], diff, cv::CMP_NE);
+
+//         if (cv::countNonZero(diff) > 0) {
+//             std::cout << "Difference found in channel " << i << std::endl;
+//             identical = false;
+
+//             // Print up to 10 different pixel values
+//             int diffCount = 0;
+//             for (int row = 0; row < diff.rows; row++) {
+//                 for (int col = 0; col < diff.cols; col++) {
+//                     if (diff.at<uchar>(row, col) > 0) {  // Found a mismatch
+//                         int pixelIndex = row * diff.cols + col; // Calculate pixel index
+//                         std::cout << "Pixel (" << row << ", " << col << ") [Index: " << pixelIndex << "] - "
+//                                   << "Img1: " << static_cast<int>(channels1[i].at<uchar>(row, col)) << " | "
+//                                   << "Img2: " << static_cast<int>(channels2[i].at<uchar>(row, col)) 
+//                                   << std::endl;
+//                         diffCount++;
+//                         if (diffCount >= 10) break; // Limit to 10 differences
+//                     }
+//                 }
+//                 if (diffCount >= 10) break;
+//             }
+//         }
+//     }
+
+//     return identical;
+// }
