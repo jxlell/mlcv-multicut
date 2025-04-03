@@ -21,7 +21,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     std::vector<RGB> regionColors = compImg.colorVector;
     PathInfoVector paths = compImg.paths;
     std::vector<bool> pathsBitString = compImg.pathsBitString;
-    PathInfoVector paths_2bit_nonRLE = compImg.pathInfoVector2bit; // unused
+    PathInfoVector paths_2bit_nonRLE = compImg.pathInfoVector2bit;
     std::vector<bool> paths2bitBitString = compImg.paths2bitBitString;
     std::vector<bool> paths2bitRLEBitString = compImg.paths2bitRLEBitString;
     RLEVector rle_paths = compImg.rleVector;

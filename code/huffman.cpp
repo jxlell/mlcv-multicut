@@ -1,26 +1,13 @@
 
 #include <iostream>
 #include <map>
+#include "huffman.h"
 
 using namespace std;
 
 // adapted from Ayush Agrawal, https://github.com/mr-ayush-agrawal/Hacktoberfest/blob/9e5d9c36121664d988d2072cd8eafc476c008c9e/Most_Useful_Algorithms/HuffmanCoding.cpp
 // accessed 20-02-2025
 
-struct HuffmanNode{
-    int data;
-    int freq;
-    HuffmanNode* left;
-    HuffmanNode* right;
-
-    HuffmanNode(int data, int freq) : data(data), freq(freq), left(nullptr), right(nullptr) {}
-};
-
-struct Compare{
-    bool operator()(HuffmanNode* l, HuffmanNode* r){
-        return l->freq > r->freq;
-    }
-};
 
 void generateCode(HuffmanNode* root, string code, map<int, string>& huffmanCodes){
     if(!root){

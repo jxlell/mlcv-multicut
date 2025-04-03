@@ -1,1 +1,1 @@
-noise.png
+tree5x5.png

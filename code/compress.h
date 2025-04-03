@@ -74,6 +74,8 @@ double getStraightsCompressionRate(std::vector<RGB> regionColors, Straights stra
 double getMulticutPercentage(std::vector<bool> edgeBits01);
 void getAnomalies(std::vector<bool> edgeBits01, cv::Mat img);
 std::vector<RGB> getRegionsFromImageSearch(cv::Mat img);
-
+std::vector<RGB> dpcm(std::vector<RGB> colors);
+std::vector<uint8_t> flatten_differences(std::vector<RGB> differences);
+std::map<uint8_t, int> createFrequencyMap(const std::vector<uint8_t>& differences);
 
 #endif // COMPRESS_H

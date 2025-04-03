@@ -121,26 +121,31 @@ CompressedImage compress(const std::string& imagePath){
     regionColors = getRegionsFromImageSearch(img);
     end = std::chrono::high_resolution_clock::now();
     std::cout << "dfs set regions time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
-    // for (size_t i = 0; i < std::min(regionColors.size(), static_cast<size_t>(10)); ++i) {
-    //     const auto& color = regionColors[i];
-    //     std::cout << "Region Color " << i + 1 << ": ("
-    //               << static_cast<int>(color.red) << ", "
-    //               << static_cast<int>(color.green) << ", "
-    //               << static_cast<int>(color.blue) << ")" << std::endl;
-    // }
-    // std::cout << "Region Colors from setRegions:" << std::endl;
-    // for (const auto& color : regionColors) {
-    //     std::cout << "(" << static_cast<int>(color.red) << ", " 
-    //               << static_cast<int>(color.green) << ", " 
-    //               << static_cast<int>(color.blue) << ")" << std::endl;
-    // }
 
-    // std::cout << "Region Colors from DFS:" << std::endl;
-    // for (const auto& color : regionColorsFromDFS) {
-    //     std::cout << "(" << static_cast<int>(color.red) << ", " 
-    //               << static_cast<int>(color.green) << ", " 
-    //               << static_cast<int>(color.blue) << ")" << std::endl;
-    // }
+    std::cout << "region colors: " << std::endl;
+    for (const auto& color : regionColors) {
+        std::cout << "R: " << static_cast<int>(color.red) 
+                  << ", G: " << static_cast<int>(color.green) 
+                  << ", B: " << static_cast<int>(color.blue) << std::endl;
+    }
+
+
+    std::vector<RGB> differentialColors;
+    differentialColors = dpcm(regionColors);
+    std::cout << "differential colors: " << std::endl;
+    for (const auto& color : differentialColors) {
+        std::cout << "R: " << static_cast<int>(color.red) 
+                  << ", G: " << static_cast<int>(color.green) 
+                  << ", B: " << static_cast<int>(color.blue) << std::endl;
+    }
+    std::vector<uint8_t> flat_differences = flatten_differences(differentialColors);
+    std::map<uint8_t, int> frequencyMapDifferences = createFrequencyMap(flat_differences);
+    std::cout << "frequency map: " << std::endl;
+    for (const auto& pair : frequencyMapDifferences) {
+        std::cout << "Value: " << static_cast<int>(pair.first) 
+                  << ", Frequency: " << pair.second << std::endl;
+    }
+    // auto [RGBHuffmanCodes, RGBroot] = buildRGBCodes(frequencyMapDifferences);
 
     // std::cout << "size of regionColors: " << regionColors.size() << std::endl;
     std::set<RGB, RGBComparator> regionColorsSet;
@@ -1224,4 +1229,38 @@ void getAnomalies(std::vector<bool> edgeBits01, cv::Mat img){
         }
     }
     std::cout << "Number of anomalies: " << count << std::endl;
+}
+
+std::vector<RGB> dpcm(std::vector<RGB> colors){
+    std::vector<RGB> dpcmColors;
+    dpcmColors.push_back(colors[0]);
+    for(int i = 1; i < colors.size(); i++){
+        RGB currentColor = colors[i];
+        RGB previousColor = colors[i-1];
+        RGB dpcmColor;
+        dpcmColor.red = currentColor.red - previousColor.red;
+        dpcmColor.green = currentColor.green - previousColor.green;
+        dpcmColor.blue = currentColor.blue - previousColor.blue;
+        dpcmColors.push_back(dpcmColor);
+    }
+    return dpcmColors;
+}
+
+std::vector<uint8_t> flatten_differences(std::vector<RGB> differences){
+    std::vector<uint8_t> flatDifferences;
+    for (const auto& color : differences) {
+        flatDifferences.push_back(color.red);
+        flatDifferences.push_back(color.green);
+        flatDifferences.push_back(color.blue);
+    }
+    return flatDifferences;
+}
+
+// create frequency map for differences 
+std::map<uint8_t, int> createFrequencyMap(const std::vector<uint8_t>& differences) {
+    std::map<uint8_t, int> frequencyMap;
+    for (const auto& diff : differences) {
+        frequencyMap[diff]++;
+    }
+    return frequencyMap;
 }
