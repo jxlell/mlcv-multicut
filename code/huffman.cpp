@@ -117,6 +117,89 @@ bool areHuffmanTreesEqual(HuffmanNode* root1, HuffmanNode* root2) {
 }
 
 
+void generateRGBCode(RGBHuffmanNode* root, std::string code, std::map<uint8_t, std::string>& huffmanCodes) {
+    if (!root) {
+        return;
+    }
+    if (!root->left && !root->right) {
+        huffmanCodes[root->data] = code;
+    }
+
+    generateRGBCode(root->left, code + "0", huffmanCodes);
+    generateRGBCode(root->right, code + "1", huffmanCodes);
+}
+
+// Build Huffman Tree and generate codes for RGB values
+std::tuple<std::map<uint8_t, std::string>, RGBHuffmanNode*> buildRGBCodes(std::map<uint8_t, int> frequencyMap) {
+    std::priority_queue<RGBHuffmanNode*, std::vector<RGBHuffmanNode*>, RGBCompare> pq;
+
+    if (frequencyMap.empty()) {
+        std::cout << "Frequency map is empty, skipping Huffman code generation." << std::endl;
+        return {std::map<uint8_t, std::string>(), nullptr};
+    }
+
+    for (auto& pair : frequencyMap) {
+        pq.push(new RGBHuffmanNode(pair.first, pair.second));
+    }
+
+    while (pq.size() > 1) {
+        RGBHuffmanNode* left = pq.top();
+        pq.pop();
+        RGBHuffmanNode* right = pq.top();
+        pq.pop();
+
+        RGBHuffmanNode* newNode = new RGBHuffmanNode(0, left->freq + right->freq); // Using '0' as dummy data for internal nodes
+        newNode->left = left;
+        newNode->right = right;
+
+        pq.push(newNode);
+    }
+
+    std::map<uint8_t, std::string> huffmanCodes;
+    generateRGBCode(pq.top(), "", huffmanCodes);
+    return {huffmanCodes, pq.top()};
+}
+
+// Decode a Huffman-encoded string for RGB values
+std::tuple<std::string, std::vector<uint8_t>> decodeRGBHuffman(RGBHuffmanNode* root, const std::string& encodedStr) {
+    std::string decodedStr = "";
+    RGBHuffmanNode* currentNode = root;
+    std::vector<uint8_t> values;
+
+    for (char bit : encodedStr) {
+        currentNode = (bit == '0') ? currentNode->left : currentNode->right;
+
+        if (!currentNode->left && !currentNode->right) { // Leaf node reached
+            decodedStr += char(currentNode->data);
+            values.push_back(currentNode->data);
+            currentNode = root;
+        }
+    }
+
+    return {decodedStr, values};
+}
+
+// Compare two RGB Huffman trees
+bool areRGBHuffmanTreesEqual(RGBHuffmanNode* root1, RGBHuffmanNode* root2) {
+    if (!root1 && !root2) return true;
+    if (!root1 || !root2) return false;
+
+    if (root1->data != root2->data || root1->freq != root2->freq) return false;
+
+    return areRGBHuffmanTreesEqual(root1->left, root2->left) &&
+           areRGBHuffmanTreesEqual(root1->right, root2->right);
+}
+
+// Delete RGB Huffman Tree
+void deleteRGBHuffmanTree(RGBHuffmanNode* root) {
+    if (!root) return;
+    deleteRGBHuffmanTree(root->left);
+    deleteRGBHuffmanTree(root->right);
+    delete root;
+}
+
+
+
 // int main(){
 //     map<int,int> frequencyMap = {
 //         {1, 5},

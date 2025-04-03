@@ -122,30 +122,88 @@ CompressedImage compress(const std::string& imagePath){
     end = std::chrono::high_resolution_clock::now();
     std::cout << "dfs set regions time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
 
-    std::cout << "region colors: " << std::endl;
-    for (const auto& color : regionColors) {
-        std::cout << "R: " << static_cast<int>(color.red) 
-                  << ", G: " << static_cast<int>(color.green) 
-                  << ", B: " << static_cast<int>(color.blue) << std::endl;
-    }
+    // std::cout << "region colors: " << std::endl;
+    // for (const auto& color : regionColors) {
+    //     std::cout << "R: " << static_cast<int>(color.red) 
+    //               << ", G: " << static_cast<int>(color.green) 
+    //               << ", B: " << static_cast<int>(color.blue) << std::endl;
+    // }
 
 
     std::vector<RGB> differentialColors;
     differentialColors = dpcm(regionColors);
-    std::cout << "differential colors: " << std::endl;
-    for (const auto& color : differentialColors) {
-        std::cout << "R: " << static_cast<int>(color.red) 
-                  << ", G: " << static_cast<int>(color.green) 
-                  << ", B: " << static_cast<int>(color.blue) << std::endl;
-    }
+    // std::cout << "differential colors: " << std::endl;
+    // for (const auto& color : differentialColors) {
+    //     std::cout << "R: " << static_cast<int>(color.red) 
+    //               << ", G: " << static_cast<int>(color.green) 
+    //               << ", B: " << static_cast<int>(color.blue) << std::endl;
+    // }
     std::vector<uint8_t> flat_differences = flatten_differences(differentialColors);
     std::map<uint8_t, int> frequencyMapDifferences = createFrequencyMap(flat_differences);
-    std::cout << "frequency map: " << std::endl;
+    // std::cout << "frequency map: " << std::endl;
+    // for (const auto& pair : frequencyMapDifferences) {
+    //     std::cout << "Value: " << static_cast<int>(pair.first) 
+    //               << ", Frequency: " << pair.second << std::endl;
+    // }
+    auto [RGBHuffmanCodes, RGBroot] = buildRGBCodes(frequencyMapDifferences);
+    // std::cout << "RGB Huffman Codes:" << std::endl;
+    // for (const auto& pair : RGBHuffmanCodes) {
+    //     std::cout << "Value: " << static_cast<int>(pair.first) 
+    //               << ", Code: " << pair.second << std::endl;
+    // }
+
+    std::vector<bool> RGBDifferencesHuffmanBitString;
+
+    // Encode the keys (first values of the map) with 8 bits each
     for (const auto& pair : frequencyMapDifferences) {
-        std::cout << "Value: " << static_cast<int>(pair.first) 
-                  << ", Frequency: " << pair.second << std::endl;
+        std::vector<bool> keyBits = intToBool(pair.first, 8);
+        RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), keyBits.begin(), keyBits.end());
     }
-    // auto [RGBHuffmanCodes, RGBroot] = buildRGBCodes(frequencyMapDifferences);
+
+    // Encode the frequencies with 32 bits each
+    int frequencyBitsAmount = std::ceil(std::log2(img.cols * img.rows));
+    std::vector<bool> frequencyBitsAmountVector = intToBool(frequencyBitsAmount, 5);
+    RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), frequencyBitsAmountVector.begin(), frequencyBitsAmountVector.end());
+    for (const auto& pair : frequencyMapDifferences) {
+        std::vector<bool> frequencyBits = intToBool(pair.second, frequencyBitsAmount);
+        RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), frequencyBits.begin(), frequencyBits.end());
+    }
+
+    // add huffman-encoded difference values to the bitstring
+    int huffmanBitsAmount = std::ceil(std::log2(flat_differences.size()));
+    std::vector<bool> huffmanBitsAmountVector = intToBool(huffmanBitsAmount, 5);
+    RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), huffmanBitsAmountVector.begin(), huffmanBitsAmountVector.end());
+    for (const auto& diff : flat_differences) {
+        std::string huffmanBits = RGBHuffmanCodes[diff];
+        RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), huffmanBits.begin(), huffmanBits.end());
+    }
+
+    std::cout << "frequency map bitstring size: " << RGBDifferencesHuffmanBitString.size() << std::endl;
+
+    // // Output the size of the bitstring for verification
+    // std::cout << "Frequency map bitstring size: " << RGBDifferencesHuffmanBitString.size() << " bits" << std::endl;
+
+    // // Calculate bits needed to store all region colors with 8 bits per channel
+    // int bitsPerChannel = 8;
+    // int totalBitsRegionColors = regionColors.size() * 3 * bitsPerChannel; // 3 channels (R, G, B)
+    // std::cout << "Bits needed to store all region colors with 8 bits per channel: " << totalBitsRegionColors << std::endl;
+
+    // // Calculate bits needed to store differences Huffman encoded
+    // int totalBitsHuffmanEncoded = 0;
+    // for (const auto& diff : flat_differences) {
+    //     totalBitsHuffmanEncoded += RGBHuffmanCodes[diff].size();
+    // }
+    // totalBitsHuffmanEncoded += RGBDifferencesHuffmanBitString.size(); // Add the size of the frequency map bitstring
+    // std::cout << "Bits needed to store differences Huffman encoded: " << totalBitsHuffmanEncoded << std::endl;
+
+    // // Compare the two
+    // if (totalBitsHuffmanEncoded < totalBitsRegionColors) {
+    //     std::cout << "Huffman encoding is more efficient by " 
+    //               << (totalBitsRegionColors - totalBitsHuffmanEncoded) << " bits." << std::endl;
+    // } else {
+    //     std::cout << "Storing with 8 bits per channel is more efficient by " 
+    //               << (totalBitsHuffmanEncoded - totalBitsRegionColors) << " bits." << std::endl;
+    // }
 
     // std::cout << "size of regionColors: " << regionColors.size() << std::endl;
     std::set<RGB, RGBComparator> regionColorsSet;
@@ -154,6 +212,7 @@ CompressedImage compress(const std::string& imagePath){
     }
     // std::cout << "Number of unique colors: " << regionColorsSet.size() << std::endl;
     auto regionColorBitString = boolVectorFromRGBVector(regionColors);
+    std::cout << "size of regionColorBitString: " << regionColorBitString.size() << std::endl;
     end = std::chrono::high_resolution_clock::now();
     regionColorsBitStringTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
@@ -250,6 +309,9 @@ CompressedImage compress(const std::string& imagePath){
         std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
         pathsBitString.insert(pathsBitString.end(), regionColorBits.begin(), regionColorBits.end());
         pathsBitString.insert(pathsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
+
+        // hier statt region color bitstring huffman dpcm werte und frequency map bitstring inserten
+
 
         std::cout << "size after cols+rows+region color: " << pathsBitString.size() << std::endl;
 
