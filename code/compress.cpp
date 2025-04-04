@@ -139,6 +139,12 @@ CompressedImage compress(const std::string& imagePath){
     //               << ", B: " << static_cast<int>(color.blue) << std::endl;
     // }
     std::vector<uint8_t> flat_differences = flatten_differences(differentialColors);
+    // Print the flattened differences
+    // std::cout << "Flattened differences: ";
+    // for (const auto& diff : flat_differences) {
+    //     std::cout << static_cast<int>(diff) << " ";
+    // }
+    std::cout << std::endl;
     std::map<uint8_t, int> frequencyMapDifferences = createFrequencyMap(flat_differences);
     // std::cout << "frequency map: " << std::endl;
     // for (const auto& pair : frequencyMapDifferences) {
@@ -154,31 +160,59 @@ CompressedImage compress(const std::string& imagePath){
 
     std::vector<bool> RGBDifferencesHuffmanBitString;
 
+    int keyAmountBits = std::ceil(frequencyMapDifferences.size());
+    std::cout << "key amount: " << frequencyMapDifferences.size() << std::endl;
+    std::cout << "key amount bits: " << keyAmountBits << std::endl;
+    std::vector<bool> keyAmountBitsVector = intToBool(keyAmountBits, 9);
+    RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), keyAmountBitsVector.begin(), keyAmountBitsVector.end());
+
     // Encode the keys (first values of the map) with 8 bits each
     for (const auto& pair : frequencyMapDifferences) {
         std::vector<bool> keyBits = intToBool(pair.first, 8);
         RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), keyBits.begin(), keyBits.end());
     }
 
-    // Encode the frequencies with 32 bits each
-    int frequencyBitsAmount = std::ceil(std::log2(img.cols * img.rows));
-    std::vector<bool> frequencyBitsAmountVector = intToBool(frequencyBitsAmount, 5);
-    RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), frequencyBitsAmountVector.begin(), frequencyBitsAmountVector.end());
+    // encode the frequencies 
+    int frequencyBitsAmount = std::ceil(std::log2(3 * img.cols * img.rows));
     for (const auto& pair : frequencyMapDifferences) {
         std::vector<bool> frequencyBits = intToBool(pair.second, frequencyBitsAmount);
         RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), frequencyBits.begin(), frequencyBits.end());
+        // std::cout << "Frequency bits: ";
+        // for (bool bit : frequencyBits) {
+        //     std::cout << bit;
+        // }
+        // std::cout << std::endl;
     }
 
-    // add huffman-encoded difference values to the bitstring
-    int huffmanBitsAmount = std::ceil(std::log2(flat_differences.size()));
-    std::vector<bool> huffmanBitsAmountVector = intToBool(huffmanBitsAmount, 5);
-    RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), huffmanBitsAmountVector.begin(), huffmanBitsAmountVector.end());
+    // // add huffman-encoded difference values to the bitstring
+
+    // temp vector to avoid double iteration over flat_differences for counting length
+    std::vector<bool> huffmanEncodedBitString;
     for (const auto& diff : flat_differences) {
         std::string huffmanBits = RGBHuffmanCodes[diff];
-        RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), huffmanBits.begin(), huffmanBits.end());
+        for (char bit : huffmanBits) {
+            huffmanEncodedBitString.push_back(bit == '1'); // Convert '0'/'1' to bool
+        }
     }
-
-    std::cout << "frequency map bitstring size: " << RGBDifferencesHuffmanBitString.size() << std::endl;
+    int totalHuffmanEncodedLength = huffmanEncodedBitString.size();
+    std::cout << "total huffman encoded length: " << totalHuffmanEncodedLength << std::endl;
+    int huffmanBitsAmount = std::ceil(totalHuffmanEncodedLength);
+    std::vector<bool> huffmanBitsAmountVector = intToBool(huffmanBitsAmount, 32);
+    std::cout << "huffman bits amount: " << huffmanBitsAmount << std::endl;
+    // for (bool bit : huffmanBitsAmountVector) {
+    //     std::cout << bit;
+    // }
+    std::cout << std::endl;
+    RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), huffmanBitsAmountVector.begin(), huffmanBitsAmountVector.end());
+    RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), huffmanEncodedBitString.begin(), huffmanEncodedBitString.end());
+  
+    // Print the Huffman-encoded bitstring
+    // std::cout << "Huffman-encoded bitstring: ";
+    // for (bool bit : huffmanEncodedBitString) {
+    //     std::cout << bit;
+    // }
+    // std::cout << std::endl;
+    // std::cout << "frequency map bitstring size: " << RGBDifferencesHuffmanBitString.size() << std::endl;
 
     // // Output the size of the bitstring for verification
     // std::cout << "Frequency map bitstring size: " << RGBDifferencesHuffmanBitString.size() << " bits" << std::endl;
@@ -302,6 +336,8 @@ CompressedImage compress(const std::string& imagePath){
         std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
         pathsBitString.insert(pathsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
         pathsBitString.insert(pathsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
+
+
         // std::cout << "region color bitstring size: " << regionColorBitString.size()/24 << std::endl;
         int regionColorsInt = regionColorBitString.size()/24;
         int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows));
@@ -312,6 +348,7 @@ CompressedImage compress(const std::string& imagePath){
 
         // hier statt region color bitstring huffman dpcm werte und frequency map bitstring inserten
 
+        pathsBitString.insert(pathsBitString.end(), RGBDifferencesHuffmanBitString.begin(), RGBDifferencesHuffmanBitString.end());
 
         std::cout << "size after cols+rows+region color: " << pathsBitString.size() << std::endl;
 
@@ -448,7 +485,7 @@ CompressedImage compress(const std::string& imagePath){
                 std::vector<bool> dir = {bit1, bit2};
                 i += 2;
 
-                // Count repetitions
+                // Count repetitions (only for direction 11, else store only direction)
                 int count = 1;
                 while (i + 1 < directions.size() && directions[i] == bit1 && directions[i + 1] == bit2) {
                     count++;
@@ -457,6 +494,7 @@ CompressedImage compress(const std::string& imagePath){
 
                 // Compute count bit size (store it explicitly)
                 int countBitsSize = std::ceil(std::log2(count + 1));
+                int countBitsBits = std::ceil(std::log2(std::max(img.cols,img.rows)));
                 std::vector<bool> countBitsSizeVec = intToBool(countBitsSize, 5); // Always 5 bits
 
                 // Store direction (2 bits)

@@ -83,6 +83,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     std::string regionColorBitsSizeStr;
     std::string regionColorBitStringStr;
     std::vector<bool> regionColorBitStringParsed;
+    std::vector<RGB> decodedColorsTree;
 
     auto start = std::chrono::high_resolution_clock::now();
     auto end = std::chrono::high_resolution_clock::now();
@@ -105,6 +106,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         std::cout << "rows: " << rows_int << std::endl;
         pathsBitStringStr = pathsBitStringStr.substr(16);
 
+        // parse region color bitstring 
         regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
         regionColorBitsSizeStr = pathsBitStringStr.substr(0, regionColorBitsSize);
         regionColorBitsSizeInt = std::stoi(regionColorBitsSizeStr, nullptr, 2);
@@ -115,6 +117,80 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
             regionColorsBitStringFromTree.push_back(c == '1');
         }
         pathsBitStringStr = pathsBitStringStr.substr(regionColorBitStringStr.size());
+
+        // parse differences string with frequency map and encoded difference values
+        std::string freqMapAmountStr = pathsBitStringStr.substr(0, 9);
+        std::cout << "freqMapAmountStr: " << freqMapAmountStr << std::endl;
+        int freqMapAmount = std::stoi(freqMapAmountStr, nullptr, 2);
+        pathsBitStringStr = pathsBitStringStr.substr(9);
+        std::cout << "frequency map amount: " << freqMapAmount << std::endl;
+
+        std::vector<uint8_t> keys;
+        for (int i = 0; i < freqMapAmount; ++i) {
+            std::string freqStr = pathsBitStringStr.substr(0, 8);
+            uint8_t key = static_cast<uint8_t>(std::stoi(freqStr, nullptr, 2));
+            keys.push_back(key);
+            pathsBitStringStr = pathsBitStringStr.substr(8);
+        }
+        int freqBits = std::ceil(std::log2(3 * cols_int * rows_int));
+        std::vector<int> frequencies;
+        for (int i = 0; i < freqMapAmount; ++i) {
+            std::string freqStr = pathsBitStringStr.substr(0, freqBits);
+            // std::cout << "frequency bits: " << freqStr << std::endl;
+            int frequency = std::stoi(freqStr, nullptr, 2);
+            frequencies.push_back(frequency);
+            pathsBitStringStr = pathsBitStringStr.substr(freqBits);
+        }
+        std::map<uint8_t, int> frequencyMapDifferences;
+        for (size_t i = 0; i < keys.size(); ++i) {
+            frequencyMapDifferences[keys[i]] = frequencies[i];
+        }
+        std::cout << "parsed frequency map" << std::endl;
+        // construct huffman tree from frequency map
+        auto [RGBHuffmanCodes, RGBroot] = buildRGBCodes(frequencyMapDifferences);
+        std::cout << "built huffman tree" << std::endl;
+        std::cout << "remaining bitstring size: " << pathsBitStringStr.size() << std::endl;
+
+        // Print the frequency map for debugging
+        // std::cout << "Frequency Map (Differences):" << std::endl;
+        // for (const auto& pair : frequencyMapDifferences) {
+        //     std::cout << "Value: " << static_cast<int>(pair.first) 
+        //               << ", Frequency: " << pair.second << std::endl;
+        // }
+
+        std::string huffmanBitsAmountStr = pathsBitStringStr.substr(0, 32);
+        std::cout << "huffman bits amount str: " << huffmanBitsAmountStr << std::endl;
+        int huffmanBitsAmount = std::stoi(huffmanBitsAmountStr, nullptr, 2);
+        std::cout << "trying to read huffman bits amount: " << huffmanBitsAmount << std::endl;
+        pathsBitStringStr = pathsBitStringStr.substr(32);
+        std::vector<uint8_t> decodedDifferences;
+        std::string huffmanEncodedStr = pathsBitStringStr.substr(0, huffmanBitsAmount);
+        pathsBitStringStr = pathsBitStringStr.substr(huffmanBitsAmount);
+        std::string decodedStr;
+        RGBHuffmanNode* currentNode = RGBroot;
+        for (char bit : huffmanEncodedStr) {
+            currentNode = (bit == '0') ? currentNode->left : currentNode->right;
+
+            if (!currentNode->left && !currentNode->right) { // Leaf node reached
+                decodedStr += char(currentNode->data);
+                decodedDifferences.push_back(currentNode->data);
+                currentNode = RGBroot;
+            }
+        }
+        // Print the decoded differences
+        // std::cout << "Decoded Differences:" << std::endl;
+        // for (uint8_t diff : decodedDifferences) {
+        //     std::cout << static_cast<int>(diff) << " ";
+        // }
+        // std::cout << std::endl;
+
+        decodedColorsTree = decodeDifferences(decodedDifferences);
+        // for (const auto& color : decodedColorsTree) {
+        //     std::cout << "R: " << static_cast<int>(color.red)
+        //               << ", G: " << static_cast<int>(color.green)
+        //               << ", B: " << static_cast<int>(color.blue) << std::endl;
+        // }
+
 
 
         //int disconnectedComponentsBits = std::ceil(std::log2(cols * rows / 2));
@@ -787,7 +863,8 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     // std::cout << "UF reconstruction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
     // reconstruct with dfs
     start = std::chrono::high_resolution_clock::now();
-    image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, regionColorsFromBitString, transparencyValues);
+    // image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, regionColorsFromBitString, transparencyValues);
+    image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, decodedColorsTree, transparencyValues);
     end = std::chrono::high_resolution_clock::now();
     std::cout << "DFS reconstruction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
 
@@ -1097,3 +1174,29 @@ std::vector<std::vector<bool>> directionsVectorFromBitstring(std::string directi
     return directions;
 }
 
+std::vector<RGB> decodeDifferences(const std::vector<uint8_t>& encodedDifferences) {
+    std::vector<RGB> decodedPixels;
+
+    if (encodedDifferences.size() < 3) {
+        throw std::runtime_error("Encoded data too short to decode");
+    }
+
+    // First pixel is stored explicitly
+    RGB firstPixel = { encodedDifferences[0], encodedDifferences[1], encodedDifferences[2] };
+    decodedPixels.push_back(firstPixel);
+
+    uint8_t r = firstPixel.red;
+    uint8_t g = firstPixel.green;
+    uint8_t b = firstPixel.blue;
+
+    // Decode differences cyclically
+    for (size_t i = 3; i < encodedDifferences.size(); i += 3) {
+        r = static_cast<uint8_t>(r + static_cast<int8_t>(encodedDifferences[i]));     // Restore R
+        g = static_cast<uint8_t>(g + static_cast<int8_t>(encodedDifferences[i + 1])); // Restore G
+        b = static_cast<uint8_t>(b + static_cast<int8_t>(encodedDifferences[i + 2])); // Restore B
+
+        decodedPixels.push_back({ r, g, b });
+    }
+
+    return decodedPixels;
+}

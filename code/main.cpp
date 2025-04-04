@@ -93,8 +93,8 @@ int main() {
 
 
     std::unordered_set<std::string> category_set = {
-        "icon_64",
-        "icon_512",
+      //   "icon_64",
+      //   "icon_512",
       //   "photo_kodak",
       //   "photo_tecnick",
       //   "photo_wikipedia",
@@ -105,7 +105,10 @@ int main() {
       //   "textures_pk",
       //   "textures_pk01",
       //   "textures_pk02",
-      //   "textures_plants"
+      //   "textures_plants",
+
+
+        "screenshot_game_reduced"
     };
 
     std::ifstream inputFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/singlefile.txt");
@@ -123,7 +126,7 @@ int main() {
     inputFile.close();
 
     // control parameters 
-    bool single_image = true;
+    bool single_image = false;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
     //showImg = false;

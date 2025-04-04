@@ -29,5 +29,6 @@ int boolVectorToIntSegment(const std::vector<bool>& bitstring, size_t startIndex
 std::vector<bool> reconstruct_edgeBits2bits_from_bitstring(const std::vector<bool>& bitstring, int cols, int rows);
 std::vector<bool> decodeRLEToNonRLE(const std::vector<bool>& rleBitString);
 std::string boolVectorToString(const std::vector<bool>& bitVec, size_t startIndex, size_t length);
+std::vector<RGB> decodeDifferences(const std::vector<uint8_t>& encodedDifferences);
 
 #endif // DECOMPRESS_H
