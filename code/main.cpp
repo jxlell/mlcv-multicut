@@ -87,6 +87,27 @@ int main() {
       vector<long long> paths_2bits_decompression_times;
       vector<long long> paths_2bits_decompression_times_total;
 
+
+      // test values
+      vector<int> tree_3bit_bits;
+      vector<int> tree_current_bits;
+      vector<int> region_colors_bits;
+      vector<int> dpcm_huffman_bits;
+
+      vector<int> region_color_dfs_time;
+      vector<int> region_color_UF_time;
+      vector<int> dpcm_huffman_time;
+      vector<int> tree_construction_time;
+
+      vector<int> rebuild_dpcm_huffman_time;
+      vector<int> decode_colors_time;
+      vector<int> assemble_tree_paths_time;
+      vector<int> reconstruct_tree_edgebits_time;
+      vector<int> dfs_reconstruction_time;
+      vector<int> UF_reconstruction_time;
+
+
+
     vector<string> filenames;
     vector<string> categories;
     vector<double> kBSizes;
@@ -94,7 +115,7 @@ int main() {
 
     std::unordered_set<std::string> category_set = {
       //   "icon_64",
-      //   "icon_512",
+        "icon_512",
       //   "photo_kodak",
       //   "photo_tecnick",
       //   "photo_wikipedia",
@@ -108,7 +129,7 @@ int main() {
       //   "textures_plants",
 
 
-        "screenshot_game_reduced"
+      //   "screenshot_game_reduced"
     };
 
     std::ifstream inputFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/singlefile.txt");
@@ -132,7 +153,10 @@ int main() {
     //showImg = false;
     bool writeToFile = true;
     writeToFile = !single_image;
-    writeToFile = false;
+    writeToFile = true;
+    
+    bool test_mode = (category_set.count("screenshot_game_reduced") > 0) && 
+                     (category_set.size() == 1);
 
     std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
     int imgCount = countImgFiles(parentDir, category_set);
@@ -337,6 +361,9 @@ if(writeToFile){
       } else {
             csvFile.open("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results.csv");
       }
+      if(test_mode){
+            csvFile.open("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_test.csv");
+      }
       if (!csvFile.is_open()) {
             cerr << "Error: Unable to open CSV file for writing." << endl;
             return -1;
@@ -444,6 +471,7 @@ if(writeToFile){
 }
 
 
+      if(!test_mode){
         csvFile << "filename,category,old_rate,tree_rate,rle_rate,straights_rate,straights_huffman_rate,reduced_edgebits_rate,paths_2bit_rate,tree_comp_time,tree_decomp_time,old_comp_time, old_decomp_time,rle_comp_time,rle_decomp_time,straights_comp_time,straights_decomp_time,huffman_comp_time,huffman_decomp_time,reduced_comp_time,reduced_decomp_time,paths_2bit_comp_time,paths_2bit_decomp_time\n";
         for (size_t i = 0; i < filenames.size(); ++i) {
             csvFile << filenames[i] << ","
@@ -474,7 +502,30 @@ if(writeToFile){
 
                     //<< decompression_times_total[i] << "\n";
         }
+      }else{
+            csvFile << "filename,category,tree_rate,3bit_paths_bits,tree_path_bits,region_color_bits,dpcm-huffman_bits,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,tree_construction_time,2bit_rate,rle_rate,2bit_construction_time,rebuild_dpcm_huffman_time,decode_colors_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time\n";
+        for (size_t i = 0; i < filenames.size(); ++i) {
+            csvFile << filenames[i] << ","
+                    << categories[i] << ","
+                    << tree_compression_rates_total[i] << ","
+                    << tree_3bit_bits[i] << ","
+                    << tree_current_bits[i] << ","
+                    << region_colors_bits[i] << ","
+                    << dpcm_huffman_bits[i] << ","
+                    << region_color_UF_time[i] << ","
+                    << region_color_dfs_time[i] << ","
+                    << dpcm_huffman_time[i] << ","
+                    << tree_construction_time[i] << ","
+                    << paths2bit_compression_rates_total[i] << ","
+                    << rle_compression_rates_total[i] << ","
+                    << paths_2bits_compression_times_total[i] << ","
+                    << rebuild_dpcm_huffman_time[i] << ","
+                    << decode_colors_time[i] << ","
+                    << reconstruct_tree_edgebits_time[i] << ","
+                    << dfs_reconstruction_time[i] << ","
 
+                    << "-" << "\n";
+      }
         csvFile.close();
     }
 
@@ -483,4 +534,5 @@ if(writeToFile){
     std::cout << "Total time: " << completeTime << " ms" << std::endl;
 
     return 0;
+}
 }

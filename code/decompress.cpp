@@ -40,6 +40,13 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     long long paths_2bits_decompression_time = 0;
     long long straights_decompression_time = 0;
 
+    long long rebuild_dpcm_huffman_time = 0;
+    long long decode_colors_time = 0;
+    long long assemble_tree_paths_time = 0;
+    long long reconstruct_tree_edgebits_time = 0;
+    long long dfs_reconstruction_time = 0;
+    // long long UF_reconstruction_time = 0;
+
     std::vector<bool> straightsHuffmanCodesBitString;// = compImg.straightsHuffmanCodesBitString;
     std::vector<uint32_t> straightsHuffmanCodesStartPoints;// = compImg.straightsHuffmanCodesStartPoints;
     HuffmanNode* root = compImg.root;
@@ -107,16 +114,16 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         pathsBitStringStr = pathsBitStringStr.substr(16);
 
         // parse region color bitstring 
-        regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
-        regionColorBitsSizeStr = pathsBitStringStr.substr(0, regionColorBitsSize);
-        regionColorBitsSizeInt = std::stoi(regionColorBitsSizeStr, nullptr, 2);
-        std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
-        pathsBitStringStr = pathsBitStringStr.substr(regionColorBitsSize);
-        regionColorBitStringStr = pathsBitStringStr.substr(0, regionColorBitsSizeInt*24);
-        for(char c : regionColorBitStringStr){
-            regionColorsBitStringFromTree.push_back(c == '1');
-        }
-        pathsBitStringStr = pathsBitStringStr.substr(regionColorBitStringStr.size());
+        // regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int + 1));
+        // regionColorBitsSizeStr = pathsBitStringStr.substr(0, regionColorBitsSize);
+        // regionColorBitsSizeInt = std::stoi(regionColorBitsSizeStr, nullptr, 2);
+        // std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
+        // pathsBitStringStr = pathsBitStringStr.substr(regionColorBitsSize);
+        // regionColorBitStringStr = pathsBitStringStr.substr(0, regionColorBitsSizeInt*24);
+        // for(char c : regionColorBitStringStr){
+        //     regionColorsBitStringFromTree.push_back(c == '1');
+        // }
+        // pathsBitStringStr = pathsBitStringStr.substr(regionColorBitStringStr.size());
 
         // parse differences string with frequency map and encoded difference values
         std::string freqMapAmountStr = pathsBitStringStr.substr(0, 9);
@@ -125,6 +132,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         pathsBitStringStr = pathsBitStringStr.substr(9);
         std::cout << "frequency map amount: " << freqMapAmount << std::endl;
 
+        start = std::chrono::high_resolution_clock::now();
         std::vector<uint8_t> keys;
         for (int i = 0; i < freqMapAmount; ++i) {
             std::string freqStr = pathsBitStringStr.substr(0, 8);
@@ -132,7 +140,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
             keys.push_back(key);
             pathsBitStringStr = pathsBitStringStr.substr(8);
         }
-        int freqBits = std::ceil(std::log2(3 * cols_int * rows_int));
+        int freqBits = std::ceil(std::log2(3 * cols_int * rows_int + 1));
         std::vector<int> frequencies;
         for (int i = 0; i < freqMapAmount; ++i) {
             std::string freqStr = pathsBitStringStr.substr(0, freqBits);
@@ -150,6 +158,9 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         auto [RGBHuffmanCodes, RGBroot] = buildRGBCodes(frequencyMapDifferences);
         std::cout << "built huffman tree" << std::endl;
         std::cout << "remaining bitstring size: " << pathsBitStringStr.size() << std::endl;
+        end = std::chrono::high_resolution_clock::now();
+        rebuild_dpcm_huffman_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        std::cout << "rebuild dpcm huffman time: " << rebuild_dpcm_huffman_time << "ms" << std::endl;
 
         // Print the frequency map for debugging
         // std::cout << "Frequency Map (Differences):" << std::endl;
@@ -158,8 +169,9 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         //               << ", Frequency: " << pair.second << std::endl;
         // }
 
+        start = std::chrono::high_resolution_clock::now();
         std::string huffmanBitsAmountStr = pathsBitStringStr.substr(0, 32);
-        std::cout << "huffman bits amount str: " << huffmanBitsAmountStr << std::endl;
+        // std::cout << "huffman bits amount str: " << huffmanBitsAmountStr << std::endl;
         int huffmanBitsAmount = std::stoi(huffmanBitsAmountStr, nullptr, 2);
         std::cout << "trying to read huffman bits amount: " << huffmanBitsAmount << std::endl;
         pathsBitStringStr = pathsBitStringStr.substr(32);
@@ -190,11 +202,13 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         //               << ", G: " << static_cast<int>(color.green)
         //               << ", B: " << static_cast<int>(color.blue) << std::endl;
         // }
+        end = std::chrono::high_resolution_clock::now();
+        decode_colors_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        std::cout << "time to decode colors: " << decode_colors_time << "ms" << std::endl;
 
-
-
+        start = std::chrono::high_resolution_clock::now();
         //int disconnectedComponentsBits = std::ceil(std::log2(cols * rows / 2));
-        int disconnectedComponentsBits = std::max(static_cast<double>(std::ceil(std::log2(std::max(cols_int, rows_int)))), std::max(static_cast<double>(1), std::log2(std::ceil(static_cast<double>(cols_int)/2) * std::ceil(static_cast<double>(rows_int)/2))));
+        int disconnectedComponentsBits = std::max(static_cast<double>(std::ceil(std::log2(std::max(cols_int, rows_int) + 1))), std::max(static_cast<double>(1), std::log2(std::ceil(static_cast<double>(cols_int)/2) * std::ceil(static_cast<double>(rows_int)/2) + 1)));
         std::cout << "disconnect bits: " << disconnectedComponentsBits << std::endl;
         // std::cout << "Paths bitstring: " << pathsBitStringStr << std::endl;
         std::string numberOfComponentsStr = pathsBitStringStr.substr(0,disconnectedComponentsBits);
@@ -218,6 +232,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         }
         std::cout << "start points size: " << startPoints.size() << std::endl;
         end = std::chrono::high_resolution_clock::now();
+        assemble_tree_paths_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         tree_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
         start = std::chrono::high_resolution_clock::now();
@@ -231,6 +246,8 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
             reconstruct_edgeBits_iterative(startPoints[i], getDirectionFromIndex(startPoints[i], rows_int, cols_int), reconstructed_edgeBits_from_paths, cols_int, rows_int, visited, directionQueue);
         }
         end = std::chrono::high_resolution_clock::now();
+        reconstruct_tree_edgebits_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        std::cout << "time to reconstruct edge bits from paths: " << reconstruct_tree_edgebits_time << "ms" << std::endl;
         tree_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         std::cout << "time to reconstruct tree edge bits from paths: " << tree_decompression_time << "ms" << std::endl;
     }
@@ -256,7 +273,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         std::cout << "rows: " << rows_int << std::endl;
         
         // Compute region color bits size
-        regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+        regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int + 1));
         regionColorBitsSizeInt = std::stoi(reducedEdgeBitsBitStringStr.substr(bitIndex, regionColorBitsSize), nullptr, 2);
         bitIndex += regionColorBitsSize;
         
@@ -321,7 +338,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         std::cout << "rows: " << rows_int << std::endl;
 
         // Compute region color bits size
-        regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+        regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int + 1));
         regionColorBitsSizeStr = edgeBitsBitStringStr.substr(bitIndex, regionColorBitsSize);
         regionColorBitsSizeInt = std::stoi(regionColorBitsSizeStr, nullptr, 2);
         bitIndex += regionColorBitsSize;
@@ -375,7 +392,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         std::cout << "rows: " << rows_int << std::endl;
 
         // Compute region color bits size
-        regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+        regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int + 1));
         regionColorBitsSizeStr = paths2bitBitStringStr.substr(bitIndex, regionColorBitsSize);
         regionColorBitsSizeInt = std::stoi(regionColorBitsSizeStr, nullptr, 2);
         bitIndex += regionColorBitsSize;
@@ -452,6 +469,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         start = std::chrono::high_resolution_clock::now();
         bitIndex = 0;
         std::vector<std::vector<bool>> reconstructedPaths;
+        int countBitsMax = std::ceil(std::log2(std::max(rows_int, cols_int) + 1));
 
         while (bitIndex + 2 <= paths2bitRLEBitString.size()) {
             std::vector<bool> path;
@@ -465,18 +483,20 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
                 // Stop if delimiter "00"
                 if (!bit1 && !bit2) break;
 
-                // Read count bit size (5 bits)
-                std::vector<bool> countBitsSizeVec(paths2bitRLEBitString.begin() + bitIndex, paths2bitRLEBitString.begin() + bitIndex + 5);
-                int countBitsSize = boolVectorToInt(countBitsSizeVec);
-                bitIndex += 5;
+                if(bit1 && bit2){
+                    // Read count (fixed length -> countBitsMax)
+                    std::vector<bool> countBits(paths2bitRLEBitString.begin() + bitIndex, paths2bitRLEBitString.begin() + bitIndex + countBitsMax);
+                    int count = boolVectorToInt(countBits);
+                    bitIndex += countBitsMax;
 
-                // Read count (variable length)
-                std::vector<bool> countBits(paths2bitRLEBitString.begin() + bitIndex, paths2bitRLEBitString.begin() + bitIndex + countBitsSize);
-                int count = boolVectorToInt(countBits);
-                bitIndex += countBitsSize;
-
-                // Reconstruct repeated direction
-                for (int j = 0; j < count; j++) {
+                    // Reconstruct repeated direction
+                    for (int j = 0; j < count; j++) {
+                        path.push_back(bit1);
+                        path.push_back(bit2);
+                    }
+                }
+                else{
+                    // Store direction (2 bits) (10 or 01)
                     path.push_back(bit1);
                     path.push_back(bit2);
                 }
@@ -530,7 +550,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         std::cout << "rows: " << rows_int << std::endl;
 
         // Compute region color bits size
-        regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+        regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int + 1));
         regionColorBitsSizeStr = straightsNoHuffBitStringStr.substr(bitIndex, regionColorBitsSize);
         regionColorBitsSizeInt = std::stoi(regionColorBitsSizeStr, nullptr, 2);
         bitIndex += regionColorBitsSize;
@@ -613,7 +633,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         std::cout << "rows: " << rows_int << std::endl;
 
         // Compute and read regionColorBitsSize
-        regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int));
+        regionColorBitsSize = std::ceil(std::log2(cols_int * rows_int + 1));
         regionColorBitsSizeInt = std::stoi(straightsBitStringStr.substr(bitIndex, regionColorBitsSize), nullptr, 2);
         bitIndex += regionColorBitsSize;
         std::cout << "regionColorBitsSize: " << regionColorBitsSizeInt << std::endl;
@@ -861,12 +881,14 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     // }
     // end = std::chrono::high_resolution_clock::now();
     // std::cout << "UF reconstruction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
+    
     // reconstruct with dfs
     start = std::chrono::high_resolution_clock::now();
     // image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, regionColorsFromBitString, transparencyValues);
     image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, decodedColorsTree, transparencyValues);
     end = std::chrono::high_resolution_clock::now();
     std::cout << "DFS reconstruction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
+    dfs_reconstruction_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     // for (auto t : transparencyValues){
     //     std::cout << (int)t << ", ";

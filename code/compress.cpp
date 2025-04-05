@@ -101,6 +101,10 @@ CompressedImage compress(const std::string& imagePath){
     long long paths2bit_compression_time = 0;
 
     long long regionColorsBitStringTime = 0;
+    long long dpcm_huffman_construction_time = 0;
+    long long dpcm_huffman_bitstring_time = 0;
+    long long region_colors_dfs_time = 0;
+    long long tree_construction_time = 0;
 
     double oldCompressionRate = 0;
     double newEdgeBitsCompressionRate = 0;
@@ -120,6 +124,7 @@ CompressedImage compress(const std::string& imagePath){
     start = std::chrono::high_resolution_clock::now();
     regionColors = getRegionsFromImageSearch(img);
     end = std::chrono::high_resolution_clock::now();
+    region_colors_dfs_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "dfs set regions time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
 
     // std::cout << "region colors: " << std::endl;
@@ -129,7 +134,7 @@ CompressedImage compress(const std::string& imagePath){
     //               << ", B: " << static_cast<int>(color.blue) << std::endl;
     // }
 
-
+    start = std::chrono::high_resolution_clock::now();
     std::vector<RGB> differentialColors;
     differentialColors = dpcm(regionColors);
     // std::cout << "differential colors: " << std::endl;
@@ -157,7 +162,10 @@ CompressedImage compress(const std::string& imagePath){
     //     std::cout << "Value: " << static_cast<int>(pair.first) 
     //               << ", Code: " << pair.second << std::endl;
     // }
-
+    end = std::chrono::high_resolution_clock::now();
+    dpcm_huffman_construction_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "dpcm huffman construction time: " << dpcm_huffman_construction_time << std::endl;
+    start = std::chrono::high_resolution_clock::now();
     std::vector<bool> RGBDifferencesHuffmanBitString;
 
     int keyAmountBits = std::ceil(frequencyMapDifferences.size());
@@ -173,7 +181,7 @@ CompressedImage compress(const std::string& imagePath){
     }
 
     // encode the frequencies 
-    int frequencyBitsAmount = std::ceil(std::log2(3 * img.cols * img.rows));
+    int frequencyBitsAmount = std::ceil(std::log2(3 * img.cols * img.rows + 1));
     for (const auto& pair : frequencyMapDifferences) {
         std::vector<bool> frequencyBits = intToBool(pair.second, frequencyBitsAmount);
         RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), frequencyBits.begin(), frequencyBits.end());
@@ -205,7 +213,9 @@ CompressedImage compress(const std::string& imagePath){
     std::cout << std::endl;
     RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), huffmanBitsAmountVector.begin(), huffmanBitsAmountVector.end());
     RGBDifferencesHuffmanBitString.insert(RGBDifferencesHuffmanBitString.end(), huffmanEncodedBitString.begin(), huffmanEncodedBitString.end());
-  
+    end = std::chrono::high_resolution_clock::now();
+    dpcm_huffman_bitstring_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "dpcm huffman bitstring time: " << dpcm_huffman_bitstring_time << std::endl;
     // Print the Huffman-encoded bitstring
     // std::cout << "Huffman-encoded bitstring: ";
     // for (bool bit : huffmanEncodedBitString) {
@@ -245,11 +255,12 @@ CompressedImage compress(const std::string& imagePath){
         regionColorsSet.insert(color);
     }
     // std::cout << "Number of unique colors: " << regionColorsSet.size() << std::endl;
+    start = std::chrono::high_resolution_clock::now();
     auto regionColorBitString = boolVectorFromRGBVector(regionColors);
     std::cout << "size of regionColorBitString: " << regionColorBitString.size() << std::endl;
     end = std::chrono::high_resolution_clock::now();
     regionColorsBitStringTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
+    std::cout << "region colors bitstring time: " << regionColorsBitStringTime << std::endl;
 
     if(compressionMethods.useEdgebits){
         std::cout << "setting edgebits" << std::endl;
@@ -259,7 +270,7 @@ CompressedImage compress(const std::string& imagePath){
         std::vector<bool> cols_bitstring = intToBool(img.cols, 16);
         std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
         int regionColorsInt = regionColorBitString.size()/24;
-        int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows));
+        int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows + 1));
         // std::cout << "region color bits size: " << regionColorBitsSize << std::endl;
         std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
         edgeBitsBitString.insert(edgeBitsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
@@ -299,7 +310,7 @@ CompressedImage compress(const std::string& imagePath){
         reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
         reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
         int regionColorsInt = regionColorBitString.size()/24;
-        int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows));
+        int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows + 1));
         // std::cout << "region color bits size: " << regionColorBitsSize << std::endl;
         std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
         reducedEdgeBitsBitString.insert(reducedEdgeBitsBitString.end(), regionColorBits.begin(), regionColorBits.end());
@@ -326,7 +337,11 @@ CompressedImage compress(const std::string& imagePath){
         std::cout << "setting paths" << std::endl;
         start = std::chrono::high_resolution_clock::now();
         paths = setPaths(edgeBits01, img);
+        end = std::chrono::high_resolution_clock::now();
+        tree_construction_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        std::cout << "time to construct tree paths: " << tree_construction_time << "ms" << std::endl;
         //set bitstring for paths 
+        start = std::chrono::high_resolution_clock::now();
         int totalDirectionBits = 0;
         for (const auto& path : paths) {
             totalDirectionBits += std::get<2>(path).size();
@@ -338,13 +353,13 @@ CompressedImage compress(const std::string& imagePath){
         pathsBitString.insert(pathsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
 
 
-        // std::cout << "region color bitstring size: " << regionColorBitString.size()/24 << std::endl;
-        int regionColorsInt = regionColorBitString.size()/24;
-        int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows));
-        // std::cout << "region color bits size: " << regionColorBitsSize << std::endl;
-        std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
-        pathsBitString.insert(pathsBitString.end(), regionColorBits.begin(), regionColorBits.end());
-        pathsBitString.insert(pathsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
+        // // std::cout << "region color bitstring size: " << regionColorBitString.size()/24 << std::endl;
+        // int regionColorsInt = regionColorBitString.size()/24;
+        // int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows + 1));
+        // // std::cout << "region color bits size: " << regionColorBitsSize << std::endl;
+        // std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
+        // pathsBitString.insert(pathsBitString.end(), regionColorBits.begin(), regionColorBits.end());
+        // pathsBitString.insert(pathsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
 
         // hier statt region color bitstring huffman dpcm werte und frequency map bitstring inserten
 
@@ -353,11 +368,11 @@ CompressedImage compress(const std::string& imagePath){
         std::cout << "size after cols+rows+region color: " << pathsBitString.size() << std::endl;
 
         //int disconnectedComponentsBits = std::ceil(std::log2(img.cols * img.rows / 2));
-        int disconnectedComponentsBits = std::max(static_cast<double>(std::ceil(std::log2(std::max(img.cols, img.rows)))), std::max(static_cast<double>(1), std::log2(std::ceil(static_cast<double>(img.cols)/2) * std::ceil(static_cast<double>(img.rows)/2))));
+        int disconnectedComponentsBits = std::max(static_cast<double>(std::ceil(std::log2(std::max(img.cols, img.rows) + 1))), std::max(static_cast<double>(1), std::log2(std::ceil(static_cast<double>(img.cols)/2) * std::ceil(static_cast<double>(img.rows)/2) + 1)));
         std::cout << "paths size: " << paths.size() << std::endl;
         std::vector<bool> numberOfDisconnectedComponents = intToBool(paths.size(), disconnectedComponentsBits);
         // std::cout << "disconnected comp bits: " << disconnectedComponentsBits << std::endl;
-        int startPointBits = std::ceil(std::log2(edgeBits01.size()));
+        int startPointBits = std::ceil(std::log2(edgeBits01.size() + 1));
         std::vector<bool> startPointBitsVector = intToBool(startPointBits, 5);
         // add number of components to bitstring
         pathsBitString.insert(pathsBitString.end(), numberOfDisconnectedComponents.begin(), numberOfDisconnectedComponents.end());
@@ -392,7 +407,7 @@ CompressedImage compress(const std::string& imagePath){
 
         end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        std::cout << "time to construct tree paths: " << duration.count() << "ms" << std::endl;
+        std::cout << "tree bitstring: " << duration.count() << "ms" << std::endl;
         tree_compression_time = duration.count();
         pathCompressionRate = (img.rows * img.cols * 24) / (double)pathsBitString.size();
         std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;
@@ -401,6 +416,8 @@ CompressedImage compress(const std::string& imagePath){
     if(compressionMethods.use2bits){
         start = std::chrono::high_resolution_clock::now();
         auto _2bitpaths = set2BitPaths(edgeBits01, img);
+        end = std::chrono::high_resolution_clock::now();
+        std::cout << "time to construct 2bit paths: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
         paths_2bit = std::get<0>(_2bitpaths);
         // for (const auto& path : paths_2bit) {
         //     uint32_t edgeI;
@@ -436,7 +453,7 @@ CompressedImage compress(const std::string& imagePath){
         std::vector<bool> cols_bitstring = intToBool(img.cols, 16);
         std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
         int regionColorsInt = regionColorBitString.size()/24;
-        int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows));
+        int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows + 1));
         std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
         paths2bitBitString.insert(paths2bitBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
         paths2bitBitString.insert(paths2bitBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
@@ -446,7 +463,7 @@ CompressedImage compress(const std::string& imagePath){
         int paths2bitAmount = paths_2bit.size();
         std::vector<bool> paths2bitAmountVector = intToBool(paths2bitAmount, 32);
         paths2bitBitString.insert(paths2bitBitString.end(), paths2bitAmountVector.begin(), paths2bitAmountVector.end());
-        int paths2bitStartPointsBits = std::ceil(std::log2(edgeBits01.size()));
+        int paths2bitStartPointsBits = std::ceil(std::log2(edgeBits01.size() + 1));
         std::vector<bool> paths2bitStartPointsBitsVector = intToBool(paths2bitStartPointsBits, 5);
         paths2bitBitString.insert(paths2bitBitString.end(), paths2bitStartPointsBitsVector.begin(), paths2bitStartPointsBitsVector.end());
         for (auto path : paths_2bit){
@@ -474,6 +491,7 @@ CompressedImage compress(const std::string& imagePath){
 
         // set rle bitstring
         start = std::chrono::high_resolution_clock::now();
+        int countMaxBits = std::ceil(std::log2(std::max(img.cols,img.rows) + 1));
         for (auto& path : paths_2bit) {
             std::vector<bool>& directions = std::get<2>(path);
 
@@ -482,31 +500,29 @@ CompressedImage compress(const std::string& imagePath){
                 // Extract 2-bit direction
                 bool bit1 = directions[i];
                 bool bit2 = directions[i + 1];
-                std::vector<bool> dir = {bit1, bit2};
+                // std::vector<bool> dir = {bit1, bit2};
                 i += 2;
 
-                // Count repetitions (only for direction 11, else store only direction)
-                int count = 1;
-                while (i + 1 < directions.size() && directions[i] == bit1 && directions[i + 1] == bit2) {
-                    count++;
-                    i += 2;
-                }
+                if(bit1 && bit2){
+                    // Count repetitions (only for direction 11, else store only direction)
+                    int count = 1;
+                    while (i + 1 < directions.size() && directions[i] && directions[i + 1]) {
+                        count++;
+                        i += 2;
+                    }
 
-                // Compute count bit size (store it explicitly)
-                int countBitsSize = std::ceil(std::log2(count + 1));
-                int countBitsBits = std::ceil(std::log2(std::max(img.cols,img.rows)));
-                std::vector<bool> countBitsSizeVec = intToBool(countBitsSize, 5); // Always 5 bits
+                    // Store direction (2 bits)
+                    paths2bitRLEBitString.push_back(bit1);
+                    paths2bitRLEBitString.push_back(bit2);
 
-                // Store direction (2 bits)
-                paths2bitRLEBitString.push_back(bit1);
-                paths2bitRLEBitString.push_back(bit2);
-
-                // Store count bit size (5 bits)
-                paths2bitRLEBitString.insert(paths2bitRLEBitString.end(), countBitsSizeVec.begin(), countBitsSizeVec.end());
-
-                // Store count (variable length)
-                std::vector<bool> countBits = intToBool(count, countBitsSize);
-                paths2bitRLEBitString.insert(paths2bitRLEBitString.end(), countBits.begin(), countBits.end());
+                    // Store count (variable length)
+                    std::vector<bool> countBits = intToBool(count, countMaxBits);
+                    paths2bitRLEBitString.insert(paths2bitRLEBitString.end(), countBits.begin(), countBits.end());
+                }else{
+                    // Store direction (2 bits)
+                    paths2bitRLEBitString.push_back(bit1);
+                    paths2bitRLEBitString.push_back(bit2);
+                }                
             }
 
             // Append "00" as delimiter
@@ -539,7 +555,7 @@ CompressedImage compress(const std::string& imagePath){
         std::vector<bool> cols_bitstring = intToBool(img.cols, 16);
         std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
         int regionColorsInt = regionColorBitString.size()/24;
-        int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows));
+        int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows + 1));
         std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
         straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
         straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
@@ -549,7 +565,7 @@ CompressedImage compress(const std::string& imagePath){
         // list start points 
         std::vector<bool> huffmanStartPointsAmount = intToBool(straightsHuffmanCodesStartPoints.size(), 32);
         straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), huffmanStartPointsAmount.begin(), huffmanStartPointsAmount.end());
-        int huffmanStartPointsBits = std::ceil(std::log2(edgeBits01.size()));
+        int huffmanStartPointsBits = std::ceil(std::log2(edgeBits01.size() + 1));
         std::vector<bool> huffmanStartPointsBitsVector = intToBool(huffmanStartPointsBits, 5);
         straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), huffmanStartPointsBitsVector.begin(), huffmanStartPointsBitsVector.end());
         for(auto& startPoint : straightsHuffmanCodesStartPoints){
@@ -558,7 +574,7 @@ CompressedImage compress(const std::string& imagePath){
         }
     
         // list lengths
-        int straightBits = std::ceil(std::log2(std::max(img.cols, img.rows)));
+        int straightBits = std::ceil(std::log2(std::max(img.cols, img.rows) + 1));
         std::vector<bool> straightBitsVector = intToBool(straightBits, 5);
         straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), straightBitsVector.begin(), straightBitsVector.end());
         for(auto straight : straights){
@@ -584,7 +600,7 @@ CompressedImage compress(const std::string& imagePath){
         // list start points 
         huffmanStartPointsAmount = intToBool(straightsHuffmanCodesStartPoints.size(), 32);
         straightsBitString.insert(straightsBitString.end(), huffmanStartPointsAmount.begin(), huffmanStartPointsAmount.end());
-        huffmanStartPointsBits = std::ceil(std::log2(edgeBits01.size()));
+        huffmanStartPointsBits = std::ceil(std::log2(edgeBits01.size() + 1));
         huffmanStartPointsBitsVector = intToBool(huffmanStartPointsBits, 5);
         straightsBitString.insert(straightsBitString.end(), huffmanStartPointsBitsVector.begin(), huffmanStartPointsBitsVector.end());
         for(auto& startPoint : straightsHuffmanCodesStartPoints){
@@ -598,7 +614,7 @@ CompressedImage compress(const std::string& imagePath){
         straightsBitString.insert(straightsBitString.end(), straightsHuffmanCodesBitString.begin(), straightsHuffmanCodesBitString.end());
         
         // lengths
-        int straightsLenghtsBits = std::ceil(std::log2(std::max(img.cols, img.rows)));
+        int straightsLenghtsBits = std::ceil(std::log2(std::max(img.cols, img.rows) + 1));
         std::vector<bool> straightsLengthsBitsVector = intToBool(straightsLenghtsBits, 5);
         straightsBitString.insert(straightsBitString.end(), straightsLengthsBitsVector.begin(), straightsLengthsBitsVector.end());
         std::vector<bool> straightLengthsListSize = intToBool(straightLengthsList.size(), 16);
