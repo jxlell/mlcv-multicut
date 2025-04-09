@@ -15,6 +15,13 @@ struct decompInfo{
     long long reduced_edgebits_decompression_time;
     long long straights_decompression_time;
     long long path2bits_decompression_time;
+
+    long long rebuild_dpcm_huffman_time;
+    long long decode_colors_time;
+    long long assemble_tree_paths_time;
+    long long reconstruct_tree_edgebits_time;
+    long long dfs_reconstruction_time;
+    // int UF_reconstruction_time;
 };
 
 

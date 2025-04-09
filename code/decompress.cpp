@@ -18,7 +18,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     cv::Mat originalImg = compImg.originalImage;
     std::vector<bool> edgeBits01 = compImg.edgeBits01;
     std::vector<bool> edgeBitsBitString = compImg.edgeBitsBitString;
-    std::vector<RGB> regionColors = compImg.colorVector;
+    std::vector<RGB> regionColors = compImg.regionColors;
     PathInfoVector paths = compImg.paths;
     std::vector<bool> pathsBitString = compImg.pathsBitString;
     PathInfoVector paths_2bit_nonRLE = compImg.pathInfoVector2bit;
@@ -1007,7 +1007,12 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     straights_huffman_decompression_time,
     reduced_edgebits_decompression_time,
     straights_decompression_time,
-    paths_2bits_decompression_time
+    paths_2bits_decompression_time,
+    rebuild_dpcm_huffman_time,
+    decode_colors_time,
+    assemble_tree_paths_time,
+    reconstruct_tree_edgebits_time,
+    dfs_reconstruction_time
     };
     
     return decomp_info;

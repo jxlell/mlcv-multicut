@@ -91,6 +91,12 @@ int main() {
       // test values
       vector<int> tree_3bit_bits;
       vector<int> tree_current_bits;
+      vector<int> tree_start_bits;
+      vector<int> paths_2bit_bits;
+      vector<int> paths_2bit_start_bits;
+      vector<int> paths_2bit_components;
+      vector<int> regions;
+      vector<int> rle_direction_bits;
       vector<int> region_colors_bits;
       vector<int> dpcm_huffman_bits;
 
@@ -104,7 +110,11 @@ int main() {
       vector<int> assemble_tree_paths_time;
       vector<int> reconstruct_tree_edgebits_time;
       vector<int> dfs_reconstruction_time;
-      vector<int> UF_reconstruction_time;
+      // vector<int> UF_reconstruction_time;
+
+      vector<long long> total_tree_bits;
+
+
 
 
 
@@ -115,7 +125,7 @@ int main() {
 
     std::unordered_set<std::string> category_set = {
       //   "icon_64",
-        "icon_512",
+      //   "icon_512",
       //   "photo_kodak",
       //   "photo_tecnick",
       //   "photo_wikipedia",
@@ -129,7 +139,7 @@ int main() {
       //   "textures_plants",
 
 
-      //   "screenshot_game_reduced"
+        "screenshot_game_reduced2"
     };
 
     std::ifstream inputFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/singlefile.txt");
@@ -153,10 +163,11 @@ int main() {
     //showImg = false;
     bool writeToFile = true;
     writeToFile = !single_image;
-    writeToFile = true;
+//     writeToFile = false;
     
     bool test_mode = (category_set.count("screenshot_game_reduced") > 0) && 
                      (category_set.size() == 1);
+    test_mode = true;
 
     std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
     int imgCount = countImgFiles(parentDir, category_set);
@@ -227,6 +238,25 @@ int main() {
             //cv::Mat img;
             //img = cv::imread(dirEntry.path().string(), cv::IMREAD_COLOR);
             
+            tree_3bit_bits.push_back(compImg.threeBitCount);
+            tree_current_bits.push_back(compImg.currentTreeDirectionBits);
+            tree_start_bits.push_back(compImg.tree_start_bits);
+            disconnected_components.push_back(compImg.disconnectedComponents);
+            regions.push_back(compImg.regionColors.size());
+            paths_2bit_bits.push_back(compImg.paths2bit_direction_bits);
+            paths_2bit_start_bits.push_back(compImg.paths2bit_start_bits);
+            paths_2bit_components.push_back(compImg.paths2bit_components);
+            rle_direction_bits.push_back(compImg.rle_direction_bits);
+            region_colors_bits.push_back(compImg.region_colors_bits);
+            dpcm_huffman_bits.push_back(compImg.dpcm_huffman_bits);
+            region_color_dfs_time.push_back(compImg.region_color_dfs_time);
+            region_color_UF_time.push_back(compImg.region_color_UF_time);
+            dpcm_huffman_time.push_back(compImg.dpcm_huffman_time);
+            tree_construction_time.push_back(compImg.tree_construction_time);
+            pixel_sizes.push_back(compImg.originalImage.cols * compImg.originalImage.rows);
+            multicut_percentages.push_back(compImg.multicutPercentage);
+            total_tree_bits.push_back(compImg.total_tree_bits);
+
             //stateless approach
             start = std::chrono::high_resolution_clock::now();
             decompInfo decomp_info = reconstructImage(compImg, showImg); 
@@ -242,6 +272,12 @@ int main() {
             straights_huffman_decompression_times.push_back(decomp_info.straights_huffman_decompression_time);
             reduced_edgebits_decompression_times.push_back(decomp_info.reduced_edgebits_decompression_time);
             paths_2bits_decompression_times.push_back(decomp_info.path2bits_decompression_time);
+
+            rebuild_dpcm_huffman_time.push_back(decomp_info.rebuild_dpcm_huffman_time);
+            decode_colors_time.push_back(decomp_info.decode_colors_time);
+            assemble_tree_paths_time.push_back(decomp_info.assemble_tree_paths_time);
+            reconstruct_tree_edgebits_time.push_back(decomp_info.reconstruct_tree_edgebits_time);
+            dfs_reconstruction_time.push_back(decomp_info.dfs_reconstruction_time);
 
             progress++;
             //std::cout << progress << "/" << imgCount << std::endl;
@@ -356,9 +392,10 @@ int main() {
 
 if(writeToFile){
       ofstream csvFile;
-      if(single_image){
+      if(single_image && !test_mode){
             csvFile.open("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_single.csv");
-      } else {
+      }
+      if(!single_image && !test_mode){
             csvFile.open("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results.csv");
       }
       if(test_mode){
@@ -502,14 +539,26 @@ if(writeToFile){
 
                     //<< decompression_times_total[i] << "\n";
         }
+            csvFile.close();
       }else{
-            csvFile << "filename,category,tree_rate,3bit_paths_bits,tree_path_bits,region_color_bits,dpcm-huffman_bits,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,tree_construction_time,2bit_rate,rle_rate,2bit_construction_time,rebuild_dpcm_huffman_time,decode_colors_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time\n";
+            std::cout << "Writing test mode csv file..." << std::endl;
+            csvFile << "filename,category,pixels,mc_percentage,total_tree_bits,tree_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,regions,paths2bit_disc_comp,paths2bit_direction_bits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,tree_construction_time,2bit_rate,rle_rate,2bit_construction_time,rebuild_dpcm_huffman_time,decode_colors_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
         for (size_t i = 0; i < filenames.size(); ++i) {
             csvFile << filenames[i] << ","
                     << categories[i] << ","
+                    << pixel_sizes[i] << ","
+                    << multicut_percentages[i] << ","
+                    << total_tree_bits[i] << ","
                     << tree_compression_rates_total[i] << ","
                     << tree_3bit_bits[i] << ","
                     << tree_current_bits[i] << ","
+                    << tree_start_bits[i] << ","
+                    << disconnected_components[i] << ","
+                    << regions[i] << ","
+                    << paths_2bit_components[i] << ","
+                    << paths_2bit_bits[i] << ","
+                    << paths_2bit_start_bits[i] << ","
+                    << rle_direction_bits[i] << ","
                     << region_colors_bits[i] << ","
                     << dpcm_huffman_bits[i] << ","
                     << region_color_UF_time[i] << ","
@@ -523,10 +572,11 @@ if(writeToFile){
                     << decode_colors_time[i] << ","
                     << reconstruct_tree_edgebits_time[i] << ","
                     << dfs_reconstruction_time[i] << ","
-
-                    << "-" << "\n";
+                    << assemble_tree_paths_time[i] << "\n"; 
+                    
       }
         csvFile.close();
+        std::cout << "CSV file written successfully." << std::endl;
     }
 
     auto completeEnd = std::chrono::high_resolution_clock::now();

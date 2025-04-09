@@ -12,7 +12,7 @@
 
 struct CompressedImage{
     methods compressionMethods;
-    std::vector<RGB> colorVector;
+    std::vector<RGB> regionColors;
     std::vector<bool> edgeBits01;
     std::vector<bool> edgeBitsBitString;
     PathInfoVector paths;
@@ -38,6 +38,9 @@ struct CompressedImage{
     std::vector<bool> reducedVerticalBits;
     std::vector<bool> reducedEdgeBitsBitString;
 
+    double multicutPercentage;
+    long long total_tree_bits;
+
     double treeCompressionRate;
     double rleCompressionRate;
     double oldCompressionRate;
@@ -54,6 +57,22 @@ struct CompressedImage{
     long long straights_huffman_compression_time;
     long long reduced_edgebits_compression_time;
     long long paths2bit_compression_time;
+
+    int threeBitCount;
+    int currentTreeDirectionBits;
+    int tree_start_bits;
+    int disconnectedComponents;
+    int paths2bit_direction_bits;
+    int paths2bit_start_bits;
+    int paths2bit_components;
+    int rle_direction_bits;
+    int region_colors_bits;
+    int dpcm_huffman_bits;
+
+    int region_color_dfs_time;
+    int region_color_UF_time;
+    int dpcm_huffman_time;
+    int tree_construction_time;
 };
 
 //std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights, std::vector<bool>> compress(const std::string& imagePath);
@@ -63,7 +82,7 @@ std::vector<bool> setVerticalBits(cv::Mat img);
 std::vector<bool> reduceVerticalBits(cv::Mat img, std::vector<bool>& edgeBits01);
 std::vector<bool> reduceHorizontalBits(cv::Mat img, std::vector<bool>& edgeBits01);
 std::vector<bool> setHorizontalBits(cv::Mat img);
-PathInfoVector setPaths(std::vector<bool> edgeBits01, cv::Mat img);
+std::tuple<PathInfoVector,int> setPaths(std::vector<bool> edgeBits01, cv::Mat img);
 std::tuple<PathInfoVector, RLEVector> set2BitPaths(std::vector<bool> edgeBits01, cv::Mat img);
 std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, std::vector<uint16_t>, std::vector<uint32_t>> setStraights(std::vector<bool> edgeBits01, cv::Mat img);
 std::vector<RGB> setRegions(cv::Mat img, std::vector<int> neighborsOffsets, int vertices);
