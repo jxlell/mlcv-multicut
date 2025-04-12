@@ -134,12 +134,20 @@ std::tuple<std::map<uint8_t, std::string>, RGBHuffmanNode*> buildRGBCodes(std::m
     std::priority_queue<RGBHuffmanNode*, std::vector<RGBHuffmanNode*>, RGBCompare> pq;
 
     if (frequencyMap.empty()) {
-        std::cout << "Frequency map is empty, skipping Huffman code generation." << std::endl;
+        std::cout << "RGB Frequency map is empty, skipping Huffman code generation." << std::endl;
         return {std::map<uint8_t, std::string>(), nullptr};
     }
 
     for (auto& pair : frequencyMap) {
         pq.push(new RGBHuffmanNode(pair.first, pair.second));
+    }
+
+     // Special case: only one unique value
+     if (pq.size() == 1) {
+        RGBHuffmanNode* soleNode = pq.top();
+        std::map<uint8_t, std::string> huffmanCodes;
+        huffmanCodes[soleNode->data] = "0";  // Assign a dummy code
+        return {huffmanCodes, soleNode};
     }
 
     while (pq.size() > 1) {

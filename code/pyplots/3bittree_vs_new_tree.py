@@ -12,9 +12,9 @@ x = range(len(df["filename"]))
 # plt.bar(x, df["3bit_paths_bits"], width=bar_width, label="3bit_paths_bits", color='skyblue')
 # plt.bar([i + bar_width for i in x], df["tree_path_bits"], width=bar_width, label="tree_path_bits", color='orange')
 
-plt.bar(x, df["3bit_paths_bits"], width=bar_width, label="3bit paths bits", color='lightgreen')
-plt.bar([i + bar_width for i in x], df["paths2bit_direction_bits"], width=bar_width, label="2bit direction bits", color='skyblue')
-plt.bar([i + 2*bar_width for i in x], df["tree_path_bits"], width=bar_width, label="tree_path_bits", color='orange')
+plt.bar(x, df["3bit_paths_bits"], width=bar_width, label="3bit paths bits", color='red')
+# plt.bar([i + bar_width for i in x], df["paths2bit_direction_bits"], width=bar_width, label="2bit direction bits", color='skyblue')
+plt.bar([i + bar_width for i in x], df["tree_path_bits"], width=bar_width, label="tree_path_bits", color='blue')
 
 
 # Add title and remove x-axis labels

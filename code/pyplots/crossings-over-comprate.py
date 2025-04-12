@@ -1,0 +1,38 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load the CSV data
+df = pd.read_csv("code/output_files/mc_results_test.csv")
+
+# Calculate the difference between crossings and disc_comp
+df['crossings_minus_disc_comp'] = df['crossings'] - df['disc_comp']
+
+# Calculate the relative difference (factor) between tree_rate and 2bit_rate
+df['rate_difference_factor'] = (df['tree_rate'] - df['2bit_rate']) / df['2bit_rate']
+
+# Set up the plot
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Scatter plot for all points
+ax.scatter(df['crossings'], df['rate_difference_factor'], alpha=0.6)
+# Add a horizontal line at y=0
+ax.axhline(y=0, color='red', linestyle='--', linewidth=1)
+# Set labels and title
+ax.set_xlabel("Crossings")
+ax.set_ylabel("Relative Difference Between Tree Rate and 2bit Rate (Factor)")
+ax.set_title("Scatter Plot of Rate Difference Factor vs Crossings - Disc Comp")
+
+# Find the row with the maximum absolute rate difference
+max_diff_row = df.loc[df['rate_difference_factor'].abs().idxmax()]
+print(max_diff_row["tree_rate"], max_diff_row["2bit_rate"])
+# Find the row with the minimum absolute rate difference
+min_diff_row = df.loc[df['rate_difference_factor'].abs().idxmin()]
+print(min_diff_row["tree_rate"], min_diff_row["2bit_rate"])
+# Print the filename for the row with the smallest rate difference
+print(f"Filename with the smallest rate difference: {min_diff_row['filename']}")
+# Print the filename for the row with the biggest rate difference
+print(f"Filename with the biggest rate difference: {max_diff_row['filename']}")
+
+# Show the plot
+plt.tight_layout()
+plt.show()

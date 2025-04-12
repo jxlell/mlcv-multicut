@@ -1,40 +1,50 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
-# Load your CSV
-df = pd.read_csv("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_test.csv")
+# Load the CSV data
+df = pd.read_csv("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_test_reduced.csv")
 
-# Compute total bits and overhead
-df["overhead"] = df["total_tree_bits"] - df["tree_path_bits"] - df["tree_start_bits"] - df["dpcm-huffman_bits"]
-df["mc_bits"] = df["tree_path_bits"] + df["tree_start_bits"]
-# Print overhead for each file name
-for filename, overhead in zip(df["filename"], df["overhead"]):
-    print(f"{filename}: {overhead}")
+# Calculate pixels per region
+df["pixels_per_region"] = df["pixels"] / df["regions"]
 
-# Create stacked bar chart
-labels = df["filename"].apply(lambda x: x.split(",")[0][:15])  # shorten filename for x-axis
-x = range(len(df))
+# Sort by pixels per region
+df_sorted = df.sort_values(by="pixels_per_region")
 
-barwidth = 0.5
+# Calculate total tree bits
+tree_total = df_sorted["tree_path_bits"] + df_sorted["tree_start_bits"]
+huffman_bits = df_sorted["dpcm-huffman_bits"]
 
-# plt.bar(x, df["tree_start_bits"], label="tree_start_bits", width=barwidth)
-# plt.bar(x, df["tree_path_bits"], bottom=df["tree_start_bits"], label="tree_path_bits", width=barwidth)
-# bottom = df["tree_path_bits"] + df["tree_start_bits"]
-# plt.bar(x, df["overhead"], bottom=bottom, label="overhead", width=barwidth)
+# Use the sorted pixels_per_region values
+pixels_per_region = df_sorted["pixels_per_region"]
 
-plt.bar(x, df["dpcm-huffman_bits"], label="dpcm-huffman_bits", width=barwidth)
-plt.bar(x, df["mc_bits"], bottom=df["dpcm-huffman_bits"], label="mc_bits", width=barwidth)
-plt.bar([x + barwidth for x in x], df["region_color_bits"], label="region_color_bits", width=barwidth)
-# Display the numbers of regions on top of the bars
-for i, (mc_bits, dpcm_bits, regions) in enumerate(zip(df["mc_bits"], df["dpcm-huffman_bits"], df["regions"])):
-    total_height = mc_bits + dpcm_bits
-    plt.text(i, total_height + 5, str(regions), ha='center', va='bottom', fontsize=8)
+# Prepare x-axis
+x = np.arange(len(df_sorted))
+bar_width = 0.6
 
-plt.xticks(x, labels, rotation=45, ha='right')
-plt.xticks([])
-plt.ylabel("Bits")
-plt.title("Breakdown of Tree Bits")
-plt.legend()
+# Create plot
+fig, ax1 = plt.subplots(figsize=(14, 6))
+
+# Primary y-axis: stacked bar chart
+ax1.bar(x, tree_total, bar_width, label="tree_path + tree_start", color="tab:blue")
+ax1.bar(x, huffman_bits, bar_width, bottom=tree_total, label="dpcm-huffman_bits", color="tab:orange")
+ax1.set_ylabel("Bit Count", color='black')
+ax1.tick_params(axis='y', labelcolor='black')
+
+# Secondary y-axis: pixels per region
+ax2 = ax1.twinx()
+ax2.plot(x, pixels_per_region, label="Pixels per Region", color="tab:red", marker='o', linewidth=2)
+ax2.set_ylabel("Pixels per Region", color='tab:red')
+ax2.tick_params(axis='y', labelcolor='tab:red')
+
+# Title and legend
+plt.title("Stacked Bit Count with Pixels per Region")
+fig.legend(loc="upper right", bbox_to_anchor=(1, 1), bbox_transform=ax1.transAxes)
+
+# Clean x-axis
+ax1.set_xticks([])
+ax1.grid(True, axis="y", linestyle="--", alpha=0.5)
+
+# Layout
 plt.tight_layout()
-# plt.yscale('log')
 plt.show()
