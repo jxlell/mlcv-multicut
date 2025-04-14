@@ -101,6 +101,7 @@ int main() {
       vector<int> region_colors_bits;
       vector<int> dpcm_huffman_bits;
 
+      vector<int> setEdgeBitsTime;
       vector<int> read_img_time;
       vector<int> region_color_dfs_time;
       vector<int> region_color_UF_time;
@@ -129,12 +130,12 @@ int main() {
 
 
     std::unordered_set<std::string> category_set = {
-        "icon_64",
-        "icon_512",
-      //   "photo_kodak",
-      //   "photo_tecnick",
-      //   "photo_wikipedia",
-      //   "pngimg",
+      //   "icon_64",
+      //   "icon_512",
+        // "photo_kodak",
+        // "photo_tecnick",
+        // "photo_wikipedia",
+        // "pngimg",
       //   "screenshot_web",
       //   "screenshot_game",
       //   "textures_photo",
@@ -144,7 +145,7 @@ int main() {
       //   "textures_plants",
 
 
-        "screenshot_game_reduced2"
+        "screenshot_game_reduced"
     };
 
     std::ifstream inputFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/singlefile.txt");
@@ -162,13 +163,13 @@ int main() {
     inputFile.close();
 
     // control parameters 
-    bool single_image = true;
+    bool single_image = false;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
     //showImg = false;
     bool writeToFile = true;
     writeToFile = !single_image;
-    writeToFile = false;
+//     writeToFile = false;
     
     bool test_mode = (category_set.count("screenshot_game_reduced") > 0) && 
                      (category_set.size() == 1);
@@ -266,6 +267,7 @@ int main() {
             new2bitDirectionBits.push_back(compImg.new2bitDirectionBits);
             paths_2bit_crossings.push_back(compImg.paths2bit_components - compImg.disconnectedComponents);
             read_img_time.push_back(compImg.read_img_time);
+            setEdgeBitsTime.push_back(compImg.setEdgeBitsTime);
             
 
             //stateless approach
@@ -553,7 +555,7 @@ if(writeToFile){
             csvFile.close();
       }else{
             std::cout << "Writing test mode csv file..." << std::endl;
-            csvFile << "filename,category,pixels,mc_percentage,total_tree_bits,tree_rate,2bit_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,read_img_time,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,rebuild_dpcm_huffman_time,decode_colors_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
+            csvFile << "filename,category,pixels,mc_percentage,total_tree_bits,tree_rate,2bit_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,read_img_time,setEdgeBitsTime,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,rebuild_dpcm_huffman_time,decode_colors_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
         for (size_t i = 0; i < filenames.size(); ++i) {
             csvFile << filenames[i] << ","
                     << categories[i] << ","
@@ -576,6 +578,7 @@ if(writeToFile){
                     << region_colors_bits[i] << ","
                     << dpcm_huffman_bits[i] << ","
                     << read_img_time[i] << ","
+                    << setEdgeBitsTime[i] << ","
                     << region_color_UF_time[i] << ","
                     << region_color_dfs_time[i] << ","
                     << dpcm_huffman_time[i] << ","

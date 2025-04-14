@@ -176,6 +176,12 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
                 }
             }
         }
+
+        // std::cout << "Decoded Differences: ";
+        // for (uint8_t diff : decodedDifferences) {
+        //     std::cout << static_cast<int>(diff) << " ";
+        // }
+        // std::cout << std::endl;
     
         decodedColorsTree = decodeDifferences(decodedDifferences);
         end = std::chrono::high_resolution_clock::now();
@@ -1209,6 +1215,7 @@ std::vector<RGB> decodeDifferences(const std::vector<uint8_t>& encodedDifference
 
     // Decode differences cyclically
     for (size_t i = 3; i < encodedDifferences.size(); i += 3) {
+        uint8_t prev_r = r;
         r = static_cast<uint8_t>(r + static_cast<int8_t>(encodedDifferences[i]));     // Restore R
         g = static_cast<uint8_t>(g + static_cast<int8_t>(encodedDifferences[i + 1])); // Restore G
         b = static_cast<uint8_t>(b + static_cast<int8_t>(encodedDifferences[i + 2])); // Restore B

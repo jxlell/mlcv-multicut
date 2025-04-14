@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load your CSV
-df = pd.read_csv("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_test.csv")
+df = pd.read_csv("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_test_icons.csv")
 
 # Sort by filename or another metric
 df_sorted = df.sort_values(by="tree_rate")
@@ -34,10 +34,10 @@ color_map = {
 # Create the plot
 fig, ax = plt.subplots(figsize=(14, 6))
 
-# Plot each compression rate and color based on the best method
+# Plot each compression rate as scatter points without connecting lines
 for i, method in enumerate(["tree_rate", "2bit_rate", "straights_huffman_rate", "rle_rate"]):
     color = color_map[method]
-    ax.plot(x, df_sorted[method], label=method, color=color, marker='o')
+    ax.scatter(x, df_sorted[method], label=method, color=color, marker='o', edgecolor='black', zorder=3, alpha=1, s=30)
 
 # Color-code the points based on the best method
 # for i, best_method in enumerate(best_methods):

@@ -98,6 +98,7 @@ CompressedImage compress(const std::string& imagePath){
     std::vector<uint16_t> straightLengthsList;
     std::vector<uint32_t> straightLengthFrequencies;
 
+    long long setEdgeBitsTime = 0;
     long long tree_compression_time = 0;
     long long old_compression_time = 0;
     long long rle_compression_time = 0;
@@ -148,7 +149,8 @@ CompressedImage compress(const std::string& imagePath){
     region_color_UF_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     // std::cout << "UF set regions time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
     start = std::chrono::high_resolution_clock::now();
-    regionColors = getRegionsFromImageSearch(img);
+    std::vector<bool> edgeBitsFromDFS(edgeBits01.size(), false);
+    regionColors = getRegionsFromImageSearch(img, edgeBitsFromDFS);
     end = std::chrono::high_resolution_clock::now();
     region_color_dfs_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     // std::cout << "dfs set regions time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
@@ -176,13 +178,14 @@ CompressedImage compress(const std::string& imagePath){
     //     std::cout << static_cast<int>(diff) << " ";
     // }
     // std::cout << std::endl;
+    std::cout << "flattened differences size: " << flat_differences.size() << std::endl;
     std::map<uint8_t, int> frequencyMapDifferences = createFrequencyMap(flat_differences);
     // std::cout << "frequency map: " << std::endl;
     // for (const auto& pair : frequencyMapDifferences) {
     //     std::cout << "Value: " << static_cast<int>(pair.first) 
     //               << ", Frequency: " << pair.second << std::endl;
     // }
-    // std::cout << "frequency map size: " << frequencyMapDifferences.size() << std::endl;
+    std::cout << "frequency map size: " << frequencyMapDifferences.size() << std::endl;
     
 
     auto [RGBHuffmanCodes, RGBroot] = buildRGBCodes(frequencyMapDifferences);
@@ -239,7 +242,7 @@ CompressedImage compress(const std::string& imagePath){
     // }
     // std::cout << std::endl;
     int totalHuffmanEncodedLength = huffmanEncodedBitString.size();
-    // std::cout << "total huffman encoded length: " << totalHuffmanEncodedLength << std::endl;
+    std::cout << "dpcm huffman length: " << totalHuffmanEncodedLength << std::endl;
     int huffmanBitsAmount = std::ceil(totalHuffmanEncodedLength);
     std::vector<bool> huffmanBitsAmountVector = intToBool(huffmanBitsAmount, 32);
     // std::cout << "huffman bits amount: " << huffmanBitsAmount << std::endl;
@@ -253,6 +256,7 @@ CompressedImage compress(const std::string& imagePath){
     dpcm_huffman_bitstring_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     // std::cout << "dpcm huffman bitstring time: " << dpcm_huffman_bitstring_time << std::endl;
     dpcm_huffman_bits = RGBDifferencesHuffmanBitString.size();
+    std::cout << "dpcm huffman bits: " << dpcm_huffman_bits << std::endl;
     // Print the Huffman-encoded bitstring
     // std::cout << "Huffman-encoded bitstring: ";
     // for (bool bit : huffmanEncodedBitString) {
@@ -303,6 +307,14 @@ CompressedImage compress(const std::string& imagePath){
         // std::cout << "setting edgebits" << std::endl;
         start = std::chrono::high_resolution_clock::now();
         edgeBits01 = setEdgeBits(img, edgeBits01, neighborsOffsets);
+        std::cout << "edgebits = edgebitsfromdfs: " << (edgeBits01 == edgeBitsFromDFS) << std::endl;
+        for (size_t i = 0; i < edgeBits01.size(); ++i) {
+            if (edgeBits01[i] != edgeBitsFromDFS[i]) {
+            std::cout << "Difference at index: " << i << std::endl;
+            }
+        }
+        end = std::chrono::high_resolution_clock::now();
+        setEdgeBitsTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         // set edgebits bitstring
         std::vector<bool> cols_bitstring = intToBool(img.cols, 16);
         std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
@@ -374,7 +386,7 @@ CompressedImage compress(const std::string& imagePath){
         // std::cout << "setting paths" << std::endl;
         start = std::chrono::high_resolution_clock::now();
         PathInfoVector paths;
-        std::tie(paths,threeBitCount) = setPaths(edgeBits01, img);
+        std::tie(paths,threeBitCount) = setPaths(edgeBitsFromDFS, img);
         disconnectedComponents = paths.size();
         for (const auto& path : paths) {
             currentTreeDirectionBits += std::get<2>(path).size();
@@ -718,7 +730,7 @@ CompressedImage compress(const std::string& imagePath){
     transparencyValues,
     tree_compression_time, old_compression_time, rle_compression_time, straights_compression_time, straights_huffman_compression_time, reduced_edgebits_compression_time, paths2bit_compression_time,
     threeBitCount, currentTreeDirectionBits,tree_start_bits,disconnectedComponents, paths2bit_bits, paths2bit_start_bits, paths2bit_components, rle_direction_bits, region_colors_bits, dpcm_huffman_bits, new2bitDirectionBits,
-    read_img_time,region_color_dfs_time, region_color_UF_time,dpcm_huffman_time, dpcm_huffman_bitstring_time,tree_construction_time, tree_bitstring_time
+    read_img_time,setEdgeBitsTime, region_color_dfs_time, region_color_UF_time,dpcm_huffman_time, dpcm_huffman_bitstring_time,tree_construction_time, tree_bitstring_time
 };
 }
 
@@ -846,7 +858,7 @@ std::vector<RGB> setRegions(cv::Mat img, std::vector<int> neighborsOffsets, int 
 }
 
 // DFS to get color region indices and their colors
-std::vector<RGB> getRegionsFromImageSearch(cv::Mat img) {
+std::vector<RGB> getRegionsFromImageSearch(cv::Mat img, std::vector<bool>& edgeBitsFromDFS) {
     int rows = img.rows;
     int cols = img.cols;
     int vertices = rows * cols;
@@ -854,6 +866,7 @@ std::vector<RGB> getRegionsFromImageSearch(cv::Mat img) {
     std::vector<bool> visited(vertices, false);
     std::vector<int> regionIndices;  // Stores starting indices of regions
     std::vector<RGB> regionColors;   // Stores corresponding region colors
+    // std::vector<bool> edgeBitFromDFS(2*cols*rows-cols-rows, false);
 
     for (int index = 0; index < vertices; index++) {
         if (visited[index]) continue;  // Skip already visited pixels
@@ -876,30 +889,66 @@ std::vector<RGB> getRegionsFromImageSearch(cv::Mat img) {
 
             // Check right neighbor
             int right = current + 1;
-            if (col < cols - 1 && !visited[right] && compareRGB(regionColor, getVertexColor(right, vertices, img))) {
-                stack.push(right);
-                visited[right] = true;
+            if (col < cols - 1 && !visited[right]) {
+                if (compareRGB(regionColor, getVertexColor(right, vertices, img))) {
+                    stack.push(right);
+                    visited[right] = true;
+                } 
+                else {
+                    // edge bit needs to be set
+                    int edgebitindex = getEdgeIndexFromPixelIndices(current, right, cols, rows);
+                    if (edgebitindex >= 0) {
+                        edgeBitsFromDFS[edgebitindex] = true;
+                    }
+                }
             }
 
             // Check below neighbor
             int below = current + cols;
-            if (row < rows - 1 && !visited[below] && compareRGB(regionColor, getVertexColor(below, vertices, img))) {
-                stack.push(below);
-                visited[below] = true;
+            if (row < rows - 1 && !visited[below]) {
+                if (compareRGB(regionColor, getVertexColor(below, vertices, img))) {
+                    stack.push(below);
+                    visited[below] = true;
+                } 
+                else {
+                    // edge bit needs to be set
+                    int edgebitindex = getEdgeIndexFromPixelIndices(current, below, cols, rows);
+                    if (edgebitindex >= 0) {
+                        edgeBitsFromDFS[edgebitindex] = true;
+                    }
+                }
             }
 
             // Check left neighbor
             int left = current - 1;
-            if (col > 0 && !visited[left] && compareRGB(regionColor, getVertexColor(left, vertices, img))) {
-                stack.push(left);
-                visited[left] = true;
+            if (col > 0 && !visited[left]) {
+                if (compareRGB(regionColor, getVertexColor(left, vertices, img))) {
+                    stack.push(left);
+                    visited[left] = true;
+                } 
+                else {
+                    // edge bit needs to be set
+                    int edgebitindex = getEdgeIndexFromPixelIndices(current, left, cols, rows);
+                    if (edgebitindex >= 0) {
+                        edgeBitsFromDFS[edgebitindex] = true;
+                    }
+                }
             }
 
             // Check above neighbor
             int above = current - cols;
-            if (row > 0 && !visited[above] && compareRGB(regionColor, getVertexColor(above, vertices, img))) {
-                stack.push(above);
-                visited[above] = true;
+            if (row > 0 && !visited[above]) {
+                if (compareRGB(regionColor, getVertexColor(above, vertices, img))) {
+                    stack.push(above);
+                    visited[above] = true;
+                } 
+                else {
+                    // edge bit needs to be set
+                    int edgebitindex = getEdgeIndexFromPixelIndices(current, above, cols, rows);
+                    if (edgebitindex >= 0) {
+                        edgeBitsFromDFS[edgebitindex] = true;
+                    }
+                }
             }
         }
     }

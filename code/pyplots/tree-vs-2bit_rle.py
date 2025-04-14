@@ -35,9 +35,10 @@ bar_width = 0.25
 if not show_average:
     total_tree = tree_path + tree_start
     total_2bit = paths_dir + paths_start
+    total_rle = rle_dir + paths_start
 
-    best_method = np.argmin(np.stack([total_tree, total_2bit]), axis=0)
-    method_colors = ['tab:blue', 'tab:green']
+    best_method = np.argmin(np.stack([total_tree, total_2bit, total_rle]), axis=0)
+    method_colors = ['tab:blue', 'tab:green', 'purple']
 
 # Create the plot
 fig, ax1 = plt.subplots(figsize=(14, 6))
@@ -52,7 +53,7 @@ ax1.bar(x, paths_start, bar_width, bottom=paths_dir, label="2bit_start_bits", co
 
 # 4th bar stacking rle_direction_bits and paths2bit_direction_bits
 ax1.bar(x + bar_width, rle_dir, bar_width, label="rle_direction_bits", color='purple')
-ax1.bar(x + bar_width, paths_dir, bar_width, bottom=rle_dir, label="paths2bit_direction_bits", color='violet')
+ax1.bar(x + bar_width, paths_start, bar_width, bottom=rle_dir, label="2bit_start_bits", color='violet')
 
 # Add color-coded method indicator below x-axis
 if not show_average:

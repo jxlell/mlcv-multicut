@@ -88,19 +88,22 @@ std::vector<bool> dfs_paths_iterative(int currentEdge, Direction currentDir, std
     
         left = false;
         if(!visited[neighborLeft]){
-            left = edgeBitFromIndex(neighborLeft, cols, rows, img);
+            left = edgeBits01[neighborLeft];
+            // left = edgeBitFromIndex(neighborLeft, cols, rows, img);
             directionVector.push_back(left);
             visited[neighborLeft] = true;
         }
         front = false;
         if(!visited[neighborFront]){
-            front = edgeBitFromIndex(neighborFront, cols, rows, img);
+            front = edgeBits01[neighborFront];
+            // front = edgeBitFromIndex(neighborFront, cols, rows, img);
             directionVector.push_back(front);
             visited[neighborFront] = true;
         }
         right = false;
         if(!visited[neighborRight]){
-            right = edgeBitFromIndex(neighborRight, cols, rows, img);
+            right = edgeBits01[neighborRight];
+            // right = edgeBitFromIndex(neighborRight, cols, rows, img);
             directionVector.push_back(right);
             visited[neighborRight] = true;
         }
