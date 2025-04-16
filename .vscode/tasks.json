@@ -18,6 +18,20 @@
                 "${workspaceFolder}/code/compress.cpp",
                 "${workspaceFolder}/code/mc.cpp",
                 "${workspaceFolder}/code/decompress.cpp",
+
+                "${workspaceFolder}/build/adler32.o",
+                "${workspaceFolder}/build/compress.o",
+                "${workspaceFolder}/build/crc32.o",
+                "${workspaceFolder}/build/deflate.o",
+                "${workspaceFolder}/build/trees.o",
+                "${workspaceFolder}/build/zutil.o",
+                "${workspaceFolder}/build/inflate.o",
+                "${workspaceFolder}/build/infback.o",
+                "${workspaceFolder}/build/inftrees.o",
+                "${workspaceFolder}/build/inffast.o",
+                "${workspaceFolder}/build/uncompr.o",
+
+
                 "-fcolor-diagnostics",
                 "-fansi-escape-codes",
                 "`pkg-config",
@@ -30,6 +44,13 @@
                 "$gcc"
             ]
         },
+        {
+            "label": "build zlib via script",
+            "type": "shell",
+            "command": "${workspaceFolder}/build_zlib.sh",
+            "group": "build",
+            "problemMatcher": []
+        },        
         {
             "label": "build multicut - no optimization",
             "type": "shell",

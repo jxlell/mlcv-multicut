@@ -13,12 +13,17 @@
 #include "huffman.h"
 #include <chrono>
 
+extern "C" {
+    #include "zlib.h"
+  }
+  
 
 
 CompressedImage compress(const std::string& imagePath){
     auto start = std::chrono::high_resolution_clock::now();
     auto end = std::chrono::high_resolution_clock::now();
 
+    // testZlib();
 
     cv::Mat img = cv::imread(imagePath, cv::IMREAD_COLOR);
     // condition never met, since IMREAD_COLOR cannot be 16U
@@ -119,6 +124,7 @@ CompressedImage compress(const std::string& imagePath){
     int rle_direction_bits = 0;
     int region_colors_bits;
     int dpcm_huffman_bits;
+    int deflate_bits = 0;
 
     int new2bitDirectionBits = 0;
 
@@ -171,7 +177,25 @@ CompressedImage compress(const std::string& imagePath){
     //               << ", G: " << static_cast<int>(color.green) 
     //               << ", B: " << static_cast<int>(color.blue) << std::endl;
     // }
-    std::vector<uint8_t> flat_differences = flatten_differences(differentialColors);
+    std::vector<uint8_t> flat_differences = flatten_colors(differentialColors);
+    std::vector<uint8_t> flat_regioncolors = flatten_colors(regionColors);
+    std::cout << "region colors size in bits: " << region_colors_bits << std::endl;
+
+
+    std::vector<uint8_t> colors_deflated = ZlibDeflate(flat_regioncolors);
+    std::vector<bool> deflatedBitstring;
+    deflatedBitstring.reserve(colors_deflated.size() * 8 + 32);
+    int deflatedBitsAmount = colors_deflated.size();
+    deflate_bits = deflatedBitsAmount * 8;
+    std::cout << "deflated colors size: " << deflatedBitsAmount << std::endl;
+    std::vector<bool> deflatedBitsAmountVector = intToBool(deflatedBitsAmount, 32);
+    deflatedBitstring.insert(deflatedBitstring.end(), deflatedBitsAmountVector.begin(), deflatedBitsAmountVector.end());
+    for (const auto& byte : colors_deflated) {
+        std::vector<bool> byteBits = intToBool(byte, 8);
+        deflatedBitstring.insert(deflatedBitstring.end(), byteBits.begin(), byteBits.end());
+    }
+
+
     // Print the flattened differences
     // std::cout << "Flattened differences: ";
     // for (const auto& diff : flat_differences) {
@@ -242,7 +266,7 @@ CompressedImage compress(const std::string& imagePath){
     // }
     // std::cout << std::endl;
     int totalHuffmanEncodedLength = huffmanEncodedBitString.size();
-    std::cout << "dpcm huffman length: " << totalHuffmanEncodedLength << std::endl;
+    // std::cout << "dpcm huffman length: " << totalHuffmanEncodedLength << std::endl;
     int huffmanBitsAmount = std::ceil(totalHuffmanEncodedLength);
     std::vector<bool> huffmanBitsAmountVector = intToBool(huffmanBitsAmount, 32);
     // std::cout << "huffman bits amount: " << huffmanBitsAmount << std::endl;
@@ -401,6 +425,7 @@ CompressedImage compress(const std::string& imagePath){
         pathsBitString.insert(pathsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
         pathsBitString.insert(pathsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
 
+        pathsBitString.insert(pathsBitString.end(), deflatedBitstring.begin(), deflatedBitstring.end());
 
         // // std::cout << "region color bitstring size: " << regionColorBitString.size()/24 << std::endl;
         // int regionColorsInt = regionColorBitString.size()/24;
@@ -413,6 +438,8 @@ CompressedImage compress(const std::string& imagePath){
         // hier statt region color bitstring huffman dpcm werte und frequency map bitstring inserten
 
         pathsBitString.insert(pathsBitString.end(), RGBDifferencesHuffmanBitString.begin(), RGBDifferencesHuffmanBitString.end());
+
+
 
         // std::cout << "size after cols+rows+region color: " << pathsBitString.size() << std::endl;
 
@@ -729,7 +756,7 @@ CompressedImage compress(const std::string& imagePath){
     pathCompressionRate, rleCompressionRate ,oldCompressionRate,straightsCompressionRate,straightsHuffmanCompressionRate, newEdgeBitsCompressionRate, paths2bit_compression_rate,
     transparencyValues,
     tree_compression_time, old_compression_time, rle_compression_time, straights_compression_time, straights_huffman_compression_time, reduced_edgebits_compression_time, paths2bit_compression_time,
-    threeBitCount, currentTreeDirectionBits,tree_start_bits,disconnectedComponents, paths2bit_bits, paths2bit_start_bits, paths2bit_components, rle_direction_bits, region_colors_bits, dpcm_huffman_bits, new2bitDirectionBits,
+    threeBitCount, currentTreeDirectionBits,tree_start_bits,disconnectedComponents, paths2bit_bits, paths2bit_start_bits, paths2bit_components, rle_direction_bits, region_colors_bits, dpcm_huffman_bits, deflate_bits, new2bitDirectionBits,
     read_img_time,setEdgeBitsTime, region_color_dfs_time, region_color_UF_time,dpcm_huffman_time, dpcm_huffman_bitstring_time,tree_construction_time, tree_bitstring_time
 };
 }
@@ -1514,14 +1541,14 @@ std::vector<RGB> dpcm(std::vector<RGB> colors){
     return dpcmColors;
 }
 
-std::vector<uint8_t> flatten_differences(std::vector<RGB> differences){
-    std::vector<uint8_t> flatDifferences;
-    for (const auto& color : differences) {
-        flatDifferences.push_back(color.red);
-        flatDifferences.push_back(color.green);
-        flatDifferences.push_back(color.blue);
+std::vector<uint8_t> flatten_colors(std::vector<RGB> colors){
+    std::vector<uint8_t> flatColors;
+    for (const auto& color : colors) {
+        flatColors.push_back(color.red);
+        flatColors.push_back(color.green);
+        flatColors.push_back(color.blue);
     }
-    return flatDifferences;
+    return flatColors;
 }
 
 // create frequency map for differences 
@@ -1531,4 +1558,71 @@ std::map<uint8_t, int> createFrequencyMap(const std::vector<uint8_t>& difference
         frequencyMap[diff]++;
     }
     return frequencyMap;
+}
+
+
+void testZlib() {
+    const char* original = "Hello, zlib!";
+    uLong originalLen = strlen(original) + 1; // include null terminator
+
+    uLong compressedLen = compressBound(originalLen);
+    Bytef* compressed = new Bytef[compressedLen];
+
+    if (compress(compressed, &compressedLen, reinterpret_cast<const Bytef*>(original), originalLen) != Z_OK) {
+        std::cerr << "Compression failed\n";
+        return;
+    }
+
+    Bytef* decompressed = new Bytef[originalLen];
+    uLong decompressedLen = originalLen;
+
+    if (uncompress(decompressed, &decompressedLen, compressed, compressedLen) != Z_OK) {
+        std::cerr << "Decompression failed\n";
+        return;
+    }
+
+    std::cout << "Original: " << original << "\n";
+    std::cout << "Decompressed: " << decompressed << "\n";
+
+    delete[] compressed;
+    delete[] decompressed;
+}
+
+#include <zlib.h>
+#include <vector>
+#include <iostream>
+#include <cstring>
+
+std::vector<uint8_t> ZlibDeflate(const std::vector<uint8_t>& input) {
+    z_stream zs{};
+    zs.zalloc = Z_NULL;
+    zs.zfree = Z_NULL;
+    zs.opaque = Z_NULL;
+
+    deflateInit(&zs, Z_BEST_COMPRESSION);
+
+    zs.avail_in = input.size();
+    zs.next_in = const_cast<Bytef*>(input.data());
+
+    std::vector<uint8_t> compressedData;
+    const size_t chunkSize = 262144; // 256 KB
+    uint8_t outBuffer[chunkSize];
+    int deflateRes;
+    do{
+        zs.avail_out = chunkSize;
+        zs.next_out = outBuffer;
+
+        deflateRes = deflate(&zs, Z_FINISH);
+        if (deflateRes == Z_STREAM_ERROR) {
+            std::cerr << "Deflate failed: " << deflateRes << "\n";
+            deflateEnd(&zs);
+            return {};
+        }
+
+        size_t compressedSize = chunkSize - zs.avail_out;
+        compressedData.insert(compressedData.end(), outBuffer, outBuffer + compressedSize);
+    }while(deflateRes != Z_STREAM_END);
+    deflateEnd(&zs);
+
+    return compressedData;
 }

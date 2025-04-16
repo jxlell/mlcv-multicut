@@ -37,5 +37,6 @@ std::vector<bool> reconstruct_edgeBits2bits_from_bitstring(const std::vector<boo
 std::vector<bool> decodeRLEToNonRLE(const std::vector<bool>& rleBitString);
 std::string boolVectorToString(const std::vector<bool>& bitVec, size_t startIndex, size_t length);
 std::vector<RGB> decodeDifferences(const std::vector<uint8_t>& encodedDifferences);
+bool ZlibInflate(const std::vector<uint8_t>& compressedData, std::vector<uint8_t>& decompressedData);
 
 #endif // DECOMPRESS_H

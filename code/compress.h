@@ -68,6 +68,7 @@ struct CompressedImage{
     int rle_direction_bits;
     int region_colors_bits;
     int dpcm_huffman_bits;
+    int deflate_bits;
     int new2bitDirectionBits;
 
     long long read_img_time;
@@ -99,7 +100,9 @@ double getMulticutPercentage(std::vector<bool> edgeBits01);
 void getAnomalies(std::vector<bool> edgeBits01, cv::Mat img);
 std::vector<RGB> getRegionsFromImageSearch(cv::Mat img, std::vector<bool>& edgeBitsFromDFS);
 std::vector<RGB> dpcm(std::vector<RGB> colors);
-std::vector<uint8_t> flatten_differences(std::vector<RGB> differences);
+std::vector<uint8_t> flatten_colors(std::vector<RGB> differences);
 std::map<uint8_t, int> createFrequencyMap(const std::vector<uint8_t>& differences);
+void testZlib();
+std::vector<uint8_t> ZlibDeflate(const std::vector<uint8_t>& input);
 
 #endif // COMPRESS_H

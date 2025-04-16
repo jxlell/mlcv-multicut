@@ -12,6 +12,10 @@
 #include <string>
 #include "compress.h"
 #include "huffman.h"
+extern "C" {
+    #include "zlib.h"
+  }
+  
 
 decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     methods compressionMethods = compImg.compressionMethods;
@@ -91,6 +95,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     std::string regionColorBitStringStr;
     std::vector<bool> regionColorBitStringParsed;
     std::vector<RGB> decodedColorsTree;
+    std::vector<RGB> inflatedRegionColorsVec;
 
     auto start = std::chrono::high_resolution_clock::now();
     auto end = std::chrono::high_resolution_clock::now();
@@ -113,6 +118,36 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         std::string rows_str = pathsBitStringStr.substr(offset, 16);
         int rows_int = std::stoi(rows_str, nullptr, 2);
         offset += 16;
+
+        std::string deflatedBitsAmount = pathsBitStringStr.substr(offset, 32);
+        int deflatedBitsAmountInt = std::stoi(deflatedBitsAmount, nullptr, 2);
+        std::cout << "Deflated bits amount: " << deflatedBitsAmountInt << std::endl;
+        offset += 32;
+        std::string deflatedBitString;
+        if(deflatedBitsAmountInt>0){
+            deflatedBitString = pathsBitStringStr.substr(offset, deflatedBitsAmountInt*8);
+        }
+        std::vector<uint8_t> deflatedData(deflatedBitsAmountInt);
+        for (int i = 0; i < deflatedBitsAmountInt; ++i) {
+            std::string byteStr = pathsBitStringStr.substr(offset + i * 8, 8);
+            deflatedData[i] = static_cast<uint8_t>(std::stoi(byteStr, nullptr, 2));
+        }
+        std::cout << "Deflated data size: " << deflatedData.size() << std::endl;
+        std::vector<uint8_t> inflatedRegionColors; 
+        bool inflateSuccess = ZlibInflate(deflatedData, inflatedRegionColors);
+        std::cout << "Zlib success: " << (inflateSuccess ? "YES" : "NO") << std::endl;
+        std::cout << "Decompressed data size in bits: " << inflatedRegionColors.size()*8 << std::endl;
+
+        std::vector<bool> inflatedRegionColorsBitString;
+        for (uint8_t byte : inflatedRegionColors) {
+            for (int i = 7; i >= 0; --i) {
+                inflatedRegionColorsBitString.push_back((byte >> i) & 1);
+            }
+        }
+        
+        inflatedRegionColorsVec = colorBitStringToRGBVector(inflatedRegionColorsBitString);
+
+        offset += deflatedBitsAmountInt * 8;
     
         std::string freqMapAmountStr = pathsBitStringStr.substr(offset, 9);
         int freqMapAmount = std::stoi(freqMapAmountStr, nullptr, 2);
@@ -882,7 +917,8 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     // reconstruct with dfs
     start = std::chrono::high_resolution_clock::now();
     // image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, regionColorsFromBitString, transparencyValues);
-    image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, decodedColorsTree, transparencyValues);
+    // image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, decodedColorsTree, transparencyValues);
+    image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, inflatedRegionColorsVec, transparencyValues);
     end = std::chrono::high_resolution_clock::now();
     // std::cout << "DFS reconstruction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
     dfs_reconstruction_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -1224,4 +1260,42 @@ std::vector<RGB> decodeDifferences(const std::vector<uint8_t>& encodedDifference
     }
 
     return decodedPixels;
+}
+
+bool ZlibInflate(const std::vector<uint8_t>& compressedData, std::vector<uint8_t>& decompressedData){
+    z_stream strm{};
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
+    int ret = inflateInit(&strm);
+    if (ret != Z_OK) {
+        std::cout << "inflateInit failed: " << ret << std::endl;
+        return false; // Initialization failed
+    }
+
+    const size_t chunkSize = 262144; // 256 KB
+    uint8_t outBuffer[chunkSize];
+
+    strm.avail_in = compressedData.size();
+    strm.next_in = const_cast<uint8_t*>(compressedData.data());
+
+    do{
+        
+        strm.avail_out = chunkSize;
+        strm.next_out = outBuffer;
+
+        ret = inflate(&strm, Z_NO_FLUSH);
+        if (ret == Z_STREAM_ERROR || ret == Z_DATA_ERROR || ret == Z_MEM_ERROR) {
+            std::cout << "inflate failed: " << ret << std::endl;
+            inflateEnd(&strm);
+            return false; // Decompression failed
+        }
+
+        size_t have = chunkSize - strm.avail_out;
+        decompressedData.insert(decompressedData.end(), outBuffer, outBuffer + have);
+    }while(ret != Z_STREAM_END);
+
+    inflateEnd(&strm);
+
+    return true;
 }
