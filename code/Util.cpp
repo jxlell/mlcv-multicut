@@ -330,6 +330,22 @@ std::vector<RGB> colorBitStringToRGBVector(std::vector<bool>& bitString){
     return regionColors;
 }
 
+std::vector<RGB> separatedChannelstoRGBVector(const std::vector<uint8_t>& separated) {
+    size_t numPixels = separated.size() / 3;
+    std::vector<RGB> rgbVector;
+    rgbVector.reserve(numPixels);
+
+    for (size_t i = 0; i < numPixels; ++i) {
+        RGB color;
+        color.red   = separated[i];
+        color.green = separated[i + numPixels];
+        color.blue  = separated[i + 2 * numPixels];
+        rgbVector.push_back(color);
+    }
+
+    return rgbVector;
+}
+
 int calculateBoolVectorStorage(std::vector<bool>& boolVector){
     // 64-bit chunks + overhead (8 bytes for pointer to memory, size and capacity respectively)
     return ((boolVector.capacity()+7) / 8) * 8 + 24*8;

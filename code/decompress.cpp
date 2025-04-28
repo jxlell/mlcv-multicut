@@ -145,7 +145,8 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
             }
         }
         
-        inflatedRegionColorsVec = colorBitStringToRGBVector(inflatedRegionColorsBitString);
+        // inflatedRegionColorsVec = colorBitStringToRGBVector(inflatedRegionColorsBitString);
+        inflatedRegionColorsVec = separatedChannelstoRGBVector(inflatedRegionColors);
 
         offset += deflatedBitsAmountInt * 8;
     

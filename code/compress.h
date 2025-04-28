@@ -69,7 +69,11 @@ struct CompressedImage{
     int region_colors_bits;
     int dpcm_huffman_bits;
     int deflate_bits;
+    int deflate_bits_unseparated;
     int new2bitDirectionBits;
+
+    int bitsfortransferingcodes;
+    int bitsfortransferingfrequencymap;
 
     long long read_img_time;
     long long setEdgeBitsTime;
@@ -90,7 +94,7 @@ std::vector<bool> reduceHorizontalBits(cv::Mat img, std::vector<bool>& edgeBits0
 std::vector<bool> setHorizontalBits(cv::Mat img);
 std::tuple<PathInfoVector,int> setPaths(std::vector<bool> edgeBits01, cv::Mat img);
 std::tuple<PathInfoVector, RLEVector, int> set2BitPaths(std::vector<bool> edgeBits01, cv::Mat img);
-std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, std::vector<uint16_t>, std::vector<uint32_t>> setStraights(std::vector<bool> edgeBits01, cv::Mat img);
+std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, std::vector<uint16_t>, std::vector<uint32_t>, map<int,string>> setStraights(std::vector<bool> edgeBits01, cv::Mat img);
 std::vector<RGB> setRegions(cv::Mat img, std::vector<int> neighborsOffsets, int vertices);
 double getCompressionRate(std::vector<RGB> regionColors, PathInfoVector paths, cv::Mat img);
 double getRLECompressionRate(std::vector<RGB> regionColors, RLEVector rle_paths, cv::Mat img);
@@ -100,6 +104,7 @@ double getMulticutPercentage(std::vector<bool> edgeBits01);
 void getAnomalies(std::vector<bool> edgeBits01, cv::Mat img);
 std::vector<RGB> getRegionsFromImageSearch(cv::Mat img, std::vector<bool>& edgeBitsFromDFS);
 std::vector<RGB> dpcm(std::vector<RGB> colors);
+std::vector<RGB> dpcm_modified(std::vector<RGB> colors);
 std::vector<uint8_t> flatten_colors(std::vector<RGB> differences);
 std::map<uint8_t, int> createFrequencyMap(const std::vector<uint8_t>& differences);
 void testZlib();

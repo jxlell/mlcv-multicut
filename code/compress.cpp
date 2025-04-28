@@ -125,6 +125,12 @@ CompressedImage compress(const std::string& imagePath){
     int region_colors_bits;
     int dpcm_huffman_bits;
     int deflate_bits = 0;
+    int deflate_bits_unseparated = 0;
+
+    int bitsfortransferingcodes = 0;
+    int bitsfortransferingfrequencymap = 0;
+
+    int colorsBitstringSize = 0;
 
     int new2bitDirectionBits = 0;
 
@@ -137,6 +143,14 @@ CompressedImage compress(const std::string& imagePath){
     int tree_construction_time;
     int tree_bitstring_time = 0;
 
+
+    int treeMCBits = 0;
+    int edgeBitsMCBits = 0;
+    int newEdgeBitsMCBits = 0;
+    int path2bitMCBits = 0;
+    int rleMCBits = 0;
+    int straightsMCBits = 0;
+    int straightsHuffmanMCBits = 0;
 
     double oldCompressionRate = 0;
     double newEdgeBitsCompressionRate = 0;
@@ -179,18 +193,36 @@ CompressedImage compress(const std::string& imagePath){
     // }
     std::vector<uint8_t> flat_differences = flatten_colors(differentialColors);
     std::vector<uint8_t> flat_regioncolors = flatten_colors(regionColors);
+    
     std::cout << "region colors size in bits: " << region_colors_bits << std::endl;
 
-
     std::vector<uint8_t> colors_deflated = ZlibDeflate(flat_regioncolors);
+    std::vector<uint8_t> colors_differences_deflated = ZlibDeflate(flat_differences);
+    std::cout << "deflated differences size in bits: " << (colors_differences_deflated.size() * 8) << std::endl;
+    std::cout << "deflated size in bits: " << (colors_deflated.size() * 8) << std::endl;
+    deflate_bits_unseparated = colors_deflated.size() * 8;
+
+    std::vector<uint8_t> separated_regioncolors;
+    separated_regioncolors.reserve(flat_regioncolors.size());
+    size_t num_pixels = flat_regioncolors.size() / 3;
+    for (int channel = 0; channel < 3; ++channel) {
+        for (size_t i = 0; i < num_pixels; ++i) {
+            separated_regioncolors.push_back(flat_regioncolors[i * 3 + channel]);
+        }
+    }
+    std::vector<uint8_t> colors_separated_deflated = ZlibDeflate(separated_regioncolors);
+    std::cout << "separated deflated size in bits: " << (colors_separated_deflated.size() * 8) << std::endl;
+
+
     std::vector<bool> deflatedBitstring;
-    deflatedBitstring.reserve(colors_deflated.size() * 8 + 32);
-    int deflatedBitsAmount = colors_deflated.size();
+    deflatedBitstring.reserve(colors_separated_deflated.size() * 8 + 32);
+    int deflatedBitsAmount = colors_separated_deflated.size();
     deflate_bits = deflatedBitsAmount * 8;
-    std::cout << "deflated colors size: " << deflatedBitsAmount << std::endl;
+    // std::cout << "deflate bits: " << deflate_bits << std::endl;
+    // std::cout << "deflated colors size: " << deflatedBitsAmount << std::endl;
     std::vector<bool> deflatedBitsAmountVector = intToBool(deflatedBitsAmount, 32);
     deflatedBitstring.insert(deflatedBitstring.end(), deflatedBitsAmountVector.begin(), deflatedBitsAmountVector.end());
-    for (const auto& byte : colors_deflated) {
+    for (const auto& byte : colors_separated_deflated) {
         std::vector<bool> byteBits = intToBool(byte, 8);
         deflatedBitstring.insert(deflatedBitstring.end(), byteBits.begin(), byteBits.end());
     }
@@ -266,7 +298,7 @@ CompressedImage compress(const std::string& imagePath){
     // }
     // std::cout << std::endl;
     int totalHuffmanEncodedLength = huffmanEncodedBitString.size();
-    // std::cout << "dpcm huffman length: " << totalHuffmanEncodedLength << std::endl;
+    std::cout << "dpcm huffman length: " << totalHuffmanEncodedLength << std::endl;
     int huffmanBitsAmount = std::ceil(totalHuffmanEncodedLength);
     std::vector<bool> huffmanBitsAmountVector = intToBool(huffmanBitsAmount, 32);
     // std::cout << "huffman bits amount: " << huffmanBitsAmount << std::endl;
@@ -357,6 +389,7 @@ CompressedImage compress(const std::string& imagePath){
         for(auto bit : edgeBits01){
             edgeBitsBitString.push_back(bit);
         }
+        edgeBitsMCBits = 32 + edgeBits01.size();
         end = std::chrono::high_resolution_clock::now();
         old_compression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         oldCompressionRate = (img.rows * img.cols * 24) / (double)(edgeBitsBitString.size());
@@ -427,6 +460,7 @@ CompressedImage compress(const std::string& imagePath){
 
         pathsBitString.insert(pathsBitString.end(), deflatedBitstring.begin(), deflatedBitstring.end());
 
+        colorsBitstringSize = pathsBitString.size();
         // // std::cout << "region color bitstring size: " << regionColorBitString.size()/24 << std::endl;
         // int regionColorsInt = regionColorBitString.size()/24;
         // int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows + 1));
@@ -443,6 +477,7 @@ CompressedImage compress(const std::string& imagePath){
 
         // std::cout << "size after cols+rows+region color: " << pathsBitString.size() << std::endl;
 
+        int pathsBitstringSizePrev = pathsBitString.size();
         //int disconnectedComponentsBits = std::ceil(std::log2(img.cols * img.rows / 2));
         int disconnectedComponentsBits = std::max(static_cast<double>(std::ceil(std::log2(std::max(img.cols, img.rows) + 1))), std::max(static_cast<double>(1), std::log2(std::ceil(static_cast<double>(img.cols)/2) * std::ceil(static_cast<double>(img.rows)/2) + 1)));
         // std::cout << "paths size: " << paths.size() << std::endl;
@@ -484,7 +519,7 @@ CompressedImage compress(const std::string& imagePath){
         // }
         // std::cout << std::endl;
         // std::cout << "tree dir bits: " << tree_dir_bits << std::endl;
-
+        treeMCBits = pathsBitString.size() - pathsBitstringSizePrev; 
 
         end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -551,7 +586,7 @@ CompressedImage compress(const std::string& imagePath){
 
         differenceForRGBHuffman = regionColorBits.size() + regionColorBitString.size() - RGBDifferencesHuffmanBitString.size();
 
-
+        int paths2bitBitstringSizePrev = paths2bitBitString.size();
         // std::cout << "size after cols+rows+region color: " << paths2bitBitString.size() << std::endl;
         int paths2bitAmount = paths_2bit.size();
         std::vector<bool> paths2bitAmountVector = intToBool(paths2bitAmount, 32);
@@ -580,12 +615,14 @@ CompressedImage compress(const std::string& imagePath){
         //     std::cout << bit;
         // }
         // std::cout << std::endl;
+        path2bitMCBits = paths2bitBitString.size() - paths2bitBitstringSizePrev;
         
         end = std::chrono::high_resolution_clock::now();
         paths2bit_compression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         paths2bit_compression_rate = static_cast<double>(img.cols * img.rows * 24) / (paths2bitBitString.size() - differenceForRGBHuffman);
         // std::cout << "Paths2bit Compression Rate: " << paths2bit_compression_rate << std::endl;
         // set rle bitstring
+        paths2bitBitstringSizePrev = paths2bitBitString.size();
         start = std::chrono::high_resolution_clock::now();
         int countMaxBits = std::ceil(std::log2(std::max(img.cols,img.rows) + 1));
         for (auto& path : paths_2bit) {
@@ -626,6 +663,7 @@ CompressedImage compress(const std::string& imagePath){
             paths2bitRLEBitString.push_back(false);
         }
         rle_direction_bits = paths2bitRLEBitString.size();
+        rleMCBits = rle_direction_bits + paths2bit_start_bits;
 
         rleCompressionRate = static_cast<double>(img.cols * img.rows * 24) / (paths2bitRLEBitString.size() - differenceForRGBHuffman + paths2BitStringNoDirSize);
         // std::cout << "new rle comp rate: " << rleCompressionRate << std::endl;
@@ -637,7 +675,8 @@ CompressedImage compress(const std::string& imagePath){
 
     if(compressionMethods.useStraights){
         start = std::chrono::high_resolution_clock::now();
-        std::tie(straights, straightsHuffmanCodesBitString, straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies) = setStraights(edgeBits01, img);
+        map<int,string> straightsHuffmanCodes;
+        std::tie(straights, straightsHuffmanCodesBitString, straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies, straightsHuffmanCodes) = setStraights(edgeBits01, img);
         end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         // std::cout << "time to set straights: " << duration.count() << "ms" << std::endl;
@@ -659,6 +698,7 @@ CompressedImage compress(const std::string& imagePath){
         straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), regionColorBits.begin(), regionColorBits.end());
         straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
     
+        int straightsPathsSizePrev = straightsNoHuffBitString.size();
         // list start points 
         std::vector<bool> huffmanStartPointsAmount = intToBool(straightsHuffmanCodesStartPoints.size(), 32);
         straightsNoHuffBitString.insert(straightsNoHuffBitString.end(), huffmanStartPointsAmount.begin(), huffmanStartPointsAmount.end());
@@ -684,6 +724,8 @@ CompressedImage compress(const std::string& imagePath){
         straights_compression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         straightsCompressionRate = (img.rows * img.cols * 24) / ((double)straightsNoHuffBitString.size() - differenceForRGBHuffman);
     
+        straightsMCBits = straightsNoHuffBitString.size() - straightsPathsSizePrev;
+
         // ---------------
         //set bitstring for straights (huffman)
     
@@ -694,6 +736,7 @@ CompressedImage compress(const std::string& imagePath){
         straightsBitString.insert(straightsBitString.end(), regionColorBits.begin(), regionColorBits.end());
         straightsBitString.insert(straightsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
     
+        straightsPathsSizePrev = straightsBitString.size();
         // list start points 
         huffmanStartPointsAmount = intToBool(straightsHuffmanCodesStartPoints.size(), 32);
         straightsBitString.insert(straightsBitString.end(), huffmanStartPointsAmount.begin(), huffmanStartPointsAmount.end());
@@ -704,13 +747,15 @@ CompressedImage compress(const std::string& imagePath){
             std::vector<bool> startPointBits = intToBool(startPoint, huffmanStartPointsBits);
             straightsBitString.insert(straightsBitString.end(), startPointBits.begin(), startPointBits.end());
         }
-    
+
+        
         // length of huffman bitstring + huffman bitstring
         std::vector<bool> huffmanCodesBitstringSize = intToBool(straightsHuffmanCodesBitString.size(), 64);
         straightsBitString.insert(straightsBitString.end(), huffmanCodesBitstringSize.begin(), huffmanCodesBitstringSize.end());
         straightsBitString.insert(straightsBitString.end(), straightsHuffmanCodesBitString.begin(), straightsHuffmanCodesBitString.end());
         
         // lengths
+        int bitsbeforfrequencymap = straightsBitString.size();
         int straightsLenghtsBits = std::ceil(std::log2(std::max(img.cols, img.rows) + 1));
         std::vector<bool> straightsLengthsBitsVector = intToBool(straightsLenghtsBits, 5);
         straightsBitString.insert(straightsBitString.end(), straightsLengthsBitsVector.begin(), straightsLengthsBitsVector.end());
@@ -731,7 +776,24 @@ CompressedImage compress(const std::string& imagePath){
             std::vector<bool> frequencyBits = intToBool(frequency, straightsFrequenciesBits);
             straightsBitString.insert(straightsBitString.end(), frequencyBits.begin(), frequencyBits.end());
         }
+
+        bitsfortransferingcodes = straightsLenghtsBits * straightsHuffmanCodes.size();
+        int longestHuffmanCodeLength = 0;
+        for (const auto& pair : straightsHuffmanCodes) {
+            if (pair.second.length() > longestHuffmanCodeLength) {
+                longestHuffmanCodeLength = pair.second.length();
+            }
+        }
+        // std::cout << "Longest Huffman code length: " << longestHuffmanCodeLength << std::endl;
+        bitsfortransferingcodes += longestHuffmanCodeLength * straightsHuffmanCodes.size();
+        std::cout << "bits for transfering codes: " << bitsfortransferingcodes << std::endl;
+    
+
+
+        bitsfortransferingfrequencymap = straightsBitString.size() - bitsbeforfrequencymap;
+        std::cout << "bits for transfering frequency map: " << bitsbeforfrequencymap << std::endl;
         end = std::chrono::high_resolution_clock::now();
+        straightsHuffmanMCBits = straightsBitString.size() - straightsPathsSizePrev;
         straights_huffman_compression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         straightsHuffmanCompressionRate = (img.rows * img.cols * 24) / ((double)straightsBitString.size() - differenceForRGBHuffman);
     }
@@ -743,6 +805,15 @@ CompressedImage compress(const std::string& imagePath){
     straights_huffman_compression_time += regionColorsBitStringTime;
     reduced_edgebits_compression_time += regionColorsBitStringTime;
     paths2bit_compression_time += regionColorsBitStringTime;
+
+    pathCompressionRate = (img.rows * img.cols * 24) / (double)(treeMCBits + colorsBitstringSize);
+    rleCompressionRate = (img.rows * img.cols * 24) / (double)(rleMCBits + colorsBitstringSize);
+    oldCompressionRate = (img.rows * img.cols * 24) / (double)(edgeBitsMCBits + colorsBitstringSize);
+    straightsCompressionRate = (img.rows * img.cols * 24) / (double)(straightsMCBits + colorsBitstringSize);
+    straightsHuffmanCompressionRate = (img.rows * img.cols * 24) / (double)(straightsHuffmanMCBits + colorsBitstringSize);
+    straightsHuffmanCompressionRate = (img.rows * img.cols * 24) / (double)(straightsHuffmanMCBits + colorsBitstringSize - (bitsfortransferingfrequencymap - bitsfortransferingcodes));
+    newEdgeBitsCompressionRate = (img.rows * img.cols * 24) / (double)(newEdgeBitsMCBits + colorsBitstringSize);
+    paths2bit_compression_rate = (img.rows * img.cols * 24) / (double)(path2bitMCBits + colorsBitstringSize);
 
 
     return {compressionMethods,
@@ -756,7 +827,8 @@ CompressedImage compress(const std::string& imagePath){
     pathCompressionRate, rleCompressionRate ,oldCompressionRate,straightsCompressionRate,straightsHuffmanCompressionRate, newEdgeBitsCompressionRate, paths2bit_compression_rate,
     transparencyValues,
     tree_compression_time, old_compression_time, rle_compression_time, straights_compression_time, straights_huffman_compression_time, reduced_edgebits_compression_time, paths2bit_compression_time,
-    threeBitCount, currentTreeDirectionBits,tree_start_bits,disconnectedComponents, paths2bit_bits, paths2bit_start_bits, paths2bit_components, rle_direction_bits, region_colors_bits, dpcm_huffman_bits, deflate_bits, new2bitDirectionBits,
+    threeBitCount, currentTreeDirectionBits,tree_start_bits,disconnectedComponents, paths2bit_bits, paths2bit_start_bits, paths2bit_components, rle_direction_bits, region_colors_bits, dpcm_huffman_bits, deflate_bits, deflate_bits_unseparated, new2bitDirectionBits,
+    bitsfortransferingcodes, bitsfortransferingfrequencymap,
     read_img_time,setEdgeBitsTime, region_color_dfs_time, region_color_UF_time,dpcm_huffman_time, dpcm_huffman_bitstring_time,tree_construction_time, tree_bitstring_time
 };
 }
@@ -1323,7 +1395,7 @@ std::tuple<PathInfoVector, RLEVector, int> set2BitPaths(std::vector<bool> edgeBi
     return {paths_2bit, rle_paths, directions2bits_reduced};
 }
 
-std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, std::vector<uint16_t>, std::vector<uint32_t>> setStraights(std::vector<bool> edgeBits01, cv::Mat img){
+std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, std::vector<uint16_t>, std::vector<uint32_t>, map<int,string>> setStraights(std::vector<bool> edgeBits01, cv::Mat img){
     Straights straights;
     std::vector<bool> visited(edgeBits01.size(), false);
     for(int edgeI=0; edgeI < edgeBits01.size(); edgeI++){
@@ -1394,6 +1466,7 @@ std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, st
     // for (const auto& pair : straightsHuffmanCodes) {
     //     std::cout << "Length: " << pair.first << " Code: " << pair.second << std::endl;
     // }
+
     
 
     //vectors to store huffman codes
@@ -1492,7 +1565,7 @@ std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, st
     // delete huffman tree from memory (only needed to create bitstring)
     //deleteHuffmanTree(root);
 
-    return {straights, straightsHuffmanCodesBitString, straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies};
+    return {straights, straightsHuffmanCodesBitString, straightsHuffmanCodesStartPoints, root, straightLengthsList, straightLengthFrequencies, straightsHuffmanCodes};
 }
 
 
@@ -1536,6 +1609,21 @@ std::vector<RGB> dpcm(std::vector<RGB> colors){
         dpcmColor.red = currentColor.red - previousColor.red;
         dpcmColor.green = currentColor.green - previousColor.green;
         dpcmColor.blue = currentColor.blue - previousColor.blue;
+        dpcmColors.push_back(dpcmColor);
+    }
+    return dpcmColors;
+}
+
+std::vector<RGB> dpcm_modified(std::vector<RGB> colors){
+    std::vector<RGB> dpcmColors;
+    dpcmColors.push_back(colors[0]);
+    for(int i = 1; i < colors.size(); i++){
+        RGB currentColor = colors[i];
+        RGB previousColor = colors[i-1];
+        RGB dpcmColor;
+        dpcmColor.red = currentColor.red - previousColor.red;
+        dpcmColor.green = currentColor.green - currentColor.red;
+        dpcmColor.blue = currentColor.blue - currentColor.red;
         dpcmColors.push_back(dpcmColor);
     }
     return dpcmColors;

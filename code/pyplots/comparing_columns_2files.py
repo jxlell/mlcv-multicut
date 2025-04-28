@@ -4,7 +4,8 @@ import numpy as np
 
 # Choose the column to compare
 # column_name = "region_color_dfs_time"
-column_name = "dpcm-huffman_bits"
+# column_name = "dpcm-huffman_bits"
+column_name ="dpcm-huffman_bits"
 
 # Load the two CSV files
 df1 = pd.read_csv("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_test_dpcmv1.csv")
@@ -20,8 +21,16 @@ bar_width = 0.35
 
 # Plot
 fig, ax = plt.subplots(figsize=(12, 6))
-ax.bar(x - bar_width/2, values1, bar_width, label="dpcm delta all channels", color="skyblue")
-ax.bar(x + bar_width/2, values2, bar_width, label="delta red channel", color="salmon")
+ax.bar(x - bar_width/2, values1, bar_width, label="dpcm normal", color="skyblue")
+ax.bar(x + bar_width/2, values2, bar_width, label="interchannel", color="salmon")
+
+# Calculate averages
+avg1 = np.mean(values1)
+avg2 = np.mean(values2)
+
+# Print averages
+print(f"Average of '{column_name}' in first file: {avg1}")
+print(f"Average of '{column_name}' in second file: {avg2}")
 
 # Labels and formatting
 ax.set_title(f"Comparison of '{column_name}' between Two CSV Files")
