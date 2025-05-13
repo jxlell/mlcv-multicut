@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load the CSV data
-df = pd.read_csv("code/output_files/mc_results_test.csv")
+df = pd.read_csv("code/output_files/mc_results_test_icons.csv")
 
 # Calculate the factor (ratio) between 2bit_rate and rle_rate
 df['rate_factor'] = df['2bit_rate'] / df['rle_rate']

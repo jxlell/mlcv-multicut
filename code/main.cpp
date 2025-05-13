@@ -57,20 +57,20 @@ int main() {
     vector<int> disconnected_components_total;
     vector<int> pixel_sizes_total; 
 
-    vector<long long> tree_compression_times;
-    vector<long long> tree_compression_times_total;
-    vector<long long> old_compression_times;
-    vector<long long> old_compression_times_total;
-    vector<long long> rle_compression_times;
-    vector<long long> rle_compression_times_total;
-    vector<long long> straights_compress_times;
-    vector<long long> straights_compress_times_total;
-    vector<long long> straights_huffman_compression_times;
-    vector<long long> straights_huffman_compression_times_total;
-    vector<long long> reduced_edgebits_compression_times;
-    vector<long long> reduced_edgebits_compression_times_total;
-      vector<long long> paths_2bits_compression_times;
-      vector<long long> paths_2bits_compression_times_total;
+    vector<double> tree_compression_times;
+    vector<double> tree_compression_times_total;
+    vector<double> old_compression_times;
+    vector<double> old_compression_times_total;
+    vector<double> rle_compression_times;
+    vector<double> rle_compression_times_total;
+    vector<double> straights_compress_times;
+    vector<double> straights_compress_times_total;
+    vector<double> straights_huffman_compression_times;
+    vector<double> straights_huffman_compression_times_total;
+    vector<double> reduced_edgebits_compression_times;
+    vector<double> reduced_edgebits_compression_times_total;
+      vector<double> paths_2bits_compression_times;
+      vector<double> paths_2bits_compression_times_total;
 
     vector<long long> tree_decompression_times;
     vector<long long> tree_decompression_times_total;
@@ -103,20 +103,24 @@ int main() {
       vector<int> deflate_bits;
       vector<int> deflate_bits_unseparated;
 
-      vector<int> setEdgeBitsTime;
-      vector<int> read_img_time;
-      vector<int> region_color_dfs_time;
-      vector<int> region_color_UF_time;
-      vector<int> dpcm_huffman_time;
-      vector<int> dpcm_huffman_bitstring_time;
-      vector<int> tree_construction_time;
-      vector<int> tree_bitstring_time;
+      vector<double> setEdgeBitsTime;
+      vector<double> read_img_time;
+      vector<double> region_color_dfs_time;
+      vector<double> region_color_UF_time;
+      vector<double> dpcm_huffman_time;
+      vector<double> dpcm_huffman_bitstring_time;
+      vector<double> tree_construction_time;
+      vector<double> tree_bitstring_time;
+        vector<double> dec_construction_time;
+        vector<double> dec_bitstring_time;
+        vector<double> sls_construction_time;
+        vector<double> sls_bitstring_time;
 
-      vector<int> rebuild_dpcm_huffman_time;
-      vector<int> decode_colors_time;
-      vector<int> assemble_tree_paths_time;
-      vector<int> reconstruct_tree_edgebits_time;
-      vector<int> dfs_reconstruction_time;
+      vector<double> rebuild_dpcm_huffman_time;
+      vector<double> decode_colors_time;
+      vector<double> assemble_tree_paths_time;
+      vector<double> reconstruct_tree_edgebits_time;
+      vector<double> dfs_reconstruction_time;
       // vector<int> UF_reconstruction_time;
 
       vector<long long> total_tree_bits;
@@ -125,6 +129,8 @@ int main() {
         vector<int> bitsfortransferingcodes;
         vector<int> bitsfortransferingfrequencymap;
 
+        vector<double> tree_bpp;
+        vector<double> avg_straight_length;
 
 
     vector<string> filenames;
@@ -133,22 +139,22 @@ int main() {
 
 
     std::unordered_set<std::string> category_set = {
-        "icon_64",
+        // "icon_64",
         // "icon_512",
         // "photo_kodak",
         // "photo_tecnick",
         // "photo_wikipedia",
         // "pngimg",
-      //   "screenshot_web",
-      //   "screenshot_game",
-      //   "textures_photo",
-      //   "textures_pk",
-      //   "textures_pk01",
-      //   "textures_pk02",
-      //   "textures_plants",
+        // "screenshot_web",
+        // "screenshot_game",
+        // "textures_photo",
+        // "textures_pk",
+        // "textures_pk01",
+        // "textures_pk02",
+        // "textures_plants",
 
 
-        // "screenshot_game_reduced"
+        "screenshot_game_reduced2"
     };
 
     std::ifstream inputFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/singlefile.txt");
@@ -166,13 +172,13 @@ int main() {
     inputFile.close();
 
     // control parameters 
-    bool single_image = true;
+    bool single_image = false;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
     //showImg = false;
     bool writeToFile = true;
     writeToFile = !single_image;
-//     writeToFile = false;
+    writeToFile = true;
     
     bool test_mode = (category_set.count("screenshot_game_reduced") > 0) && 
                      (category_set.size() == 1);
@@ -273,8 +279,15 @@ int main() {
             paths_2bit_crossings.push_back(compImg.paths2bit_components - compImg.disconnectedComponents);
             read_img_time.push_back(compImg.read_img_time);
             setEdgeBitsTime.push_back(compImg.setEdgeBitsTime);
+            std::cout << "pushed setEdgeBitsTime: " << compImg.setEdgeBitsTime << std::endl;
             bitsfortransferingcodes.push_back(compImg.bitsfortransferingcodes);
-                bitsfortransferingfrequencymap.push_back(compImg.bitsfortransferingfrequencymap);
+            bitsfortransferingfrequencymap.push_back(compImg.bitsfortransferingfrequencymap);
+            tree_bpp.push_back(compImg.tree_bpp);
+                avg_straight_length.push_back(compImg.avg_straight_length);
+            dec_construction_time.push_back(compImg.dec_construction_time);
+                dec_bitstring_time.push_back(compImg.dec_bitstring_time);
+                sls_construction_time.push_back(compImg.sls_construction_time);
+                sls_bitstring_time.push_back(compImg.sls_bitstring_time);
             
 
             //stateless approach
@@ -297,7 +310,8 @@ int main() {
             decode_colors_time.push_back(decomp_info.decode_colors_time);
             assemble_tree_paths_time.push_back(decomp_info.assemble_tree_paths_time);
             reconstruct_tree_edgebits_time.push_back(decomp_info.reconstruct_tree_edgebits_time);
-            dfs_reconstruction_time.push_back(decomp_info.dfs_reconstruction_time);
+            dfs_reconstruction_time.push_back(decomp_info.dfs_reconstruction_time/1000.0f);
+        std::cout << "pushed dfs_reconstruction_time: " << (decomp_info.dfs_reconstruction_time / 1000.0f) << std::endl;
 
             progress++;
             //std::cout << progress << "/" << imgCount << std::endl;
@@ -407,7 +421,7 @@ int main() {
 
         // multicut_percentages.clear();
         // disconnected_components.clear();
-        pixel_sizes.clear();
+        // pixel_sizes.clear();
     }
 
 if(writeToFile){
@@ -562,7 +576,7 @@ if(writeToFile){
             csvFile.close();
       }else{
             std::cout << "Writing test mode csv file..." << std::endl;
-            csvFile << "filename,category,pixels,mc_percentage,total_tree_bits,tree_rate,2bit_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,deflate_bits,deflate_unseparated,transfer_codes,transfer_map,read_img_time,setEdgeBitsTime,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,rebuild_dpcm_huffman_time,decode_colors_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
+            csvFile << "filename,category,pixels,mc_percentage,total_tree_bits,tree_rate,2bit_rate,red_edgebits_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,deflate_bits,deflate_unseparated,transfer_codes,transfer_map,tree_bpp,avg_straight_lenght,read_img_time,setEdgeBitsTime,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,dec_construction_time,dec_bitstring_time,sls_construction_time,sls_bitstring_time,rebuild_dpcm_huffman_time,decode_colors_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
         for (size_t i = 0; i < filenames.size(); ++i) {
             csvFile << filenames[i] << ","
                     << categories[i] << ","
@@ -571,6 +585,7 @@ if(writeToFile){
                     << total_tree_bits[i] << ","
                     << tree_compression_rates_total[i] << ","
                     << paths2bit_compression_rates_total[i] << ","
+                    << reduced_edgebits_compression_rates_total[i] << ","
                     << tree_3bit_bits[i] << ","
                     << tree_current_bits[i] << ","
                     << tree_start_bits[i] << ","
@@ -588,6 +603,8 @@ if(writeToFile){
                         << deflate_bits_unseparated[i] << ","
                         << bitsfortransferingcodes[i] << ","
                         << bitsfortransferingfrequencymap[i] << ","
+                        << tree_bpp[i] << ","
+                        << avg_straight_length[i] << ","
                     << read_img_time[i] << ","
                     << setEdgeBitsTime[i] << ","
                     << region_color_UF_time[i] << ","
@@ -599,6 +616,10 @@ if(writeToFile){
                     << rle_compression_rates_total[i] << ","
                     << straights_huffman_compression_rates_total[i] << ","
                     << paths_2bits_compression_times_total[i] << ","
+                    << dec_construction_time[i] << ","
+                        << dec_bitstring_time[i] << ","
+                        << sls_construction_time[i] << ","
+                        << sls_bitstring_time[i] << ","
                     << rebuild_dpcm_huffman_time[i] << ","
                     << decode_colors_time[i] << ","
                     << reconstruct_tree_edgebits_time[i] << ","

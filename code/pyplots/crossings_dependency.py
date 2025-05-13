@@ -4,7 +4,7 @@ import seaborn as sns
 from scipy import stats
 
 # Load the CSV data
-df = pd.read_csv("code/output_files/mc_results_test.csv")
+df = pd.read_csv("code/output_files/mc_results_test_screenshots.csv")
 
 # Calculate the difference between crossings and disc_comp
 df['crossings_minus_disc_comp'] = df['crossings'] - df['disc_comp']

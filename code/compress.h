@@ -50,13 +50,13 @@ struct CompressedImage{
     double paths2bit_compression_rate;
     std::vector<uint8_t> transparencyValues;
 
-    long long tree_compression_time;
-    long long old_compression_time;
-    long long rle_compression_time;
-    long long straights_compression_time;
-    long long straights_huffman_compression_time;
-    long long reduced_edgebits_compression_time;
-    long long paths2bit_compression_time;
+    double tree_compression_time;
+    double old_compression_time;
+    double rle_compression_time;
+    double straights_compression_time;
+    double straights_huffman_compression_time;
+    double reduced_edgebits_compression_time;
+    double paths2bit_compression_time;
 
     int threeBitCount;
     int currentTreeDirectionBits;
@@ -71,18 +71,25 @@ struct CompressedImage{
     int deflate_bits;
     int deflate_bits_unseparated;
     int new2bitDirectionBits;
+    double tree_bpp;
+    double avg_straight_length;
 
     int bitsfortransferingcodes;
     int bitsfortransferingfrequencymap;
 
-    long long read_img_time;
-    long long setEdgeBitsTime;
-    int region_color_dfs_time;
-    int region_color_UF_time;
-    int dpcm_huffman_time;
-    int dpcm_huffman_bitstring_time;
-    int tree_construction_time;
-    int tree_bitstring_time;
+    double read_img_time;
+    double setEdgeBitsTime;
+    double region_color_dfs_time;
+    double region_color_UF_time;
+    double dpcm_huffman_time;
+    double dpcm_huffman_bitstring_time;
+    double tree_construction_time;
+    double tree_bitstring_time;
+    double dec_construction_time;
+    double dec_bitstring_time;
+    double sls_construction_time;
+    double sls_bitstring_time;
+
 };
 
 //std::tuple<std::vector<RGB>, PathInfoVector, cv::Mat, PathInfoVector, RLEVector, Straights, std::vector<bool>> compress(const std::string& imagePath);

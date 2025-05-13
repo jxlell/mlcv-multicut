@@ -44,11 +44,11 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     long long paths_2bits_decompression_time = 0;
     long long straights_decompression_time = 0;
 
-    int rebuild_dpcm_huffman_time = 0;
-    long long decode_colors_time = 0;
-    long long assemble_tree_paths_time = 0;
-    long long reconstruct_tree_edgebits_time = 0;
-    long long dfs_reconstruction_time = 0;
+    double rebuild_dpcm_huffman_time = 0;
+    double decode_colors_time = 0;
+    double assemble_tree_paths_time = 0;
+    double reconstruct_tree_edgebits_time = 0;
+    double dfs_reconstruction_time = 0;
     // long long UF_reconstruction_time = 0;
 
     std::vector<bool> straightsHuffmanCodesBitString;// = compImg.straightsHuffmanCodesBitString;
@@ -96,6 +96,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     std::vector<bool> regionColorBitStringParsed;
     std::vector<RGB> decodedColorsTree;
     std::vector<RGB> inflatedRegionColorsVec;
+    std::vector<RGB> decodedColorsTree_inflated;
 
     auto start = std::chrono::high_resolution_clock::now();
     auto end = std::chrono::high_resolution_clock::now();
@@ -144,84 +145,87 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
                 inflatedRegionColorsBitString.push_back((byte >> i) & 1);
             }
         }
+
+        start = std::chrono::high_resolution_clock::now();
+        decodedColorsTree_inflated = decodeDifferences(inflatedRegionColors);
         
         // inflatedRegionColorsVec = colorBitStringToRGBVector(inflatedRegionColorsBitString);
-        inflatedRegionColorsVec = separatedChannelstoRGBVector(inflatedRegionColors);
+        // inflatedRegionColorsVec = separatedChannelstoRGBVector(inflatedRegionColors);
 
         offset += deflatedBitsAmountInt * 8;
     
-        std::string freqMapAmountStr = pathsBitStringStr.substr(offset, 9);
-        int freqMapAmount = std::stoi(freqMapAmountStr, nullptr, 2);
-        offset += 9;
+        // std::string freqMapAmountStr = pathsBitStringStr.substr(offset, 9);
+        // int freqMapAmount = std::stoi(freqMapAmountStr, nullptr, 2);
+        // offset += 9;
     
-        start = std::chrono::high_resolution_clock::now();
+        // start = std::chrono::high_resolution_clock::now();
     
-        std::vector<uint8_t> keys;
-        for (int i = 0; i < freqMapAmount; ++i) {
-            std::string freqStr = pathsBitStringStr.substr(offset, 8);
-            uint8_t key = static_cast<uint8_t>(std::stoi(freqStr, nullptr, 2));
-            keys.push_back(key);
-            offset += 8;
-        }
-    
-        int freqBits = std::ceil(std::log2(3 * cols_int * rows_int + 1));
-        std::vector<int> frequencies;
-        for (int i = 0; i < freqMapAmount; ++i) {
-            std::string freqStr = pathsBitStringStr.substr(offset, freqBits);
-            int frequency = std::stoi(freqStr, nullptr, 2);
-            frequencies.push_back(frequency);
-            offset += freqBits;
-        }
-    
-        std::map<uint8_t, int> frequencyMapDifferences;
-        for (size_t i = 0; i < keys.size(); ++i) {
-            frequencyMapDifferences[keys[i]] = frequencies[i];
-        }
-    
-        auto [RGBHuffmanCodes, RGBroot] = buildRGBCodes(frequencyMapDifferences);
-    
-        end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration<double, std::milli>(end - start).count();
-
-        rebuild_dpcm_huffman_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        std::cout << "Rebuild DPCM Huffman time: " << rebuild_dpcm_huffman_time << "ms" << std::endl;
-        start = std::chrono::high_resolution_clock::now();
-    
-        std::string huffmanBitsAmountStr = pathsBitStringStr.substr(offset, 32);
-        int huffmanBitsAmount = std::stoi(huffmanBitsAmountStr, nullptr, 2);
-        offset += 32;
-    
-        std::string huffmanEncodedStr = pathsBitStringStr.substr(offset, huffmanBitsAmount);
-        offset += huffmanBitsAmount;
-    
-        std::vector<uint8_t> decodedDifferences;
-        std::string decodedStr;
-        RGBHuffmanNode* currentNode = RGBroot;
-    
-        if (!RGBroot->left && !RGBroot->right) {
-            int totalCount = frequencyMapDifferences.begin()->second;
-            decodedDifferences = std::vector<uint8_t>(totalCount, RGBroot->data);
-            decodedStr = std::string(totalCount, char(RGBroot->data));
-        } else {
-            for (char bit : huffmanEncodedStr) {
-                currentNode = (bit == '0') ? currentNode->left : currentNode->right;
-                if (!currentNode->left && !currentNode->right) {
-                    decodedStr += char(currentNode->data);
-                    decodedDifferences.push_back(currentNode->data);
-                    currentNode = RGBroot;
-                }
-            }
-        }
-
-        // std::cout << "Decoded Differences: ";
-        // for (uint8_t diff : decodedDifferences) {
-        //     std::cout << static_cast<int>(diff) << " ";
+        // std::vector<uint8_t> keys;
+        // for (int i = 0; i < freqMapAmount; ++i) {
+        //     std::string freqStr = pathsBitStringStr.substr(offset, 8);
+        //     uint8_t key = static_cast<uint8_t>(std::stoi(freqStr, nullptr, 2));
+        //     keys.push_back(key);
+        //     offset += 8;
         // }
-        // std::cout << std::endl;
     
-        decodedColorsTree = decodeDifferences(decodedDifferences);
+        // int freqBits = std::ceil(std::log2(3 * cols_int * rows_int + 1));
+        // std::vector<int> frequencies;
+        // for (int i = 0; i < freqMapAmount; ++i) {
+        //     std::string freqStr = pathsBitStringStr.substr(offset, freqBits);
+        //     int frequency = std::stoi(freqStr, nullptr, 2);
+        //     frequencies.push_back(frequency);
+        //     offset += freqBits;
+        // }
+    
+        // std::map<uint8_t, int> frequencyMapDifferences;
+        // for (size_t i = 0; i < keys.size(); ++i) {
+        //     frequencyMapDifferences[keys[i]] = frequencies[i];
+        // }
+    
+        // auto [RGBHuffmanCodes, RGBroot] = buildRGBCodes(frequencyMapDifferences);
+    
+        // end = std::chrono::high_resolution_clock::now();
+        // auto duration = std::chrono::duration<double, std::milli>(end - start).count();
+
+        // rebuild_dpcm_huffman_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        // std::cout << "Rebuild DPCM Huffman time: " << rebuild_dpcm_huffman_time << "ms" << std::endl;
+        // start = std::chrono::high_resolution_clock::now();
+    
+        // std::string huffmanBitsAmountStr = pathsBitStringStr.substr(offset, 32);
+        // int huffmanBitsAmount = std::stoi(huffmanBitsAmountStr, nullptr, 2);
+        // offset += 32;
+    
+        // std::string huffmanEncodedStr = pathsBitStringStr.substr(offset, huffmanBitsAmount);
+        // offset += huffmanBitsAmount;
+    
+        // std::vector<uint8_t> decodedDifferences;
+        // std::string decodedStr;
+        // RGBHuffmanNode* currentNode = RGBroot;
+    
+        // if (!RGBroot->left && !RGBroot->right) {
+        //     int totalCount = frequencyMapDifferences.begin()->second;
+        //     decodedDifferences = std::vector<uint8_t>(totalCount, RGBroot->data);
+        //     decodedStr = std::string(totalCount, char(RGBroot->data));
+        // } else {
+        //     for (char bit : huffmanEncodedStr) {
+        //         currentNode = (bit == '0') ? currentNode->left : currentNode->right;
+        //         if (!currentNode->left && !currentNode->right) {
+        //             decodedStr += char(currentNode->data);
+        //             decodedDifferences.push_back(currentNode->data);
+        //             currentNode = RGBroot;
+        //         }
+        //     }
+        // }
+
+        // // std::cout << "Decoded Differences: ";
+        // // for (uint8_t diff : decodedDifferences) {
+        // //     std::cout << static_cast<int>(diff) << " ";
+        // // }
+        // // std::cout << std::endl;
+    
+        // decodedColorsTree = decodeDifferences(decodedDifferences);
         end = std::chrono::high_resolution_clock::now();
-        decode_colors_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        decode_colors_time = std::chrono::duration<double, std::milli>(end - start).count();
     
         start = std::chrono::high_resolution_clock::now();
     
@@ -255,7 +259,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         }
     
         end = std::chrono::high_resolution_clock::now();
-        assemble_tree_paths_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        assemble_tree_paths_time = std::chrono::duration<double, std::milli>(end - start).count();
         tree_decompression_time += assemble_tree_paths_time;
     
         start = std::chrono::high_resolution_clock::now();
@@ -280,8 +284,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         }
     
         end = std::chrono::high_resolution_clock::now();
-        reconstruct_tree_edgebits_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        tree_decompression_time += reconstruct_tree_edgebits_time;
+        reconstruct_tree_edgebits_time = std::chrono::duration<double, std::milli>(end - start).count();
     }
     
     
@@ -919,10 +922,11 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     start = std::chrono::high_resolution_clock::now();
     // image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, regionColorsFromBitString, transparencyValues);
     // image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, decodedColorsTree, transparencyValues);
-    image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, inflatedRegionColorsVec, transparencyValues);
+    // image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, inflatedRegionColorsVec, transparencyValues);
+    image = setRegionColorsFromImageSearch(image, reconstructed_edgeBits_from_paths, decodedColorsTree_inflated, transparencyValues);
     end = std::chrono::high_resolution_clock::now();
     // std::cout << "DFS reconstruction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
-    dfs_reconstruction_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    dfs_reconstruction_time = std::chrono::duration<double, std::milli>(end - start).count();
 
     // for (auto t : transparencyValues){
     //     std::cout << (int)t << ", ";
@@ -951,49 +955,54 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     //printSize();
     //bool success = areImagesIdentical(originalImg, image);
     //bool success = (edgeBits01 == reconstructed_edgeBits_from_paths) && (edgeBits01 == reconstructed_edgeBits_horizontals) && (edgeBits01 == reconstructed_edgeBits_2bits) && (edgeBits01 == reconstructed_edgeBits_straights) && (edgeBits01 == edgeBitsFromBitString) && (edgeBits01 == reconstructed_edgeBits_2bits_original) && (edgeBits01 == reconstructed_edgeBits_straights_no_huff);
-    if(compressionMethods.useTree){
-        success = (edgeBits01 == reconstructed_edgeBits_from_paths);  
-        if(edgeBits01 != reconstructed_edgeBits_from_paths){
-            std::cout << "reconstructed edge bits from paths do not match!" << std::endl;
-        }
+    // bool success = true;
+
+    if (compressionMethods.useTree) {
+        bool match = (edgeBits01 == reconstructed_edgeBits_from_paths);
+        success = success && match;
+        if (!match)
+            std::cout << "Reconstructed edge bits from tree do not match!\n";
     }
-    if(compressionMethods.useReducedEdgebits){
-        success = (edgeBits01 == reconstructed_edgeBits_horizontals); 
-        if(edgeBits01 != reconstructed_edgeBits_horizontals){
-            std::cout << "reconstructed edge bits from horizontals do not match!" << std::endl;
-        }
+
+    if (compressionMethods.useReducedEdgebits) {
+        bool match = (edgeBits01 == reconstructed_edgeBits_horizontals);
+        success = success && match;
+        if (!match)
+            std::cout << "Reconstructed edge bits from horizontals do not match!\n";
     }
-    if(compressionMethods.use2bits){
-        success = (edgeBits01 == reconstructed_edgeBits_2bits);
-        success = (edgeBits01 == reconstructed_edgeBits_2bits_original);
-        if(edgeBits01 != reconstructed_edgeBits_2bits){
-            std::cout << "reconstructed edge bits from 2bits do not match!" << std::endl;
-        }
-        if(edgeBits01 != reconstructed_edgeBits_2bits_original){
-            std::cout << "reconstructed edge bits from 2bits original do not match!" << std::endl;
-        }
+
+    if (compressionMethods.use2bits) {
+        bool match1 = (edgeBits01 == reconstructed_edgeBits_2bits);
+        bool match2 = (edgeBits01 == reconstructed_edgeBits_2bits_original);
+        success = success && match1 && match2;
+        if (!match1)
+            std::cout << "Reconstructed edge bits from 2bits do not match!\n";
+        if (!match2)
+            std::cout << "Reconstructed edge bits from 2bits original do not match!\n";
     }
-    if(compressionMethods.useStraights && compressionMethods.useHuffman){
-        success = (edgeBits01 == reconstructed_edgeBits_straights);
-        success = (edgeBits01 == reconstructed_edgeBits_straights_no_huff);
-        if(edgeBits01 != reconstructed_edgeBits_straights){
-            std::cout << "reconstructed edge bits from straights do not match!" << std::endl;
-        }
-        if(edgeBits01 != reconstructed_edgeBits_straights_no_huff){
-            std::cout << "reconstructed edge bits from straights no huff do not match!" << std::endl;
-        }
+
+    if (compressionMethods.useStraights && compressionMethods.useHuffman) {
+        bool match1 = (edgeBits01 == reconstructed_edgeBits_straights);
+        bool match2 = (edgeBits01 == reconstructed_edgeBits_straights_no_huff);
+        success = success && match1 && match2;
+        if (!match1)
+            std::cout << "Reconstructed edge bits from straights do not match!\n";
+        if (!match2)
+            std::cout << "Reconstructed edge bits from straights no huff do not match!\n";
     }
-    if(compressionMethods.useEdgebits){
-        success = (edgeBits01 == edgeBitsFromBitString);
-        if(edgeBits01 != edgeBitsFromBitString){
-            std::cout << "reconstructed edge bits from bitstring do not match!" << std::endl;
-        }
+
+    if (compressionMethods.useEdgebits) {
+        bool match = (edgeBits01 == edgeBitsFromBitString);
+        success = success && match;
+        if (!match)
+            std::cout << "Reconstructed edge bits from bitstring do not match!\n";
     }
+
 
     cv::Mat reconstructedBGR;
     cv::cvtColor(image, reconstructedBGR, cv::COLOR_BGRA2BGR);
 
-    success = areImagesIdentical(originalImg, reconstructedBGR);
+    success = success && areImagesIdentical(originalImg, reconstructedBGR);
 
     // std::cout << "channels for original image: " << originalImg.channels() << std::endl;
     // cv::Vec4b firstPixel = image.at<cv::Vec4b>(0, 0);
@@ -1254,8 +1263,8 @@ std::vector<RGB> decodeDifferences(const std::vector<uint8_t>& encodedDifference
     for (size_t i = 3; i < encodedDifferences.size(); i += 3) {
         uint8_t prev_r = r;
         r = static_cast<uint8_t>(r + static_cast<int8_t>(encodedDifferences[i]));     // Restore R
-        g = static_cast<uint8_t>(g + static_cast<int8_t>(encodedDifferences[i + 1])); // Restore G
-        b = static_cast<uint8_t>(b + static_cast<int8_t>(encodedDifferences[i + 2])); // Restore B
+        g = static_cast<uint8_t>(r + static_cast<int8_t>(encodedDifferences[i + 1])); // Restore G
+        b = static_cast<uint8_t>(r + static_cast<int8_t>(encodedDifferences[i + 2])); // Restore B
 
         decodedPixels.push_back({ r, g, b });
     }

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load your CSV
-df = pd.read_csv("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_test.csv")
+df = pd.read_csv("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_test_screenshots.csv")
 
 # Sort by filename or another metric
 df_sorted = df.sort_values(by="tree_rate")
@@ -15,29 +15,39 @@ x = np.arange(len(df_sorted))
 best_methods = []
 for index, row in df_sorted.iterrows():
     rates = {
+        "red_edgebits_rate": row["red_edgebits_rate"],
         "tree_rate": row["tree_rate"],
-        "2bit_rate": row["2bit_rate"],
-        "straights_huffman_rate": row["straights_huffman_rate"],
-        "rle_rate": row["rle_rate"]
+        # "2bit_rate": row["2bit_rate"],
+        "rle_rate": row["rle_rate"],
+        "straights_huffman_rate": row["straights_huffman_rate"]
     }
     best_method = max(rates, key=rates.get)
     best_methods.append(best_method)
 
 # Color map for the methods
 color_map = {
+    "red_edgebits_rate": "tab:red",
     "tree_rate": "tab:purple",
-    "2bit_rate": "tab:orange",
-    "straights_huffman_rate": "tab:brown",
-    "rle_rate": "tab:pink"
+    "rle_rate": "tab:orange",
+    "straights_huffman_rate": "tab:brown"
+    # "rle_rate": "tab:pink"
 }
 
 # Create the plot
 fig, ax = plt.subplots(figsize=(14, 6))
 
+label_map = {
+    "tree_rate": "Directional Tree (DT)",
+    # "2bit_rate": "2bit Rate",
+    "rle_rate": "Directional Edge Chains (DEC)",
+    "straights_huffman_rate": "Straight Line Segments (SLS)"
+}
+
 # Plot each compression rate as scatter points without connecting lines
-for i, method in enumerate(["tree_rate", "2bit_rate", "straights_huffman_rate", "rle_rate"]):
+for i, method in enumerate(["tree_rate", "rle_rate", "straights_huffman_rate"]):
     color = color_map[method]
-    ax.scatter(x, df_sorted[method], label=method, color=color, marker='o', edgecolor='black', zorder=3, alpha=1, s=30)
+    label = label_map[method]
+    ax.scatter(x, df_sorted[method], label=label, color=color, marker='o', edgecolor='black', zorder=3, alpha=1, s=30)
 
 # Color-code the points based on the best method
 # for i, best_method in enumerate(best_methods):
@@ -54,7 +64,7 @@ for i, best_method in enumerate(best_methods):
 ax.set_ylabel("Compression Rate")
 ax.set_yscale('log')
 ax.set_title("Comparison of Compression Rates with Best Method Highlighted")
-ax.legend(loc="upper right")
+ax.legend(loc="upper left")
 
 # Optional tweaks
 plt.xticks([])  # Hide x-axis labels if not needed
