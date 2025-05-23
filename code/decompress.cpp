@@ -12,6 +12,7 @@
 #include <string>
 #include "compress.h"
 #include "huffman.h"
+#include <stack>
 extern "C" {
     #include "zlib.h"
   }

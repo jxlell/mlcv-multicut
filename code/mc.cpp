@@ -4,7 +4,7 @@
 #include "Image.h"
 #include "partition.hxx"
 #include "Util.h"
-
+#include <stack>
 
 
 RGB getVertexColor(int v, int vertices, cv::Mat img, bool invert) {

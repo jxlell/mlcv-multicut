@@ -1,6 +1,20 @@
 {
     "version": "2.0.0",
     "tasks": [
+{
+  "label": "build multicut with clang in MSVC env",
+  "type": "shell",
+  "command": "cmd.exe",
+  "args": [
+    "/c",
+    "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat\" && \"C:\\Program Files\\LLVM\\bin\\clang++.exe\" -std=c++17 -O3 -g -o \"${workspaceFolder}\\code\\multicut.exe\" \"${workspaceFolder}\\code\\Image.cpp\" \"${workspaceFolder}\\code\\Util.cpp\" \"${workspaceFolder}\\code\\main.cpp\" \"${workspaceFolder}\\code\\huffman.cpp\" \"${workspaceFolder}\\code\\compress.cpp\" \"${workspaceFolder}\\code\\mc.cpp\" \"${workspaceFolder}\\code\\decompress.cpp\" -I\"${workspaceFolder}\\zlib\\include\" -L\"${workspaceFolder}\\zlib\" -lzdll -fcolor-diagnostics -fansi-escape-codes"
+  ],
+  "problemMatcher": ["$gcc"],
+  "group": {
+    "kind": "build",
+    "isDefault": true
+  }
+},
         {
             "label": "build multicut",
             "type": "shell",

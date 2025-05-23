@@ -12,6 +12,7 @@
 #include <string>
 #include "huffman.h"
 #include <chrono>
+#include <stack>
 
 extern "C" {
     #include "zlib.h"

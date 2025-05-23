@@ -6,6 +6,7 @@
 #include <numeric>
 #include <type_traits>
 #include <unordered_set>
+#include <stack>
 
 int getNeighbor(int currentEdge, Direction currentDir, int neighborIndex, int cols, int rows){
     std::vector<int> edgeOffsets;
