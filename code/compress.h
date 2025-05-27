@@ -89,6 +89,8 @@ struct CompressedImage{
     double dec_bitstring_time;
     double sls_construction_time;
     double sls_bitstring_time;
+    double rcmv_construction_time;
+    double rcmv_bitstring_time;
 
 };
 

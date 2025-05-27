@@ -21,6 +21,12 @@ struct decompInfo{
     double assemble_tree_paths_time;
     double reconstruct_tree_edgebits_time;
     double dfs_reconstruction_time;
+    double reconstruct_rcmv_time;
+    double reconstruct_rcmv_cmv_time;
+    double dec_reconstruction_time;
+    double dec_cmv_reconstruction_time;
+    double sls_reconstruction_time;
+    double sls_cmv_reconstruction_time;
     // int UF_reconstruction_time;
 };
 

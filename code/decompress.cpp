@@ -50,6 +50,12 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     double reconstruct_tree_edgebits_time = 0;
     double dfs_reconstruction_time = 0;
     // long long UF_reconstruction_time = 0;
+    double reconstruct_rcmv_time = 0;
+    double reconstruct_rcmv_cmv_time = 0;
+    double dec_reconstruction_time = 0;
+    double dec_cmv_reconstruction_time = 0;
+    double sls_reconstruction_time = 0;
+    double sls_cmv_reconstruction_time = 0;
 
     std::vector<bool> straightsHuffmanCodesBitString;// = compImg.straightsHuffmanCodesBitString;
     std::vector<uint32_t> straightsHuffmanCodesStartPoints;// = compImg.straightsHuffmanCodesStartPoints;
@@ -146,7 +152,6 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
             }
         }
 
-        start = std::chrono::high_resolution_clock::now();
         decodedColorsTree_inflated = decodeDifferences(inflatedRegionColors);
         
         // inflatedRegionColorsVec = colorBitStringToRGBVector(inflatedRegionColorsBitString);
@@ -338,10 +343,14 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         for (size_t i = 0; i < reducedVerticalBitsAmount; ++i) {
             reducedVerticalBits[i] = (reducedEdgeBitsBitStringStr[bitIndex++] == '1');
         }
+        end = std::chrono::high_resolution_clock::now();
+        reconstruct_rcmv_time = std::chrono::duration<double, std::milli>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
         
         //reconstruct edgebits from horizontals/verticals
         reconstructed_edgeBits_horizontals = reconstruct_edgeBits_from_Horizontals(horizontalBits, reducedVerticalBits, cols, rows);
         end = std::chrono::high_resolution_clock::now();
+        reconstruct_rcmv_cmv_time = std::chrono::duration<double, std::milli>(end - start).count();
         reduced_edgebits_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     
     }
@@ -483,8 +492,8 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         }
         end = std::chrono::high_resolution_clock::now();
         paths_2bits_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
-
+        dec_reconstruction_time = std::chrono::duration<double, std::milli>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
 
         // Compare paths_2bit_from_bitstring and paths_2bit_nonRLE
         bool pathsMatch = (paths_2bit_from_bitstring == paths_2bit_nonRLE);
@@ -498,7 +507,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         reconstructed_edgeBits_2bits_original = reconstruct_edgeBits2bits(paths_2bit_from_bitstring, edgeBitsSize, cols_int, rows_int);
         end = std::chrono::high_resolution_clock::now();
         paths_2bits_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
+        dec_cmv_reconstruction_time = std::chrono::duration<double, std::milli>(end - start).count();
 
         // ----------------------------------------------
         // reconstruct only directions from rle bitstring
@@ -782,8 +791,12 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
             std::vector<bool> count = intToBool(straightsLengthsDecoded[i]);
             straightsDecoded.push_back(std::make_tuple(startEdge, count));
         }
+        end = std::chrono::high_resolution_clock::now();
+        sls_reconstruction_time = std::chrono::duration<double, std::milli>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
         reconstructed_edgeBits_straights = reconstructStraights(straightsDecoded, edgeBitsSize, cols, rows);
         end = std::chrono::high_resolution_clock::now();
+        sls_cmv_reconstruction_time = std::chrono::duration<double, std::milli>(end - start).count();
         straights_huffman_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
         // delete huffman tree from memory 
@@ -1055,7 +1068,13 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     decode_colors_time,
     assemble_tree_paths_time,
     reconstruct_tree_edgebits_time,
-    dfs_reconstruction_time
+    dfs_reconstruction_time,
+    reconstruct_rcmv_time,
+    reconstruct_rcmv_cmv_time,
+    dec_reconstruction_time,
+    dec_cmv_reconstruction_time,
+    sls_reconstruction_time,
+    sls_cmv_reconstruction_time
     };
     
     return decomp_info;

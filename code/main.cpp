@@ -115,6 +115,8 @@ int main() {
         vector<double> dec_bitstring_time;
         vector<double> sls_construction_time;
         vector<double> sls_bitstring_time;
+        vector<double> rcmv_construction_time;
+        vector<double> rcmv_bitstring_time;
 
       vector<double> rebuild_dpcm_huffman_time;
       vector<double> decode_colors_time;
@@ -122,6 +124,12 @@ int main() {
       vector<double> reconstruct_tree_edgebits_time;
       vector<double> dfs_reconstruction_time;
       // vector<int> UF_reconstruction_time;
+      vector<double> reconstruct_rcmv_time;
+        vector<double> reconstruct_rcmv_cmv_time;
+        vector<double> dec_reconstruction_time;
+        vector<double> dec_cmv_reconstruction_time;
+        vector<double> sls_reconstruction_time;
+        vector<double> sls_cmv_reconstruction_time;
 
       vector<long long> total_tree_bits;
       vector<int> new2bitDirectionBits;
@@ -139,14 +147,14 @@ int main() {
 
 
     std::unordered_set<std::string> category_set = {
-        "icon_64",
-        "icon_512",
-        "photo_kodak",
-        "photo_tecnick",
-        "photo_wikipedia",
-        "pngimg",
-        "screenshot_web",
-        "screenshot_game",
+        // "icon_64",
+        // "icon_512",
+        // "photo_kodak",
+        // "photo_tecnick",
+        // "photo_wikipedia",
+        // "pngimg",
+        // "screenshot_web",
+        // "screenshot_game",
         "textures_photo",
         "textures_pk",
         "textures_pk01",
@@ -189,7 +197,7 @@ int main() {
     int progress = 0;
 
     if(single_image){
-        parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code";
+        parentDir = "/Users/jalell/Documents/GitHub/mlcv-multicut/code";
         category_set = {"test_img"};
     }
 
@@ -288,6 +296,8 @@ int main() {
                 dec_bitstring_time.push_back(compImg.dec_bitstring_time);
                 sls_construction_time.push_back(compImg.sls_construction_time);
                 sls_bitstring_time.push_back(compImg.sls_bitstring_time);
+                rcmv_construction_time.push_back(compImg.rcmv_construction_time);
+                rcmv_bitstring_time.push_back(compImg.rcmv_bitstring_time);
             
 
             //stateless approach
@@ -310,7 +320,13 @@ int main() {
             decode_colors_time.push_back(decomp_info.decode_colors_time);
             assemble_tree_paths_time.push_back(decomp_info.assemble_tree_paths_time);
             reconstruct_tree_edgebits_time.push_back(decomp_info.reconstruct_tree_edgebits_time);
-            dfs_reconstruction_time.push_back(decomp_info.dfs_reconstruction_time/1000.0f);
+            dfs_reconstruction_time.push_back(decomp_info.dfs_reconstruction_time);
+            reconstruct_rcmv_time.push_back(decomp_info.reconstruct_rcmv_time);
+            reconstruct_rcmv_cmv_time.push_back(decomp_info.reconstruct_rcmv_cmv_time);
+            dec_reconstruction_time.push_back(decomp_info.dec_reconstruction_time);
+            dec_cmv_reconstruction_time.push_back(decomp_info.dec_cmv_reconstruction_time);
+            sls_reconstruction_time.push_back(decomp_info.sls_reconstruction_time);
+            sls_cmv_reconstruction_time.push_back(decomp_info.sls_cmv_reconstruction_time);
         std::cout << "pushed dfs_reconstruction_time: " << (decomp_info.dfs_reconstruction_time / 1000.0f) << std::endl;
 
             progress++;
@@ -576,7 +592,7 @@ if(writeToFile){
             csvFile.close();
       }else{
             std::cout << "Writing test mode csv file..." << std::endl;
-            csvFile << "filename,category,pixels,mc_percentage,total_tree_bits,tree_rate,2bit_rate,red_edgebits_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,deflate_bits,deflate_unseparated,transfer_codes,transfer_map,tree_bpp,avg_straight_lenght,read_img_time,setEdgeBitsTime,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,dec_construction_time,dec_bitstring_time,sls_construction_time,sls_bitstring_time,rebuild_dpcm_huffman_time,decode_colors_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
+            csvFile << "filename,category,pixels,mc_percentage,total_tree_bits,tree_rate,2bit_rate,red_edgebits_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,deflate_bits,deflate_unseparated,transfer_codes,transfer_map,tree_bpp,avg_straight_lenght,read_img_time,setEdgeBitsTime,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,dec_construction_time,dec_bitstring_time,sls_construction_time,sls_bitstring_time,rcmv_construction_time,rcmv_bitstring_time,rebuild_dpcm_huffman_time,decode_colors_time,cmv_reconstruction_time,reconstruct_rcmv_time,reconstruct_rcmv_cmv_time,dec_reconstruction_time,dec_cmv_reconstruction_time,sls_reconstruction_time,sls_cmv_reconstruction_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
         for (size_t i = 0; i < filenames.size(); ++i) {
             csvFile << filenames[i] << ","
                     << categories[i] << ","
@@ -620,8 +636,17 @@ if(writeToFile){
                         << dec_bitstring_time[i] << ","
                         << sls_construction_time[i] << ","
                         << sls_bitstring_time[i] << ","
+                        << rcmv_construction_time[i] << ","
+                        << rcmv_bitstring_time[i] << ","
                     << rebuild_dpcm_huffman_time[i] << ","
                     << decode_colors_time[i] << ","
+                    << old_decompression_times_total[i] << ","
+                    << reconstruct_rcmv_time[i] << ","
+                    << reconstruct_rcmv_cmv_time[i] << ","
+                    << dec_reconstruction_time[i] << ","
+                    << dec_cmv_reconstruction_time[i] << ","
+                    << sls_reconstruction_time[i] << ","
+                    << sls_cmv_reconstruction_time[i] << ","
                     << reconstruct_tree_edgebits_time[i] << ","
                     << dfs_reconstruction_time[i] << ","
                     << assemble_tree_paths_time[i] << "\n"; 
