@@ -6,7 +6,7 @@
 #include <filesystem> 
 #include <fstream>
 #include <numeric>
-#include "Compressor.h"
+// #include "Compressor.h"
 #include "Decompressor.h"
 #include "Util.h"
 #include "compress.h"
@@ -139,25 +139,25 @@ int main() {
 
 
     std::unordered_set<std::string> category_set = {
-        // "icon_64",
-        // "icon_512",
-        // "photo_kodak",
-        // "photo_tecnick",
-        // "photo_wikipedia",
-        // "pngimg",
-        // "screenshot_web",
-        // "screenshot_game",
-        // "textures_photo",
-        // "textures_pk",
-        // "textures_pk01",
-        // "textures_pk02",
-        // "textures_plants",
+        "icon_64",
+        "icon_512",
+        "photo_kodak",
+        "photo_tecnick",
+        "photo_wikipedia",
+        "pngimg",
+        "screenshot_web",
+        "screenshot_game",
+        "textures_photo",
+        "textures_pk",
+        "textures_pk01",
+        "textures_pk02",
+        "textures_plants",
 
 
-        "screenshot_game_reduced2"
+        // "screenshot_game_reduced2"
     };
 
-    std::ifstream inputFile("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/singlefile.txt");
+    std::ifstream inputFile("/Users/jalell/Documents/GitHub/mlcv-multicut/code/singlefile.txt");
     if (!inputFile.is_open()) {
         std::cerr << "Error: Unable to open file for reading." << std::endl;
         return -1;
@@ -184,7 +184,7 @@ int main() {
                      (category_set.size() == 1);
     test_mode = true;
 
-    std::filesystem::path parentDir = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/code/images";
+    std::filesystem::path parentDir = "/Users/jalell/Documents/images";
     int imgCount = countImgFiles(parentDir, category_set);
     int progress = 0;
 
@@ -427,13 +427,13 @@ int main() {
 if(writeToFile){
       ofstream csvFile;
       if(single_image && !test_mode){
-            csvFile.open("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_single.csv");
+            csvFile.open("/Users/jalell/Documents/GitHub/mlcv-multicut/code/output_files/mc_results_single.csv");
       }
       if(!single_image && !test_mode){
-            csvFile.open("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results.csv");
+            csvFile.open("/Users/jalell/Documents/GitHub/mlcv-multicut/code/output_files/mc_results.csv");
       }
       if(test_mode){
-            csvFile.open("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_test.csv");
+            csvFile.open("/Users/jalell/Documents/GitHub/mlcv-multicut/code/output_files/mc_results_test.csv");
       }
       if (!csvFile.is_open()) {
             cerr << "Error: Unable to open CSV file for writing." << endl;

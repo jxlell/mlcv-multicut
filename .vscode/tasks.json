@@ -1,49 +1,21 @@
 {
     "version": "2.0.0",
     "tasks": [
-        {
-            "label": "build multicut",
-            "type": "shell",
-            "command": "/usr/bin/clang++",
-            "args": [
-                "-std=c++17",
-                "-O3",
-                "-g",
-                "-o",
-                "${workspaceFolder}/code/multicut",
-                "${workspaceFolder}/code/Image.cpp",
-                "${workspaceFolder}/code/Util.cpp",
-                "${workspaceFolder}/code/main.cpp",
-                "${workspaceFolder}/code/huffman.cpp",
-                "${workspaceFolder}/code/compress.cpp",
-                "${workspaceFolder}/code/mc.cpp",
-                "${workspaceFolder}/code/decompress.cpp",
-
-                "${workspaceFolder}/build/adler32.o",
-                "${workspaceFolder}/build/compress.o",
-                "${workspaceFolder}/build/crc32.o",
-                "${workspaceFolder}/build/deflate.o",
-                "${workspaceFolder}/build/trees.o",
-                "${workspaceFolder}/build/zutil.o",
-                "${workspaceFolder}/build/inflate.o",
-                "${workspaceFolder}/build/infback.o",
-                "${workspaceFolder}/build/inftrees.o",
-                "${workspaceFolder}/build/inffast.o",
-                "${workspaceFolder}/build/uncompr.o",
+       {
+  "label": "build multicut",
+  "type": "shell",
+  "command": "/bin/zsh",
+  "args": [
+    "-c",
+    "clang++ -std=c++17 -O3 -g -fcolor-diagnostics -fansi-escape-codes -o code/multicut code/Image.cpp code/Util.cpp code/main.cpp code/huffman.cpp code/compress.cpp code/mc.cpp code/decompress.cpp build/adler32.o build/compress.o build/crc32.o build/deflate.o build/trees.o build/zutil.o build/inflate.o build/infback.o build/inftrees.o build/inffast.o build/uncompr.o `pkg-config --cflags --libs opencv4`"
+  ],
+  "group": "build",
+  "problemMatcher": ["$gcc"]
+}
 
 
-                "-fcolor-diagnostics",
-                "-fansi-escape-codes",
-                "`pkg-config",
-                "--cflags",
-                "--libs",
-                "opencv4`"
-            ],
-            "group": "build",
-            "problemMatcher": [
-                "$gcc"
-            ]
-        },
+
+,
         {
             "label": "build zlib via script",
             "type": "shell",
