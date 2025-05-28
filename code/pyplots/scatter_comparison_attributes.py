@@ -2,8 +2,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load CSV
-df = pd.read_csv("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_test.csv")
 
+# Load the CSV files and combine them into one DataFrame
+csv_files = [
+    'code/output_files/mc_results_test_screenshots_new.csv'
+    ,'code/output_files/mc_results_test_textures_new.csv'
+    ,'code/output_files/mc_results_test_photos_new.csv'
+    ,'code/output_files/mc_results_test_icons_new.csv'
+]
+
+# Read and concatenate all CSV files
+data_frames = [pd.read_csv(file) for file in csv_files]
+df = pd.concat(data_frames, ignore_index=True)
 
 # Sort by tree_rate
 df_sorted = df.sort_values(by="tree_rate").reset_index(drop=True)
@@ -28,5 +38,6 @@ plt.ylabel("Compression rate (lower is better)")
 plt.title("Compression Rate Comparison: Tree vs 2bit")
 plt.legend()
 plt.grid(True)
+plt.yscale('log')  
 plt.tight_layout()
 plt.show()

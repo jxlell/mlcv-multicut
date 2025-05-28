@@ -1,45 +1,47 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Load CSV
-csv_path = "/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_test_020525.csv"
-try:
-    df = pd.read_csv(csv_path)
-except FileNotFoundError:
-    raise FileNotFoundError(f"CSV file not found at path: {csv_path}")
+
 
 csv_files = [
-    'code/output_files/mc_results_test_screenshots.csv',
-    'code/output_files/mc_results_test_photos.csv',
-    'code/output_files/mc_results_test_icons.csv',
-    'code/output_files/mc_results_test_textures_pk.csv',
-    'code/output_files/mc_results_test_textures_no_pk.csv'
+    'code/output_files/mc_results_test_screenshots_new.csv',
+    'code/output_files/mc_results_test_photos_new.csv',
+    'code/output_files/mc_results_test_icons_new.csv',
+    'code/output_files/mc_results_test_textures_new.csv'
 ]
 
-data_frames = []
+df = []
 for file in csv_files:
     try:
-        data_frames.append(pd.read_csv(file))
+        df.append(pd.read_csv(file))
     except FileNotFoundError:
         print(f"Warning: File not found: {file}")
 
-if not data_frames:
+if not df:
     raise ValueError("No valid CSV files found to combine.")
 
-combined_data = pd.concat(data_frames, ignore_index=True)
+combined_data = pd.concat(df, ignore_index=True)
 
 # Filter out missing values and check for required columns
 required_columns = ['region_color_UF_time', 'region_color_dfs_time']
 for col in required_columns:
-    if col not in df.columns:
+    if col not in combined_data.columns:
         raise KeyError(f"Missing required column in CSV: {col}")
 
-uf_times = df['region_color_UF_time'].dropna()
-dfs_times = df['region_color_dfs_time'].dropna()
+uf_times = combined_data['region_color_UF_time'].dropna()
+dfs_times = combined_data['region_color_dfs_time'].dropna()
 
 # Prepare data for boxplot
 plot_data = [uf_times, dfs_times]
 labels = ['Union-Find', 'DFS']
+
+# Print average times per file
+for file, data in zip(csv_files, df):
+    avg_uf = data['region_color_UF_time'].dropna().mean()
+    avg_dfs = data['region_color_dfs_time'].dropna().mean()
+    print(f"{file}:")
+    print(f"  Average Union-Find time: {avg_uf:.4f} ms")
+    print(f"  Average DFS time:        {avg_dfs:.4f} ms")
 
 # Create boxplot
 plt.figure(figsize=(6, 4))

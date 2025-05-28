@@ -133,6 +133,8 @@ int main() {
 
       vector<long long> total_tree_bits;
       vector<int> new2bitDirectionBits;
+      vector<int> edgebits;
+      vector<int> rcmv_bits;
 
         vector<int> bitsfortransferingcodes;
         vector<int> bitsfortransferingfrequencymap;
@@ -144,22 +146,23 @@ int main() {
     vector<string> filenames;
     vector<string> categories;
     vector<double> kBSizes;
+    
 
 
     std::unordered_set<std::string> category_set = {
-        // "icon_64",
-        // "icon_512",
+        "icon_64",
+        "icon_512",
         // "photo_kodak",
         // "photo_tecnick",
         // "photo_wikipedia",
         // "pngimg",
         // "screenshot_web",
         // "screenshot_game",
-        "textures_photo",
-        "textures_pk",
-        "textures_pk01",
-        "textures_pk02",
-        "textures_plants",
+        // "textures_photo",
+        // "textures_pk",
+        // "textures_pk01",
+        // "textures_pk02",
+        // "textures_plants",
 
 
         // "screenshot_game_reduced2"
@@ -298,7 +301,8 @@ int main() {
                 sls_bitstring_time.push_back(compImg.sls_bitstring_time);
                 rcmv_construction_time.push_back(compImg.rcmv_construction_time);
                 rcmv_bitstring_time.push_back(compImg.rcmv_bitstring_time);
-            
+            edgebits.push_back(compImg.edgeBits01.size());
+            rcmv_bits.push_back(compImg.rcmv_bits);
 
             //stateless approach
             start = std::chrono::high_resolution_clock::now();
@@ -442,7 +446,7 @@ int main() {
 
 if(writeToFile){
       ofstream csvFile;
-      if(single_image && !test_mode){
+      if(single_image && test_mode){
             csvFile.open("/Users/jalell/Documents/GitHub/mlcv-multicut/code/output_files/mc_results_single.csv");
       }
       if(!single_image && !test_mode){
@@ -592,12 +596,14 @@ if(writeToFile){
             csvFile.close();
       }else{
             std::cout << "Writing test mode csv file..." << std::endl;
-            csvFile << "filename,category,pixels,mc_percentage,total_tree_bits,tree_rate,2bit_rate,red_edgebits_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,deflate_bits,deflate_unseparated,transfer_codes,transfer_map,tree_bpp,avg_straight_lenght,read_img_time,setEdgeBitsTime,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,dec_construction_time,dec_bitstring_time,sls_construction_time,sls_bitstring_time,rcmv_construction_time,rcmv_bitstring_time,rebuild_dpcm_huffman_time,decode_colors_time,cmv_reconstruction_time,reconstruct_rcmv_time,reconstruct_rcmv_cmv_time,dec_reconstruction_time,dec_cmv_reconstruction_time,sls_reconstruction_time,sls_cmv_reconstruction_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
+            csvFile << "filename,category,pixels,mc_percentage,edgebits,rcmv_bits,total_tree_bits,tree_rate,2bit_rate,red_edgebits_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,deflate_bits,deflate_unseparated,transfer_codes,transfer_map,tree_bpp,avg_straight_lenght,read_img_time,setEdgeBitsTime,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,dec_construction_time,dec_bitstring_time,sls_construction_time,sls_bitstring_time,rcmv_construction_time,rcmv_bitstring_time,rebuild_dpcm_huffman_time,decode_colors_time,cmv_reconstruction_time,reconstruct_rcmv_time,reconstruct_rcmv_cmv_time,dec_reconstruction_time,dec_cmv_reconstruction_time,sls_reconstruction_time,sls_cmv_reconstruction_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
         for (size_t i = 0; i < filenames.size(); ++i) {
             csvFile << filenames[i] << ","
                     << categories[i] << ","
                     << pixel_sizes[i] << ","
                     << multicut_percentages[i] << ","
+                    << edgebits[i] << ","
+                    << rcmv_bits[i] << ","
                     << total_tree_bits[i] << ","
                     << tree_compression_rates_total[i] << ","
                     << paths2bit_compression_rates_total[i] << ","

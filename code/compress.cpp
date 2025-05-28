@@ -126,6 +126,7 @@ CompressedImage compress(const std::string& imagePath){
     int dpcm_huffman_bits;
     int deflate_bits = 0;
     int deflate_bits_unseparated = 0;
+    int rcmv_bits = 0;
 
     int bitsfortransferingcodes = 0;
     int bitsfortransferingfrequencymap = 0;
@@ -412,7 +413,7 @@ CompressedImage compress(const std::string& imagePath){
     
     //std::vector<bool> verticalBits = setVerticalBits(img);
     double multicutPercentage = getMulticutPercentage(edgeBits01);
-    // std::cout << "Percentage of edge bits set to 1: " << multicutPercentage << "%" << std::endl;
+    std::cout << "Percentage of edge bits set to 1: " << multicutPercentage << "%" << std::endl;
 
     if(compressionMethods.useReducedEdgebits){
         // std::cout << "setting reduced edgebits" << std::endl;
@@ -421,6 +422,7 @@ CompressedImage compress(const std::string& imagePath){
         reducedVerticalBits = reduceVerticalBits(img, edgeBits01);
         end = std::chrono::high_resolution_clock::now();
         rcmv_construction_time = std::chrono::duration<double, std::milli>(end - start).count();
+        rcmv_bits = horizontalBits.size() + reducedVerticalBits.size();
         start = std::chrono::high_resolution_clock::now();
         
         // set reduced edge bits bitstring
@@ -581,12 +583,6 @@ CompressedImage compress(const std::string& imagePath){
         // std::cout << "paths_2bit size: " << paths_2bit.size() << std::endl;
         // edgeI,  zeros,          ones,           start
         // 32 bit, 1bit (vector),  16bit (vector), 1bit
-        rle_paths = std::get<1>(_2bitpaths);
-        std::vector<uint32_t> rleStartPoints;
-        for (auto rle : rle_paths) {
-            rleStartPoints.push_back(boolVectorToInt(std::get<0>(rle)));
-            // std::cout << "start: " << boolVectorToInt(std::get<0>(rle)) << std::endl;
-        }
             
         // set paths_2bit bitstring
         int paths2BitStringNoDirSize = 0;
@@ -854,6 +850,7 @@ CompressedImage compress(const std::string& imagePath){
     tree_compression_time, old_compression_time, rle_compression_time, straights_compression_time, straights_huffman_compression_time, reduced_edgebits_compression_time, paths2bit_compression_time,
     threeBitCount, currentTreeDirectionBits,tree_start_bits,disconnectedComponents, paths2bit_bits, paths2bit_start_bits, paths2bit_components, rle_direction_bits, region_colors_bits, dpcm_huffman_bits, deflate_bits, deflate_bits_unseparated, new2bitDirectionBits,
     tree_bpp,avg_straight_length, 
+    rcmv_bits,
     bitsfortransferingcodes, bitsfortransferingfrequencymap,
     read_img_time,setEdgeBitsTime, region_color_dfs_time, region_color_UF_time,dpcm_huffman_time, dpcm_huffman_bitstring_time,tree_construction_time, tree_bitstring_time,
     dec_construction_time, dec_bitstring_time, sls_construction_time, sls_bitstring_time, rcmv_construction_time, rcmv_bitstring_time
@@ -1290,135 +1287,9 @@ std::tuple<PathInfoVector, RLEVector, int> set2BitPaths(std::vector<bool> edgeBi
         // for (bool bit : directions2bits) {
         //     std::cout << bit;
         // }
-        if(directions2bits.empty()){
-            // std::cout << "empty path" << std::endl;
-            rle_paths.emplace_back(intToBool(edgeI), std::vector<bool>(), std::vector<std::vector<bool>>(), false);
-        }else{
-            // zeros, ones, start 
-            std::tuple<std::vector<bool>, std::vector<uint16_t>, bool> rle = getRLE(directions2bits);
-            //vector of runs, each vector contains the length of a 1s run
-            std::vector<std::vector<bool>> rle_directions;
-            for(uint16_t run : std::get<1>(rle)){
-                rle_directions.push_back(intToBool(run));
-            }
-            // edgeI,  zeros,          ones,           start
-            // 32 bit, 1bit (vector),  16bit (vector), 1bit
-            rle_paths.emplace_back(intToBool(edgeI), std::get<0>(rle), rle_directions, std::get<2>(rle));
-        }
         paths_2bit.emplace_back(edgeI, startDir, directions2bits);
     }
 
-    // std::cout << "new bits amount: " << directions2bits_reduced << std::endl;
-    // std::cout << "current bits amount: " << currentBitsAmount << std::endl;
-
-    // Calculate storage space for the paths vector
-    double totalBits2BitPaths = 0;
-    int emptyPathsCount = 0;
-    for (const auto& path : paths_2bit) {
-        uint32_t edgeI;
-        Direction dir;
-        std::vector<bool> directions2bits;
-
-        std::tie(edgeI, dir, directions2bits) = path;
-
-        totalBits2BitPaths += 32;
-        //totalBits2BitPaths += 32; // 32 bits for starting point
-        //totalBits2BitPaths += ceil(log2(2 * img.rows * img.cols - img.rows - img.cols)); // 32 bits for starting point
-        
-        //totalBits2BitPaths += 8;  // 8 bits for starting direction (smallest addressable unit)
-        if(!directions2bits.empty()){
-            //direction wird berechnet und nicht mehr gespeichert
-            //totalBits2BitPaths += 8; // only store direction if there is a path following
-            totalBits2BitPaths += directions2bits.size(); // Size of directions2bits in bits
-        }
-        else {
-            emptyPathsCount++;
-        }
-    }
-    // std::cout << "Number of 2-bit paths: " << multicut.paths_2bit.size() << std::endl;
-    // std::cout << "Total bits for 2-bit paths: " << totalBits2BitPaths << std::endl;
-    // std::cout << "Number of empty paths: " << emptyPathsCount << std::endl;
-
-    // Identify the longest run of ones in the direction vectors
-    int longestRun = 0;
-    for (const auto& path : paths_2bit) {
-        uint32_t edgeI;
-        Direction dir;
-        std::vector<bool> directions2bits;
-
-        std::tie(edgeI, dir, directions2bits) = path;
-
-        int currentRun = 0;
-        for (bool bit : directions2bits) {
-            if (bit) {
-                currentRun++;
-                if (currentRun > longestRun) {
-                    longestRun = currentRun;
-                }
-            } else {
-                currentRun = 0;
-            }
-        }
-    }
-    //std::cout << "Longest run of ones in direction vectors: " << longestRun << std::endl;
-
-    // Calculate bits needed for run length encoding
-    double totalBitsRLE = 0;
-    for (const auto& path : paths_2bit) {
-        uint32_t edgeI;
-        Direction dir;
-        std::vector<bool> directions2bits;
-
-        std::tie(edgeI, dir, directions2bits) = path;
-
-        totalBitsRLE += 32;
-        //totalBitsRLE += 32; // 32 bits for starting point 
-        //totalBitsRLE += ceil(log2(2 * img.rows * img.cols - img.rows - img.cols)); // 32 bits for starting point
-        if(!directions2bits.empty()){
-            totalBitsRLE += 8; // only store direction if there is a path following
-        }
-        //totalBitsRLE += 8;  // 8 bits for starting direction (smallest addressable unit)
-
-        int currentRun = 0;
-        for (size_t i = 0; i < directions2bits.size(); ++i) {
-            if (!directions2bits[i]) {
-            totalBitsRLE += 16; // for length of 1s
-            totalBitsRLE += 1; // for lengths of 0s (0 for length 1, 1 for length 2)
-            // Skip the next bit if it is also 0
-            if (i + 1 < directions2bits.size() && !directions2bits[i + 1]) {
-                ++i;
-            }
-            }
-        }
-    }
-    // std::cout << "Total bits for run length encoding: " << totalBitsRLE << std::endl;
-
-
-    // Count the runs of 0s in the 2-bit paths
-    int totalRunsOfZeros = 0;
-    for (const auto& path : paths_2bit) {
-        uint32_t edgeI;
-        Direction dir;
-        std::vector<bool> directions2bits;
-
-        std::tie(edgeI, dir, directions2bits) = path;
-
-        bool inRun = false;
-        for (bool bit : directions2bits) {
-            if (!bit) {
-                if (!inRun) {
-                    inRun = true;
-                    totalRunsOfZeros++;
-                }
-            } else {
-                inRun = false;
-            }
-        }
-    }
-    //std::cout << "Total runs of 0s in 2-bit paths: " << totalRunsOfZeros << std::endl;
-
-    // print 2-bit paths
-    //print2bitpaths(multicut.paths_2bit);
     return {paths_2bit, rle_paths, directions2bits_reduced};
 }
 
@@ -1603,7 +1474,7 @@ double getMulticutPercentage(std::vector<bool> edgeBits01){
     int count = std::count(edgeBits01.begin(), edgeBits01.end(), true);
     // std::cout << "0 in edgebits: " << edgeBits01.size() - count << std::endl;
     // std::cout << "1 in edgebits: " << count << std::endl;
-    return 100*count / edgeBits01.size();
+    return 100.0*count / edgeBits01.size();
 }
 
 

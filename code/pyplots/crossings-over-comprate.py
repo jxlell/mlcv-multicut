@@ -3,11 +3,10 @@ import matplotlib.pyplot as plt
 
 # Load the CSV files and combine them into one DataFrame
 csv_files = [
-    'code/output_files/mc_results_test_screenshots.csv',
-    # 'code/output_files/mc_results_test_textures_no_pk.csv',
-    # 'code/output_files/mc_results_test_textures_pk.csv',
-    # 'code/output_files/mc_results_test_photos.csv',
-    # 'code/output_files/mc_results_test_icons.csv'
+    'code/output_files/mc_results_test_screenshots_new.csv',
+    'code/output_files/mc_results_test_textures_new.csv',
+    'code/output_files/mc_results_test_photos_new.csv',
+    'code/output_files/mc_results_test_icons_new.csv'
 ]
 
 # Read and concatenate all CSV files
@@ -29,8 +28,8 @@ ax.scatter(df['crossings'], df['rate_difference_factor'], alpha=0.6, color='blac
 ax.axhline(y=0, color='red', linestyle='--', linewidth=1)
 # Set labels and title
 ax.set_xlabel("Crossings")
-ax.set_ylabel("Relative Difference Between Tree Rate and 2bit Rate (Factor)")
-ax.set_title("Scatter Plot of Rate Difference Factor vs Crossings - Disc Comp")
+ax.set_ylabel("Compression Rate Ratio: DT/DEC")
+ax.set_title("Scatter Plot of DT-DEC Rate Difference Factor vs Crossings")
 
 # Find the row with the maximum absolute rate difference
 max_diff_row = df.loc[df['rate_difference_factor'].abs().idxmax()]

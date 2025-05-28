@@ -8,7 +8,7 @@ csv_files = [
     # ,'code/output_files/mc_results_test_textures_no_pk.csv'
     # ,'code/output_files/mc_results_test_textures_pk.csv'
     # ,'code/output_files/mc_results_test_photos.csv'
-    # ,'code/output_files/mc_results_test_icons.csv'
+    ,'code/output_files/mc_results_test_icons.csv'
 ]
 
 # Read and concatenate all CSV files
@@ -27,10 +27,21 @@ print("Median Compression Rates:")
 medians = data[columns_to_compare].median()
 print(medians)
 
+print("\nMax Compression Rates:")
+max_rates = data[columns_to_compare].max()
+print(max_rates)
+
+print("\nFilenames corresponding to max compression rates:")
+for col in columns_to_compare:
+    max_idx = data[col].idxmax()
+    filename = data.loc[max_idx, 'filename'] if 'filename' in data.columns else 'N/A'
+    print(f"{col}: {filename}")
+
 # Create the boxplot
 plt.figure(figsize=(8, 6))
 data[columns_to_compare].boxplot()
-plt.title('Comparison of Compression Rates (Icons)')
+plt.xticks([1, 2, 3, 4], ["rCMV", "DT", "DEC", "SLS"])
+plt.title('Comparison of Compression Rates (Artificial Images)')
 plt.ylabel('Compression Rate')
 plt.xlabel('Columns')
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
