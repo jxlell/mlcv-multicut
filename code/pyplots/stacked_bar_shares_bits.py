@@ -10,52 +10,52 @@ csv_files = [
 ]
 
 data_frames = [pd.read_csv(file) for file in csv_files]
-df = pd.concat(data_frames, ignore_index=True)
-
-# Add a column to indicate the category (file source)
-categories = [
-    "screenshots",
-    "textures",
-    "photos",
-    "icons"
-]
+categories = ["screenshots", "textures", "photos", "icons"]
 for df_part, category in zip(data_frames, categories):
     df_part["category"] = category
 df = pd.concat(data_frames, ignore_index=True)
 
-# Calculate total bits per image
-df["total_bits"] = df["total_tree_bits"] + df["deflate_bits"]
-
 # Group by category and sum bits
-grouped = df.groupby("category")[["total_tree_bits", "deflate_bits"]].sum()
+grouped = df.groupby("category")[["tree_path_bits", "tree_start_bits", "deflate_bits"]].sum()
 
-# Calculate percentage shares per category
-grouped["tree_bits_percent"] = grouped["total_tree_bits"] / (grouped["total_tree_bits"] + grouped["deflate_bits"]) * 100
-grouped["deflate_bits_percent"] = grouped["deflate_bits"] / (grouped["total_tree_bits"] + grouped["deflate_bits"]) * 100
+# Compute total bits
+grouped["total_bits"] = grouped["tree_path_bits"] + grouped["tree_start_bits"] + grouped["deflate_bits"]
 
-# Prepare data for stacked bar plot (one bar per category)
+# Calculate percentage shares
+grouped["path_bits_percent"] = grouped["tree_path_bits"] / grouped["total_bits"] * 100
+grouped["start_bits_percent"] = grouped["tree_start_bits"] / grouped["total_bits"] * 100
+grouped["deflate_bits_percent"] = grouped["deflate_bits"] / grouped["total_bits"] * 100
+
+# Reorder categories
+grouped = grouped.reindex(["screenshots", "icons", "photos", "textures"])
+
+# Plot
 bar_width = 0.6
 indices = range(len(grouped))
-
-# Specify custom colors
-tree_bits_color = "#FF8080"      # blue
-deflate_bits_color = "#7a9dff"   # orange
 
 plt.figure(figsize=(8, 6))
 plt.bar(
     indices,
-    grouped["tree_bits_percent"],
+    grouped["path_bits_percent"],
     bar_width,
-    label="DT Bits (%)",
-    color=tree_bits_color
+    label="DT Path Bits (%)",
+    color="#FF8080"
+)
+plt.bar(
+    indices,
+    grouped["start_bits_percent"],
+    bar_width,
+    bottom=grouped["path_bits_percent"],
+    label="DT Start Bits (%)",
+    color="#FF3333"
 )
 plt.bar(
     indices,
     grouped["deflate_bits_percent"],
     bar_width,
-    bottom=grouped["tree_bits_percent"],
+    bottom=grouped["path_bits_percent"] + grouped["start_bits_percent"],
     label="Color Bits (%)",
-    color=deflate_bits_color
+    color="#7a9dff"
 )
 
 plt.xticks(indices, grouped.index)

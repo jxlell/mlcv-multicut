@@ -103,7 +103,7 @@ std::vector<bool> reduceVerticalBits(cv::Mat img, std::vector<bool>& edgeBits01)
 std::vector<bool> reduceHorizontalBits(cv::Mat img, std::vector<bool>& edgeBits01);
 std::vector<bool> setHorizontalBits(cv::Mat img);
 std::tuple<PathInfoVector,int> setPaths(std::vector<bool> edgeBits01, cv::Mat img);
-std::tuple<PathInfoVector, RLEVector, int> set2BitPaths(std::vector<bool> edgeBits01, cv::Mat img);
+std::tuple<PathInfoVector, int> set2BitPaths(std::vector<bool> edgeBits01, cv::Mat img);
 std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, std::vector<uint16_t>, std::vector<uint32_t>, map<int,string>> setStraights(std::vector<bool> edgeBits01, cv::Mat img);
 std::vector<RGB> setRegions(cv::Mat img, std::vector<int> neighborsOffsets, int vertices);
 double getCompressionRate(std::vector<RGB> regionColors, PathInfoVector paths, cv::Mat img);

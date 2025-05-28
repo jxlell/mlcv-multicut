@@ -558,7 +558,7 @@ CompressedImage compress(const std::string& imagePath){
         // std::cout << "tree dir bits for comparison: " << currentTreeDirectionBits << std::endl;
         // std::cout << "time to construct 2bit paths: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
         paths_2bit = std::get<0>(_2bitpaths);
-        new2bitDirectionBits = std::get<2>(_2bitpaths);
+        new2bitDirectionBits = std::get<1>(_2bitpaths);
         // for (const auto& path : paths_2bit) {
         //     uint32_t edgeI;
         //     Direction dir;
@@ -1166,132 +1166,63 @@ std::tuple<PathInfoVector,int> setPaths(std::vector<bool> edgeBits01, cv::Mat im
     return {paths, threeBitCount};
 }
 
-std::tuple<PathInfoVector, RLEVector, int> set2BitPaths(std::vector<bool> edgeBits01, cv::Mat img){
+std::tuple<PathInfoVector, int> set2BitPaths(std::vector<bool> edgeBits01, cv::Mat img) {
     std::vector<bool> visited(edgeBits01.size(), false);
-    RLEVector rle_paths;
     PathInfoVector paths_2bit;
-
     int currentBitsAmount = 0;
-    int directions2bits_reduced;
 
-    for (int edgeI = 0; edgeI < edgeBits01.size(); edgeI++){
-        int iter_i = 0;
-        if(visited[edgeI]){continue;}
-        if(!edgeBits01[edgeI]){
-            visited[edgeI] = true;
-            continue;
-        }
-        visited[edgeI] = true;
-        //std::cout << "pass if\n";
-        // get current direction (either down or right) from current index 
-        std::vector<bool> directions2bits; 
-        Direction startDir;
-        Direction currentDir;
-        startDir = getDirectionFromIndex(edgeI, img.rows, img.cols);
-        currentDir = startDir;
+    for (int edgeI = 0; edgeI < edgeBits01.size(); ++edgeI) {
+        if (visited[edgeI] || !edgeBits01[edgeI]) continue;
+
+        std::vector<bool> directions2bits;
+        Direction startDir = getDirectionFromIndex(edgeI, img.rows, img.cols);
+        Direction currentDir = startDir;
         int currentEdge = edgeI;
-        int left = 0;
-        int front = 0;
-        int right = 0;
-        while(true){
-            //std::cout << "iter: " << iter_i++ << std::endl;
-            //FIXME: manchmal endlosschleife (gradient.png)
-            left = getNeighbor(currentEdge, currentDir, 0, img.cols, img.rows);
-            front = getNeighbor(currentEdge, currentDir, 1, img.cols, img.rows);
-            right = getNeighbor(currentEdge, currentDir, 2, img.cols, img.rows);
 
-            // edge out of bounds 
-            if(left == -1 || front == -1 || right == -1 || 
-            left >= edgeBits01.size() || front >= edgeBits01.size() || right >= edgeBits01.size()){
-                visited[currentEdge] = true;
-                break; 
-            }
+        while (true) {
+            visited[currentEdge] = true;
 
-            // check if all neighbors are visited
-            //TODO: wird eigentlich auch noch von den folgenden ifs abgefangen
-            if(visited[left] && visited[front] && visited[right]){
-                visited[currentEdge] = true;
-                break;
-            }
+            int left  = getNeighbor(currentEdge, currentDir, 0, img.cols, img.rows);
+            int front = getNeighbor(currentEdge, currentDir, 1, img.cols, img.rows);
+            int right = getNeighbor(currentEdge, currentDir, 2, img.cols, img.rows);
 
-            //front
-            if(edgeBits01[front] && !visited[front]){
-                currentEdge = getNeighbor(currentEdge, currentDir, 1, img.cols, img.rows);
+            bool validLeft  = (left >= 0 && left < edgeBits01.size() && edgeBits01[left]  && !visited[left]);
+            bool validFront = (front >= 0 && front < edgeBits01.size() && edgeBits01[front] && !visited[front]);
+            bool validRight = (right >= 0 && right < edgeBits01.size() && edgeBits01[right] && !visited[right]);
+
+            if (validFront) {
+                currentEdge = front;
                 directions2bits.push_back(1);
                 directions2bits.push_back(1);
-                if(visited[left] && visited[right]){
-                    // directions2bits_reduced++;
-                }
-                else if(visited[left] && !visited[right]){
-                    directions2bits_reduced++;
-                }
-                else if(!visited[left] && visited[right]){
-                    directions2bits_reduced++;
-                }else if(!visited[left] && !visited[right]){
-                    directions2bits_reduced += 2;
-                }
-                visited[currentEdge] = true;
                 continue;
             }
 
-            //left
-            if(edgeBits01[left] && !visited[left]){
-                currentEdge = getNeighbor(currentEdge, currentDir, 0, img.cols, img.rows);
+            if (validLeft) {
+                currentEdge = left;
                 currentDir = previousDirection(currentDir);
                 directions2bits.push_back(1);
                 directions2bits.push_back(0);
-                if(visited[right] && visited[front]){
-                    // directions2bits_reduced++;
-                }
-                else if(visited[front]){
-                    directions2bits_reduced++;
-                }
-                else if(visited[right] && !visited[front]){
-                    directions2bits_reduced++;
-                }else if(!visited[front] && !visited[right]){
-                    directions2bits_reduced += 2;
-                }
-                visited[currentEdge] = true;
                 continue;
             }
-            
-            //right
-            if(edgeBits01[right] && !visited[right]){
-                currentEdge = getNeighbor(currentEdge, currentDir, 2, img.cols, img.rows);
+
+            if (validRight) {
+                currentEdge = right;
                 currentDir = nextDirection(currentDir);
                 directions2bits.push_back(0);
                 directions2bits.push_back(1);
-                if(visited[left] && visited[front]){
-                    // directions2bits_reduced++;
-                }
-                else if(visited[left]){
-                    directions2bits_reduced++;
-                }
-                else if(visited[front] && !visited[left]){
-                    directions2bits_reduced++;
-                }else if(!visited[front] && !visited[left]){
-                    directions2bits_reduced += 2;
-                }
-                visited[currentEdge] = true;
                 continue;
-            }else{
-                //std::cout << edgeBits01[front] << std::endl;
-                //std::cerr << "Warning: No valid path found from edge " << currentEdge << std::endl;
-                visited[currentEdge] = true;
-                break;
             }
+
+            break; // no valid neighbor
         }
+
         currentBitsAmount += directions2bits.size();
-        // comparing new 2bit paths approach with old 
-        // std::cout << "edgeI: " << edgeI << std::endl;
-        // for (bool bit : directions2bits) {
-        //     std::cout << bit;
-        // }
         paths_2bit.emplace_back(edgeI, startDir, directions2bits);
     }
 
-    return {paths_2bit, rle_paths, directions2bits_reduced};
+    return {paths_2bit, currentBitsAmount};
 }
+
 
 std::tuple<Straights, std::vector<bool>, std::vector<uint32_t>, HuffmanNode*, std::vector<uint16_t>, std::vector<uint32_t>, map<int,string>> setStraights(std::vector<bool> edgeBits01, cv::Mat img){
     Straights straights;

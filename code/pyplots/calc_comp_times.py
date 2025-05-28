@@ -77,6 +77,22 @@ df["sls_decomp_time"] = (
     df["dfs_reconstruction_time"]
 )
 
+# Calculate megapixels per second for each compression time (convert ms to seconds)
+df["cmv_mpx_per_s"] = df["pixels"] / 1e6 / (df["cmv_comp_time"] / 1000)
+df["rcmv_mpx_per_s"] = df["pixels"] / 1e6 / (df["rcmv_comp_time"] / 1000)
+df["tree_mpx_per_s"] = df["pixels"] / 1e6 / (df["tree_comp_time"] / 1000)
+df["dec_mpx_per_s"] = df["pixels"] / 1e6 / (df["dec_comp_time"] / 1000)
+df["sls_mpx_per_s"] = df["pixels"] / 1e6 / (df["sls_comp_time"] / 1000)
+print("\n")
+
+print("\nAverage Megapixels per Second (Compression):")
+print("CMV:", df["cmv_mpx_per_s"].mean())
+print("RCMV:", df["rcmv_mpx_per_s"].mean())
+print("Tree:", df["tree_mpx_per_s"].mean())
+print("DEC:", df["dec_mpx_per_s"].mean())
+print("SLS:", df["sls_mpx_per_s"].mean())
+print("\n")
+
 # Print total average times
 print("Average Computation Times:")
 print("CMV:", df["cmv_comp_time"].mean())

@@ -7,10 +7,13 @@ import matplotlib.patches as patches
 show_average = False  # <<<< CHANGE THIS TO True for average-only view
 
 # Load your CSV
-df = pd.read_csv("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_test_reduced.csv")
+df = pd.read_csv("/Users/jalell/Documents/GitHub/mlcv-multicut/code/output_files/mc_results_test_screenshots_new.csv")
 
 # Sort by filename or other metric
 df_sorted = df.sort_values(by="filename")
+
+# Filter to only 15 images
+df_sorted = df_sorted.head(15)
 
 # Prepare data
 if show_average:
@@ -37,7 +40,7 @@ if not show_average:
     total_2bit = paths_dir + paths_start
     total_new2bit = new2bit_dir + paths_start
 
-    best_method = np.argmin(np.stack([total_tree, total_2bit, total_new2bit]), axis=0)
+    best_method = np.argmin(np.stack([total_tree, total_2bit]), axis=0)
     method_colors = ['tab:blue', 'tab:green', 'tab:red']
 
 # Create the plot
@@ -52,8 +55,8 @@ ax1.bar(x, paths_dir, bar_width, label="2bit_direction_bits", color='tab:green')
 ax1.bar(x, paths_start, bar_width, bottom=paths_dir, label="2bit_start_bits", color='lightgreen')
 
 # new2bit bars (rightmost)
-ax1.bar(x + bar_width, new2bit_dir, bar_width, label="new2bit_direction_bits", color='tab:red')
-ax1.bar(x + bar_width, paths_start, bar_width, bottom=new2bit_dir, label="2bit_start_bits (again)", color='salmon')
+# ax1.bar(x + bar_width, new2bit_dir, bar_width, label="new2bit_direction_bits", color='tab:red')
+# ax1.bar(x + bar_width, paths_start, bar_width, bottom=new2bit_dir, label="2bit_start_bits (again)", color='salmon')
 
 # Add color-coded method indicator below x-axis
 if not show_average:

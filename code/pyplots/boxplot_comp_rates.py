@@ -37,13 +37,23 @@ for col in columns_to_compare:
     filename = data.loc[max_idx, 'filename'] if 'filename' in data.columns else 'N/A'
     print(f"{col}: {filename}")
 
+print("\nMin Compression Rates:")
+min_rates = data[columns_to_compare].min()
+print(min_rates)
+
+print("\nFilenames corresponding to min compression rates:")
+for col in columns_to_compare:
+    min_idx = data[col].idxmin()
+    filename = data.loc[min_idx, 'filename'] if 'filename' in data.columns else 'N/A'
+    print(f"{col}: {filename}")
+
 # Create the boxplot
 plt.figure(figsize=(8, 6))
 data[columns_to_compare].boxplot()
 plt.xticks([1, 2, 3, 4], ["rCMV", "DT", "DEC", "SLS"])
 plt.title('Comparison of Compression Rates (Artificial Images)')
 plt.ylabel('Compression Rate')
-plt.xlabel('Columns')
+plt.xlabel('Multicut Encoding Methods')
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.yscale('log')  # Set y-axis to logarithmic scale for better visualization
 
