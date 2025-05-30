@@ -511,3 +511,14 @@ cv::Mat setRegionColorsFromImageSearch(cv::Mat img, std::vector<bool>& edgeBits,
     }
     return image;
 }
+
+
+std::vector<uint8_t> ConvertBitsToBytes(const std::vector<bool>& bits) {
+    std::vector<uint8_t> bytes((bits.size() + 7) / 8, 0);
+    for (size_t i = 0; i < bits.size(); ++i) {
+        if (bits[i]) {
+            bytes[i / 8] |= (1 << (7 - (i % 8)));
+        }
+    }
+    return bytes;
+}

@@ -156,8 +156,8 @@ int main() {
         // "photo_tecnick",
         // "photo_wikipedia",
         // "pngimg",
-        "screenshot_web",
-        "screenshot_game",
+        // "screenshot_web",
+        // "screenshot_game",
         // "textures_photo",
         // "textures_pk",
         // "textures_pk01",
@@ -165,7 +165,7 @@ int main() {
         // "textures_plants",
 
 
-        // "screenshot_game_reduced2"
+        "screenshot_game_reduced2"
     };
 
     std::ifstream inputFile("/Users/jalell/Documents/GitHub/mlcv-multicut/code/singlefile.txt");

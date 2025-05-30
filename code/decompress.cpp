@@ -109,188 +109,137 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
 
 
     if (compressionMethods.useTree) {
-        start = std::chrono::high_resolution_clock::now();
-    
-        std::string pathsBitStringStr;
-        for (bool bit : pathsBitString) {
-            pathsBitStringStr += bit ? "1" : "0";
-        }
-    
-        size_t offset = 0;
-    
-        std::string cols_str = pathsBitStringStr.substr(offset, 16);
-        int cols_int = std::stoi(cols_str, nullptr, 2);
-        offset += 16;
-    
-        std::string rows_str = pathsBitStringStr.substr(offset, 16);
-        int rows_int = std::stoi(rows_str, nullptr, 2);
-        offset += 16;
+    start = std::chrono::high_resolution_clock::now();
 
-        std::string deflatedBitsAmount = pathsBitStringStr.substr(offset, 32);
-        int deflatedBitsAmountInt = std::stoi(deflatedBitsAmount, nullptr, 2);
-        std::cout << "Deflated bits amount: " << deflatedBitsAmountInt << std::endl;
-        offset += 32;
-        std::string deflatedBitString;
-        if(deflatedBitsAmountInt>0){
-            deflatedBitString = pathsBitStringStr.substr(offset, deflatedBitsAmountInt*8);
-        }
-        std::vector<uint8_t> deflatedData(deflatedBitsAmountInt);
-        for (int i = 0; i < deflatedBitsAmountInt; ++i) {
-            std::string byteStr = pathsBitStringStr.substr(offset + i * 8, 8);
-            deflatedData[i] = static_cast<uint8_t>(std::stoi(byteStr, nullptr, 2));
-        }
-        std::cout << "Deflated data size: " << deflatedData.size() << std::endl;
-        std::vector<uint8_t> inflatedRegionColors; 
-        bool inflateSuccess = ZlibInflate(deflatedData, inflatedRegionColors);
-        std::cout << "Zlib success: " << (inflateSuccess ? "YES" : "NO") << std::endl;
-        std::cout << "Decompressed data size in bits: " << inflatedRegionColors.size()*8 << std::endl;
-
-        std::vector<bool> inflatedRegionColorsBitString;
-        for (uint8_t byte : inflatedRegionColors) {
-            for (int i = 7; i >= 0; --i) {
-                inflatedRegionColorsBitString.push_back((byte >> i) & 1);
-            }
-        }
-
-        decodedColorsTree_inflated = decodeDifferences(inflatedRegionColors);
-        
-        // inflatedRegionColorsVec = colorBitStringToRGBVector(inflatedRegionColorsBitString);
-        // inflatedRegionColorsVec = separatedChannelstoRGBVector(inflatedRegionColors);
-
-        offset += deflatedBitsAmountInt * 8;
-    
-        // std::string freqMapAmountStr = pathsBitStringStr.substr(offset, 9);
-        // int freqMapAmount = std::stoi(freqMapAmountStr, nullptr, 2);
-        // offset += 9;
-    
-        // start = std::chrono::high_resolution_clock::now();
-    
-        // std::vector<uint8_t> keys;
-        // for (int i = 0; i < freqMapAmount; ++i) {
-        //     std::string freqStr = pathsBitStringStr.substr(offset, 8);
-        //     uint8_t key = static_cast<uint8_t>(std::stoi(freqStr, nullptr, 2));
-        //     keys.push_back(key);
-        //     offset += 8;
-        // }
-    
-        // int freqBits = std::ceil(std::log2(3 * cols_int * rows_int + 1));
-        // std::vector<int> frequencies;
-        // for (int i = 0; i < freqMapAmount; ++i) {
-        //     std::string freqStr = pathsBitStringStr.substr(offset, freqBits);
-        //     int frequency = std::stoi(freqStr, nullptr, 2);
-        //     frequencies.push_back(frequency);
-        //     offset += freqBits;
-        // }
-    
-        // std::map<uint8_t, int> frequencyMapDifferences;
-        // for (size_t i = 0; i < keys.size(); ++i) {
-        //     frequencyMapDifferences[keys[i]] = frequencies[i];
-        // }
-    
-        // auto [RGBHuffmanCodes, RGBroot] = buildRGBCodes(frequencyMapDifferences);
-    
-        // end = std::chrono::high_resolution_clock::now();
-        // auto duration = std::chrono::duration<double, std::milli>(end - start).count();
-
-        // rebuild_dpcm_huffman_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        // std::cout << "Rebuild DPCM Huffman time: " << rebuild_dpcm_huffman_time << "ms" << std::endl;
-        // start = std::chrono::high_resolution_clock::now();
-    
-        // std::string huffmanBitsAmountStr = pathsBitStringStr.substr(offset, 32);
-        // int huffmanBitsAmount = std::stoi(huffmanBitsAmountStr, nullptr, 2);
-        // offset += 32;
-    
-        // std::string huffmanEncodedStr = pathsBitStringStr.substr(offset, huffmanBitsAmount);
-        // offset += huffmanBitsAmount;
-    
-        // std::vector<uint8_t> decodedDifferences;
-        // std::string decodedStr;
-        // RGBHuffmanNode* currentNode = RGBroot;
-    
-        // if (!RGBroot->left && !RGBroot->right) {
-        //     int totalCount = frequencyMapDifferences.begin()->second;
-        //     decodedDifferences = std::vector<uint8_t>(totalCount, RGBroot->data);
-        //     decodedStr = std::string(totalCount, char(RGBroot->data));
-        // } else {
-        //     for (char bit : huffmanEncodedStr) {
-        //         currentNode = (bit == '0') ? currentNode->left : currentNode->right;
-        //         if (!currentNode->left && !currentNode->right) {
-        //             decodedStr += char(currentNode->data);
-        //             decodedDifferences.push_back(currentNode->data);
-        //             currentNode = RGBroot;
-        //         }
-        //     }
-        // }
-
-        // // std::cout << "Decoded Differences: ";
-        // // for (uint8_t diff : decodedDifferences) {
-        // //     std::cout << static_cast<int>(diff) << " ";
-        // // }
-        // // std::cout << std::endl;
-    
-        // decodedColorsTree = decodeDifferences(decodedDifferences);
-        end = std::chrono::high_resolution_clock::now();
-        decode_colors_time = std::chrono::duration<double, std::milli>(end - start).count();
-    
-        start = std::chrono::high_resolution_clock::now();
-    
-        int disconnectedComponentsBits = std::max(
-            static_cast<double>(std::ceil(std::log2(std::max(cols_int, rows_int) + 1))),
-            std::max(
-                static_cast<double>(1),
-                std::log2(std::ceil(static_cast<double>(cols_int) / 2) * std::ceil(static_cast<double>(rows_int) / 2) + 1)
-            )
-        );
-    
-        std::string numberOfComponentsStr = pathsBitStringStr.substr(offset, disconnectedComponentsBits);
-        int numberOfComponets = std::stoi(numberOfComponentsStr, nullptr, 2);
-        offset += disconnectedComponentsBits;
-    
-        std::string startPointBitsStr = pathsBitStringStr.substr(offset, 5);
-        int startPointBits = std::stoi(startPointBitsStr, nullptr, 2);
-        offset += 5;
-    
-        std::string startPointBitstring = pathsBitStringStr.substr(offset, startPointBits * numberOfComponets);
-        offset += startPointBits * numberOfComponets;
-    
-        std::string directionsBitstring = pathsBitStringStr.substr(offset);
-        // offset not updated further, since this is the rest
-    
-        std::vector<uint32_t> startPoints;
-        for (size_t i = 0; i < startPointBitstring.size(); i += startPointBits) {
-            std::string currentStr = startPointBitstring.substr(i, startPointBits);
-            uint32_t startPoint = std::stoi(currentStr, nullptr, 2);
-            startPoints.push_back(startPoint);
-        }
-    
-        end = std::chrono::high_resolution_clock::now();
-        assemble_tree_paths_time = std::chrono::duration<double, std::milli>(end - start).count();
-        tree_decompression_time += assemble_tree_paths_time;
-    
-        start = std::chrono::high_resolution_clock::now();
-    
-        reconstructed_edgeBits_from_paths.assign(edgeBitsSize, false);
-        std::vector<bool> visited(edgeBitsSize, false);
-        std::queue<bool> directionQueue;
-        for (char c : directionsBitstring) {
-            directionQueue.push(c == '1');
-        }
-    
-        for (size_t i = 0; i < startPoints.size(); ++i) {
-            reconstruct_edgeBits_iterative(
-                startPoints[i],
-                getDirectionFromIndex(startPoints[i], rows_int, cols_int),
-                reconstructed_edgeBits_from_paths,
-                cols_int,
-                rows_int,
-                visited,
-                directionQueue
-            );
-        }
-    
-        end = std::chrono::high_resolution_clock::now();
-        reconstruct_tree_edgebits_time = std::chrono::duration<double, std::milli>(end - start).count();
+    std::string pathsBitStringStr;
+    for (bool bit : pathsBitString) {
+        pathsBitStringStr += bit ? '1' : '0';
     }
+
+    size_t offset = 0;
+
+    // 1. Extract image dimensions
+    std::string cols_str = pathsBitStringStr.substr(offset, 16);
+    int cols_int = std::stoi(cols_str, nullptr, 2);
+    offset += 16;
+
+    std::string rows_str = pathsBitStringStr.substr(offset, 16);
+    int rows_int = std::stoi(rows_str, nullptr, 2);
+    offset += 16;
+
+    // 2. Extract and inflate region colors
+    std::string deflatedBitsAmount = pathsBitStringStr.substr(offset, 32);
+    int deflatedBitsAmountInt = std::stoi(deflatedBitsAmount, nullptr, 2);
+    std::cout << "Deflated color bytes: " << deflatedBitsAmountInt << std::endl;
+    offset += 32;
+
+    std::vector<uint8_t> deflatedColorData(deflatedBitsAmountInt);
+    for (int i = 0; i < deflatedBitsAmountInt; ++i) {
+        std::string byteStr = pathsBitStringStr.substr(offset + i * 8, 8);
+        deflatedColorData[i] = static_cast<uint8_t>(std::stoi(byteStr, nullptr, 2));
+    }
+    offset += deflatedBitsAmountInt * 8;
+
+    std::vector<uint8_t> inflatedColorBytes;
+    bool inflateSuccess = ZlibInflate(deflatedColorData, inflatedColorBytes);
+    std::cout << "Zlib color success: " << (inflateSuccess ? "YES" : "NO") << std::endl;
+
+    std::vector<bool> inflatedColorBitstring;
+    for (uint8_t byte : inflatedColorBytes) {
+        for (int i = 7; i >= 0; --i) {
+            inflatedColorBitstring.push_back((byte >> i) & 1);
+        }
+    }
+    decodedColorsTree_inflated = decodeDifferences(inflatedColorBytes);
+    
+    decode_colors_time = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
+
+    // 3. Inflate compressed directional path bitstring
+    start = std::chrono::high_resolution_clock::now();
+
+    std::string compressedDTSizeStr = pathsBitStringStr.substr(offset, 32);
+    int compressedDTSizeBytes = std::stoi(compressedDTSizeStr, nullptr, 2);
+    offset += 32;
+
+    std::vector<uint8_t> deflatedDTData(compressedDTSizeBytes);
+    for (int i = 0; i < compressedDTSizeBytes; ++i) {
+        std::string byteStr = pathsBitStringStr.substr(offset + i * 8, 8);
+        deflatedDTData[i] = static_cast<uint8_t>(std::stoi(byteStr, nullptr, 2));
+    }
+    offset += compressedDTSizeBytes * 8;
+
+    std::vector<uint8_t> inflatedDTBytes;
+    bool inflateSuccessDT = ZlibInflate(deflatedDTData, inflatedDTBytes);
+    std::cout << "Zlib DT success: " << (inflateSuccessDT ? "YES" : "NO") << std::endl;
+
+    std::vector<bool> DT_bitstring_inflated;
+    for (uint8_t byte : inflatedDTBytes) {
+        for (int i = 7; i >= 0; --i) {
+            DT_bitstring_inflated.push_back((byte >> i) & 1);
+        }
+    }
+
+    // 4. Extract metadata from DT_bitstring_inflated
+    size_t dt_offset = 0;
+
+    int disconnectedComponentsBits = std::max(
+        static_cast<double>(std::ceil(std::log2(std::max(cols_int, rows_int) + 1))),
+        std::max(static_cast<double>(1),
+                 std::log2(std::ceil(static_cast<double>(cols_int) / 2) *
+                           std::ceil(static_cast<double>(rows_int) / 2) + 1))
+    );
+
+    std::string numberOfComponentsStr = "";
+    for (int i = 0; i < disconnectedComponentsBits; ++i)
+        numberOfComponentsStr += DT_bitstring_inflated[dt_offset++] ? '1' : '0';
+    int numberOfComponents = std::stoi(numberOfComponentsStr, nullptr, 2);
+
+    std::string startPointBitsStr = "";
+    for (int i = 0; i < 5; ++i)
+        startPointBitsStr += DT_bitstring_inflated[dt_offset++] ? '1' : '0';
+    int startPointBits = std::stoi(startPointBitsStr, nullptr, 2);
+
+    std::vector<uint32_t> startPoints;
+    for (int i = 0; i < numberOfComponents; ++i) {
+        std::string currentStr = "";
+        for (int b = 0; b < startPointBits; ++b)
+            currentStr += DT_bitstring_inflated[dt_offset++] ? '1' : '0';
+        uint32_t startPoint = std::stoi(currentStr, nullptr, 2);
+        startPoints.push_back(startPoint);
+    }
+
+    // 5. Remaining bits are directions
+    std::queue<bool> directionQueue;
+    while (dt_offset < DT_bitstring_inflated.size()) {
+        directionQueue.push(DT_bitstring_inflated[dt_offset++]);
+    }
+
+    assemble_tree_paths_time = std::chrono::duration<double, std::milli>(
+        std::chrono::high_resolution_clock::now() - start).count();
+    tree_decompression_time += assemble_tree_paths_time;
+
+    // 6. Reconstruct edgebits
+    start = std::chrono::high_resolution_clock::now();
+
+    reconstructed_edgeBits_from_paths.assign(edgeBitsSize, false);
+    std::vector<bool> visited(edgeBitsSize, false);
+
+    for (size_t i = 0; i < startPoints.size(); ++i) {
+        reconstruct_edgeBits_iterative(
+            startPoints[i],
+            getDirectionFromIndex(startPoints[i], rows_int, cols_int),
+            reconstructed_edgeBits_from_paths,
+            cols_int,
+            rows_int,
+            visited,
+            directionQueue
+        );
+    }
+
+    reconstruct_tree_edgebits_time = std::chrono::duration<double, std::milli>(
+        std::chrono::high_resolution_clock::now() - start).count();
+}
+
     
     
     size_t bitIndex = 0;

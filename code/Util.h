@@ -76,5 +76,6 @@ std::pair<int,int> getPixelIndexFromEdgeIndex(int edgeIndex, int cols, int rows)
 int getEdgeIndexFromPixelIndices(int pixelIndex1, int pixelIndex2, int cols, int rows);
 cv::Mat setRegionColorsFromImageSearch(cv::Mat img, std::vector<bool>& edgeBits, std::vector<RGB>& regionColors, std::vector<uint8_t>& transparencyValues);
 std::vector<RGB> separatedChannelstoRGBVector(const std::vector<uint8_t>& separated);
+std::vector<uint8_t> ConvertBitsToBytes(const std::vector<bool>& bits);
 
 #endif // UTIL_H

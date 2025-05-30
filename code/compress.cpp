@@ -12,6 +12,7 @@
 #include <string>
 #include "huffman.h"
 #include <chrono>
+#include <iomanip>
 
 extern "C" {
     #include "zlib.h"
@@ -457,98 +458,97 @@ CompressedImage compress(const std::string& imagePath){
         newEdgeBitsMCBits = reducedEdgeBitsBitString.size() - redBitstringSizePrev;
     }
 
-    if(compressionMethods.useTree){
-        // std::cout << "setting paths" << std::endl;
-        start = std::chrono::high_resolution_clock::now();
-        PathInfoVector paths;
-        std::tie(paths,threeBitCount) = setPaths(edgeBitsFromDFS, img);
-        disconnectedComponents = paths.size();
-        for (const auto& path : paths) {
-            currentTreeDirectionBits += std::get<2>(path).size();
-        }
-        end = std::chrono::high_resolution_clock::now();
-        tree_construction_time = std::chrono::duration<double, std::milli>(end - start).count();
-        // std::cout << "time to construct tree paths: " << tree_construction_time << "ms" << std::endl;
-        //set bitstring for paths 
-        start = std::chrono::high_resolution_clock::now();
-        std::vector<bool> cols_bitstring = intToBool(img.cols, 16);
-        std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
-        pathsBitString.insert(pathsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
-        pathsBitString.insert(pathsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
+    if (compressionMethods.useTree) {
+    start = std::chrono::high_resolution_clock::now();
 
-        pathsBitString.insert(pathsBitString.end(), deflatedBitstring.begin(), deflatedBitstring.end());
-
-        colorsBitstringSize = pathsBitString.size();
-        // // std::cout << "region color bitstring size: " << regionColorBitString.size()/24 << std::endl;
-        // int regionColorsInt = regionColorBitString.size()/24;
-        // int regionColorBitsSize = std::ceil(std::log2(img.cols * img.rows + 1));
-        // // std::cout << "region color bits size: " << regionColorBitsSize << std::endl;
-        // std::vector<bool> regionColorBits = intToBool(regionColorsInt, regionColorBitsSize);
-        // pathsBitString.insert(pathsBitString.end(), regionColorBits.begin(), regionColorBits.end());
-        // pathsBitString.insert(pathsBitString.end(), regionColorBitString.begin(), regionColorBitString.end());
-
-        // hier statt region color bitstring huffman dpcm werte und frequency map bitstring inserten
-
-        // pathsBitString.insert(pathsBitString.end(), RGBDifferencesHuffmanBitString.begin(), RGBDifferencesHuffmanBitString.end());
-
-
-
-        // std::cout << "size after cols+rows+region color: " << pathsBitString.size() << std::endl;
-
-        int pathsBitstringSizePrev = pathsBitString.size();
-        //int disconnectedComponentsBits = std::ceil(std::log2(img.cols * img.rows / 2));
-        int disconnectedComponentsBits = std::max(static_cast<double>(std::ceil(std::log2(std::max(img.cols, img.rows) + 1))), std::max(static_cast<double>(1), std::log2(std::ceil(static_cast<double>(img.cols)/2) * std::ceil(static_cast<double>(img.rows)/2) + 1)));
-        // std::cout << "paths size: " << paths.size() << std::endl;
-        std::vector<bool> numberOfDisconnectedComponents = intToBool(paths.size(), disconnectedComponentsBits);
-        // std::cout << "disconnected comp bits: " << disconnectedComponentsBits << std::endl;
-        int startPointBits = std::ceil(std::log2(edgeBits01.size() + 1));
-        std::vector<bool> startPointBitsVector = intToBool(startPointBits, 5);
-        // add number of components to bitstring
-        pathsBitString.insert(pathsBitString.end(), numberOfDisconnectedComponents.begin(), numberOfDisconnectedComponents.end());
-        // add number of bits for start points to bitstring
-        pathsBitString.insert(pathsBitString.end(), startPointBitsVector.begin(), startPointBitsVector.end());
-        for (auto& path : paths){
-            auto& startEdge = std::get<0>(path);
-            std::vector<bool> startBool = intToBool(startEdge,startPointBits);
-            pathsBitString.insert(pathsBitString.end(), startBool.begin(), startBool.end());
-            // std::cout << "direction size: " << std::get<2>(path).size() << std::endl;
-            // std::cout << "startEdge: " << startEdge << ", path: " << std::endl;
-            // int i = 0;
-            // for (bool bit : std::get<2>(path)) {
-            //     std::cout << bit;
-            //     // if(++i % 3 == 0){
-            //     //     std::cout << "-";
-            //     // }
-            // }
-            // std::cout << std::endl;
-        }
-        tree_start_bits = startPointBits * paths.size();
-        // std::cout << "tree start bits: " << tree_start_bits << std::endl;
-        int tree_dir_bits = 0;
-        for(auto& path : paths){
-            // add direction vector to bitstring, delimited by 000
-            pathsBitString.insert(pathsBitString.end(), std::get<2>(path).begin(), std::get<2>(path).end());
-            tree_dir_bits += std::get<2>(path).size();
-        }
-        // std::cout << "paths bitstring: ";
-        // int i = 0;
-        // for(bool bit : pathsBitString){
-        //     std::cout << bit;
-        // }
-        // std::cout << std::endl;
-        // std::cout << "tree dir bits: " << tree_dir_bits << std::endl;
-        treeMCBits = pathsBitString.size() - pathsBitstringSizePrev; 
-
-        end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        tree_bitstring_time = std::chrono::duration<double, std::milli>(end - start).count();
-        // std::cout << "tree bitstring: " << duration.count() << "ms" << std::endl;
-        tree_compression_time = std::chrono::duration<double, std::milli>(end - start).count();
-        pathCompressionRate = (img.rows * img.cols * 24) / (double)pathsBitString.size();
-        total_tree_bits = pathsBitString.size();
-        tree_bpp = static_cast<double>(total_tree_bits) / (img.rows * img.cols * 24);
-        // std::cout << "Path Compression Rate: " << pathCompressionRate << std::endl;
+    PathInfoVector paths;
+    std::tie(paths, threeBitCount) = setPaths(edgeBitsFromDFS, img);
+    disconnectedComponents = paths.size();
+    for (const auto& path : paths) {
+        currentTreeDirectionBits += std::get<2>(path).size();
     }
+    end = std::chrono::high_resolution_clock::now();
+    tree_construction_time = std::chrono::duration<double, std::milli>(end - start).count();
+
+    start = std::chrono::high_resolution_clock::now();
+
+    // Header: cols and rows
+    std::vector<bool> cols_bitstring = intToBool(img.cols, 16);
+    std::vector<bool> rows_bitstring = intToBool(img.rows, 16);
+    pathsBitString.insert(pathsBitString.end(), cols_bitstring.begin(), cols_bitstring.end());
+    pathsBitString.insert(pathsBitString.end(), rows_bitstring.begin(), rows_bitstring.end());
+
+    // Color information already deflated earlier, append here
+    pathsBitString.insert(pathsBitString.end(), deflatedBitstring.begin(), deflatedBitstring.end());
+    colorsBitstringSize = pathsBitString.size();
+
+    // Build DT_bitstring
+    std::vector<bool> DT_bitstring;
+    int disconnectedComponentsBits = std::max(
+        static_cast<double>(std::ceil(std::log2(std::max(img.cols, img.rows) + 1))),
+        std::max(static_cast<double>(1),
+                 std::log2(std::ceil(static_cast<double>(img.cols) / 2) *
+                           std::ceil(static_cast<double>(img.rows) / 2) + 1))
+    );
+    std::vector<bool> numberOfDisconnectedComponents = intToBool(paths.size(), disconnectedComponentsBits);
+    int startPointBits = std::ceil(std::log2(edgeBits01.size() + 1));
+    std::vector<bool> startPointBitsVector = intToBool(startPointBits, 5);
+    DT_bitstring.insert(DT_bitstring.end(), numberOfDisconnectedComponents.begin(), numberOfDisconnectedComponents.end());
+    DT_bitstring.insert(DT_bitstring.end(), startPointBitsVector.begin(), startPointBitsVector.end());
+
+    // Start edges
+    for (auto& path : paths) {
+        auto& startEdge = std::get<0>(path);
+        std::vector<bool> startBool = intToBool(startEdge, startPointBits);
+        DT_bitstring.insert(DT_bitstring.end(), startBool.begin(), startBool.end());
+    }
+
+    // Direction bits
+    tree_start_bits = startPointBits * paths.size();
+    int tree_dir_bits = 0;
+    for (auto& path : paths) {
+        DT_bitstring.insert(DT_bitstring.end(), std::get<2>(path).begin(), std::get<2>(path).end());
+        tree_dir_bits += std::get<2>(path).size();
+    }
+    treeMCBits = DT_bitstring.size();
+
+    end = std::chrono::high_resolution_clock::now();
+    tree_bitstring_time = std::chrono::duration<double, std::milli>(end - start).count();
+    tree_compression_time = tree_bitstring_time;
+
+    pathCompressionRate = (img.rows * img.cols * 24) / (double)pathsBitString.size();
+    total_tree_bits = pathsBitString.size();
+    tree_bpp = static_cast<double>(total_tree_bits) / (img.rows * img.cols * 24);
+
+    // === NEW: Compress DT_bitstring with Zlib ===
+    std::vector<uint8_t> dtBytes = ConvertBitsToBytes(DT_bitstring);
+    std::vector<uint8_t> compressedDT = ZlibDeflate(dtBytes);
+    treeMCBits = compressedDT.size() * 8; // compressed size in bits
+    int compressedDTSizeBytes = compressedDT.size();
+    std::vector<bool> compressedDTSizeBits = intToBool(compressedDTSizeBytes, 32); // 32 bits = 4 bytes
+
+    int originalDTBits = DT_bitstring.size();
+    int compressedDTBits = compressedDTSizeBytes * 8;
+    int savedBits = originalDTBits - compressedDTBits;
+
+    std::cout << "[DT Compression] Original DT bitstring size: " << originalDTBits << " bits\n";
+    std::cout << "[DT Compression] Compressed DT bitstring size: " << compressedDTBits << " bits\n";
+    std::cout << "[DT Compression] Saved bits by deflate: " << savedBits << " bits ("
+          << std::fixed << std::setprecision(2)
+          << (100.0 * savedBits / originalDTBits) << "% reduction)\n";
+
+
+    // Append size and then compressed data to pathsBitString
+    pathsBitString.insert(pathsBitString.end(), compressedDTSizeBits.begin(), compressedDTSizeBits.end());
+    for (uint8_t byte : compressedDT) {
+        std::vector<bool> byteBits = intToBool(byte, 8);
+        pathsBitString.insert(pathsBitString.end(), byteBits.begin(), byteBits.end());
+    }
+
+    std::cout << "Compressed directional path bitstring size in bits: " << compressedDT.size() * 8 << std::endl;
+    std::cout << "Original DT_bitstring size in bits: " << DT_bitstring.size() << std::endl;
+}
+
 
     if(compressionMethods.use2bits){
         start = std::chrono::high_resolution_clock::now();

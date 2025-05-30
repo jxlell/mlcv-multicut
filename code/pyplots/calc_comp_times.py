@@ -3,8 +3,8 @@ import pandas as pd
 # Load and combine CSVs
 csv_files = [
     # 'code/output_files/mc_results_test_screenshots_new.csv',
-    'code/output_files/mc_results_test_icons_new.csv'
-    # 'code/output_files/mc_results_test_textures_new.csv'
+    # 'code/output_files/mc_results_test_icons_new.csv'
+    'code/output_files/mc_results_test_textures_new.csv'
     # 'code/output_files/mc_results_test_photos_new.csv'
 ]
 data_frames = [pd.read_csv(file) for file in csv_files]
