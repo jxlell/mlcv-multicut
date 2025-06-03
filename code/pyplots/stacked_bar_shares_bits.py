@@ -33,35 +33,39 @@ grouped = grouped.reindex(["screenshots", "icons", "photos", "textures"])
 bar_width = 0.6
 indices = range(len(grouped))
 
-plt.figure(figsize=(8, 6))
-plt.bar(
+fig, ax = plt.subplots(figsize=(8, 6))
+ax.bar(
     indices,
     grouped["path_bits_percent"],
     bar_width,
-    label="DT Path Bits (%)",
-    color="#FF8080"
+    label="DT Directional Bits (%)",
+    color="#007EE3"
 )
-plt.bar(
+ax.bar(
     indices,
     grouped["start_bits_percent"],
     bar_width,
     bottom=grouped["path_bits_percent"],
-    label="DT Start Bits (%)",
-    color="#FF3333"
+    label="DT Start Edge Bits (%)",
+    color="#00335D"
 )
-plt.bar(
+ax.bar(
     indices,
     grouped["deflate_bits_percent"],
     bar_width,
     bottom=grouped["path_bits_percent"] + grouped["start_bits_percent"],
     label="Color Bits (%)",
-    color="#7a9dff"
+    color="#007DE376"
 )
 
-plt.xticks(indices, grouped.index)
-plt.xlabel("Category")
-plt.ylabel("Percent (%)")
-plt.title("Stacked Bar: Percent Contribution of Tree Bits and Deflate Bits per Category")
-plt.legend()
+current_ylim = ax.get_ylim()
+ax.set_ylim(current_ylim[0], current_ylim[1] * 1.05)
+
+ax.set_xticks(indices)
+ax.set_xticklabels(grouped.index)
+ax.set_xlabel("Category")
+ax.set_ylabel("Percent (%)")
+ax.set_title("Stacked Bar: Percent Contribution of Tree Bits and Deflate Bits per Category")
+ax.legend(loc='upper center', ncol=3)
 plt.tight_layout()
 plt.show()

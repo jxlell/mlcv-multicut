@@ -28,6 +28,7 @@ struct decompInfo{
     double sls_reconstruction_time;
     double sls_cmv_reconstruction_time;
     // int UF_reconstruction_time;
+    double read_time;
 };
 
 

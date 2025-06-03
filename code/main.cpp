@@ -131,6 +131,9 @@ int main() {
         vector<double> sls_reconstruction_time;
         vector<double> sls_cmv_reconstruction_time;
 
+    vector<double> write_times;
+    vector<double> read_times;
+
       vector<long long> total_tree_bits;
       vector<int> new2bitDirectionBits;
       vector<int> edgebits;
@@ -152,9 +155,9 @@ int main() {
     std::unordered_set<std::string> category_set = {
         // "icon_64",
         // "icon_512",
-        // "photo_kodak",
-        // "photo_tecnick",
-        // "photo_wikipedia",
+        "photo_kodak",
+        "photo_tecnick",
+        "photo_wikipedia",
         // "pngimg",
         // "screenshot_web",
         // "screenshot_game",
@@ -165,7 +168,7 @@ int main() {
         // "textures_plants",
 
 
-        "screenshot_game_reduced2"
+        // "screenshot_game_reduced2"
     };
 
     std::ifstream inputFile("/Users/jalell/Documents/GitHub/mlcv-multicut/code/singlefile.txt");
@@ -183,7 +186,7 @@ int main() {
     inputFile.close();
 
     // control parameters 
-    bool single_image = false;
+    bool single_image = true;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
     //showImg = false;
@@ -234,6 +237,34 @@ int main() {
             filename.erase(std::remove(filename.begin(), filename.end(), ','), filename.end());
             filenames.push_back(filename);
             categories.push_back(entry.path().filename().string());
+
+            start = std::chrono::high_resolution_clock::now();
+            std::ofstream outFile("tree_paths.bit", std::ios::binary);
+            if (outFile.is_open()) {
+                uint8_t byte = 0;
+                int count = 0;
+                for (bool bit : compImg.pathsBitString) {
+                    byte = (byte << 1) | bit;
+                    count++;
+                    if (count == 8) {
+                        outFile.put(byte);
+                        byte = 0;
+                        count = 0;
+                    }
+                }
+                if (count > 0) {  // pad remaining bits
+                    byte <<= (8 - count);
+                    outFile.put(byte);
+                }
+                outFile.close();
+            }
+            std::cout << "pathsBitString size: " << compImg.pathsBitString.size() << std::endl;
+            end = std::chrono::high_resolution_clock::now();
+            std::cout << "Time to write pathsBitString to file: " 
+                      << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() 
+                      << " ms\n";
+            double write_time = std::chrono::duration<double, std::milli>(end - start).count();
+            write_times.push_back(write_time);
 
             tree_compression_times.push_back(compImg.tree_compression_time);
             old_compression_times.push_back(compImg.old_compression_time);
@@ -331,6 +362,7 @@ int main() {
             dec_cmv_reconstruction_time.push_back(decomp_info.dec_cmv_reconstruction_time);
             sls_reconstruction_time.push_back(decomp_info.sls_reconstruction_time);
             sls_cmv_reconstruction_time.push_back(decomp_info.sls_cmv_reconstruction_time);
+            read_times.push_back(decomp_info.read_time);
         std::cout << "pushed dfs_reconstruction_time: " << (decomp_info.dfs_reconstruction_time / 1000.0f) << std::endl;
 
             progress++;
@@ -449,10 +481,10 @@ if(writeToFile){
       if(single_image && test_mode){
             csvFile.open("/Users/jalell/Documents/GitHub/mlcv-multicut/code/output_files/mc_results_single.csv");
       }
-      if(!single_image && !test_mode){
+      else if(!single_image && !test_mode){
             csvFile.open("/Users/jalell/Documents/GitHub/mlcv-multicut/code/output_files/mc_results.csv");
       }
-      if(test_mode){
+      else if(test_mode){
             csvFile.open("/Users/jalell/Documents/GitHub/mlcv-multicut/code/output_files/mc_results_test.csv");
       }
       if (!csvFile.is_open()) {
@@ -596,7 +628,7 @@ if(writeToFile){
             csvFile.close();
       }else{
             std::cout << "Writing test mode csv file..." << std::endl;
-            csvFile << "filename,category,pixels,mc_percentage,edgebits,rcmv_bits,total_tree_bits,tree_rate,2bit_rate,red_edgebits_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,deflate_bits,deflate_unseparated,transfer_codes,transfer_map,tree_bpp,avg_straight_lenght,read_img_time,setEdgeBitsTime,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,dec_construction_time,dec_bitstring_time,sls_construction_time,sls_bitstring_time,rcmv_construction_time,rcmv_bitstring_time,rebuild_dpcm_huffman_time,decode_colors_time,cmv_reconstruction_time,reconstruct_rcmv_time,reconstruct_rcmv_cmv_time,dec_reconstruction_time,dec_cmv_reconstruction_time,sls_reconstruction_time,sls_cmv_reconstruction_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
+            csvFile << "filename,category,pixels,mc_percentage,edgebits,rcmv_bits,total_tree_bits,tree_rate,2bit_rate,red_edgebits_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,deflate_bits,deflate_unseparated,transfer_codes,transfer_map,tree_bpp,avg_straight_lenght,read_img_time,write_time,read_time,setEdgeBitsTime,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,dec_construction_time,dec_bitstring_time,sls_construction_time,sls_bitstring_time,rcmv_construction_time,rcmv_bitstring_time,rebuild_dpcm_huffman_time,decode_colors_time,cmv_reconstruction_time,reconstruct_rcmv_time,reconstruct_rcmv_cmv_time,dec_reconstruction_time,dec_cmv_reconstruction_time,sls_reconstruction_time,sls_cmv_reconstruction_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
         for (size_t i = 0; i < filenames.size(); ++i) {
             csvFile << filenames[i] << ","
                     << categories[i] << ","
@@ -628,6 +660,8 @@ if(writeToFile){
                         << tree_bpp[i] << ","
                         << avg_straight_length[i] << ","
                     << read_img_time[i] << ","
+                    << write_times[i] << ","
+                    << read_times[i] << ","
                     << setEdgeBitsTime[i] << ","
                     << region_color_UF_time[i] << ","
                     << region_color_dfs_time[i] << ","

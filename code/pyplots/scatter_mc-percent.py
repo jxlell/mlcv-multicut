@@ -84,7 +84,37 @@ axes[3].set_xlabel("Share of edges that belong to the multicut in %")
 axes[0].set_ylabel("Compression Rate")
 axes[2].set_ylabel("Compression Rate")
 
-axes[0].legend(title="Category", bbox_to_anchor=(1.05, 1), loc='upper left')
+# axes[0].legend(title="Category", bbox_to_anchor=(1.05, 1), loc='upper left')
+fig.legend(
+    handles=axes[0].get_legend_handles_labels()[0],
+    labels=axes[0].get_legend_handles_labels()[1],
+    loc='lower center',
+    bbox_to_anchor=(0.5, -0.01),
+    ncol=4,
+    title="Category",
+    fontsize="small",
+    title_fontsize="small"
+)
+# plt.tight_layout(rect=[0, 0.08, 1, 0.96])
+
 fig.suptitle("Compression Rate vs. Multicut Share (per Method)", fontsize=14)
-plt.tight_layout(rect=[0, 0, 1, 0.96])
+plt.tight_layout(rect=[0.01, 0, 1.5, 0])
 plt.show()
+
+
+# # axes[0].legend(title="Category", bbox_to_anchor=(1.05, 1), loc='upper left')
+# fig.legend(
+#     handles=axes[0].get_legend_handles_labels()[0],
+#     labels=axes[0].get_legend_handles_labels()[1],
+#     loc='upper center',
+#     bbox_to_anchor=(0.5, 0.06),
+#     ncol=4,
+#     title="Category",
+#     fontsize="small",
+#     title_fontsize="small"
+# )
+# # plt.tight_layout(rect=[0, 0.08, 1, 0.96])
+
+# fig.suptitle("Compression Rate vs. Multicut Share (per Method)", fontsize=14)
+# plt.tight_layout(rect=[0, 0, 1.5, 0])
+# plt.show()

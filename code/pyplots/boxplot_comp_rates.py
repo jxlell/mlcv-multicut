@@ -4,11 +4,10 @@ import matplotlib.pyplot as plt
 
 # Load the CSV files and combine them into one DataFrame
 csv_files = [
-    'code/output_files/mc_results_test_screenshots.csv'
-    # ,'code/output_files/mc_results_test_textures_no_pk.csv'
-    # ,'code/output_files/mc_results_test_textures_pk.csv'
+    'code/output_files/mc_results_test_screenshots_new.csv'
+    # 'code/output_files/mc_results_test_textures_new.csv'
     # ,'code/output_files/mc_results_test_photos.csv'
-    ,'code/output_files/mc_results_test_icons.csv'
+    ,'code/output_files/mc_results_test_icons_new.csv'
 ]
 
 # Read and concatenate all CSV files

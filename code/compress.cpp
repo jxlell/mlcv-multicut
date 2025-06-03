@@ -827,6 +827,9 @@ CompressedImage compress(const std::string& imagePath){
     reduced_edgebits_compression_time += regionColorsBitStringTime;
     paths2bit_compression_time += regionColorsBitStringTime;
 
+    std::cout << "treeMC + colorsBitstring size: " << treeMCBits + colorsBitstringSize << std::endl;
+    std::cout << "pathsbitstring size: " << pathsBitString.size() << std::endl;
+
     pathCompressionRate = (img.rows * img.cols * 24) / (double)(treeMCBits + colorsBitstringSize);
     rleCompressionRate = (img.rows * img.cols * 24) / (double)(rleMCBits + colorsBitstringSize);
     oldCompressionRate = (img.rows * img.cols * 24) / (double)(edgeBitsMCBits + colorsBitstringSize);

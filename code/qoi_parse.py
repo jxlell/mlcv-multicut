@@ -2,11 +2,11 @@ import csv
 import re
 
 # Define the input and output file paths
-input_file_path = '/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/qoi.txt'
-output_file_path = '/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/parsed_qoi_results.csv'
+input_file_path = '/Users/jalell/Documents/GitHub/mlcv-multicut/code/qoi.txt'
+output_file_path = '/Users/jalell/Documents/GitHub/mlcv-multicut/code/output_files/parsed_qoi_results_new.csv'
 
 # Regular expression to match the lines with image paths and compression data
-image_path_regex = re.compile(r'^images\/([a-z_]+)\/(.+\.png) (\d+x\d+)$')
+image_path_regex = re.compile(r'^images\/([^\/]+)\/(.+\.png) (\d+x\d+)$')
 compression_data_regex = re.compile(r'^libpng:\s+(\d+\.\d+)\s+(\d+\.\d+)\s+\d+\.\d+\s+\d+\.\d+\s+(\d+)\s+(\d+\.\d+)%$')
 
 # Open the input file and read all lines

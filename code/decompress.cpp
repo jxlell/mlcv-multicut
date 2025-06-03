@@ -24,7 +24,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     std::vector<bool> edgeBitsBitString = compImg.edgeBitsBitString;
     std::vector<RGB> regionColors = compImg.regionColors;
     PathInfoVector paths = compImg.paths;
-    std::vector<bool> pathsBitString = compImg.pathsBitString;
+    // std::vector<bool> pathsBitString = compImg.pathsBitString;
     PathInfoVector paths_2bit_nonRLE = compImg.pathInfoVector2bit;
     std::vector<bool> paths2bitBitString = compImg.paths2bitBitString;
     std::vector<bool> paths2bitRLEBitString = compImg.paths2bitRLEBitString;
@@ -36,6 +36,9 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     int rows = originalImg.rows;
     int cols = originalImg.cols;
 
+    auto start = std::chrono::high_resolution_clock::now();
+    auto end = std::chrono::high_resolution_clock::now();
+
     long long tree_decompression_time = 0;
     long long old_decompression_time = 0;
     long long rle_decompression_time = 0;
@@ -43,6 +46,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     long long reduced_edgebits_decompression_time = 0;
     long long paths_2bits_decompression_time = 0;
     long long straights_decompression_time = 0;
+    double read_time = 0;
 
     double rebuild_dpcm_huffman_time = 0;
     double decode_colors_time = 0;
@@ -104,8 +108,30 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     std::vector<RGB> inflatedRegionColorsVec;
     std::vector<RGB> decodedColorsTree_inflated;
 
-    auto start = std::chrono::high_resolution_clock::now();
-    auto end = std::chrono::high_resolution_clock::now();
+
+        std::ifstream inFile("tree_paths.bit", std::ios::binary);
+    std::vector<bool> pathsBitString;
+
+    start = std::chrono::high_resolution_clock::now();
+
+    if (inFile.is_open()) {
+        char byte;
+        while (inFile.get(byte)) {
+            for (int i = 7; i >= 0; --i) {
+                pathsBitString.push_back((byte >> i) & 1);
+            }
+        }
+        inFile.close();
+        std::cout << "Loaded " << pathsBitString.size() << " bits from tree_paths.bit\n";
+        // compImg.pathsBitString = pathsBitString;
+    } else {
+        std::cerr << "Could not open tree_paths.bit for reading.\n";
+    }
+    end = std::chrono::high_resolution_clock::now();
+    std::cout << "Time to read pathsBitString from file: " 
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() 
+              << " ms\n";
+    read_time = std::chrono::duration<double, std::milli>(end - start).count();
 
 
     if (compressionMethods.useTree) {
@@ -1023,7 +1049,8 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     dec_reconstruction_time,
     dec_cmv_reconstruction_time,
     sls_reconstruction_time,
-    sls_cmv_reconstruction_time
+    sls_cmv_reconstruction_time,
+    read_time
     };
     
     return decomp_info;
