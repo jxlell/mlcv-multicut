@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 
 # Load and combine CSVs
 csv_files = [
-    'code/output_files/mc_results_test_screenshots_final.csv',
-    'code/output_files/mc_results_test_textures_final.csv',
-    'code/output_files/mc_results_test_photos_final.csv',
+    # 'code/output_files/mc_results_test_screenshots_final.csv',
+    # 'code/output_files/mc_results_test_textures_final.csv',
+    # 'code/output_files/mc_results_test_photos_final.csv',
     'code/output_files/mc_results_test_icons_final.csv'
 ]
 
@@ -20,10 +20,11 @@ grouped = df.groupby("category")[["tree_path_bits", "tree_start_bits", "deflate_
 
 # Compute total bits
 grouped["total_bits"] = grouped["tree_path_bits"] + grouped["tree_start_bits"] + grouped["deflate_bits"]
+grouped["total_bits"] = grouped["treeMCBits"] + grouped["deflate_bits"]
 
 # Calculate percentage shares
 grouped["path_bits_percent"] = grouped["tree_path_bits"] / grouped["total_bits"] * 100
-grouped["start_bits_percent"] = grouped["tree_start_bits"] / grouped["total_bits"] * 100
+# grouped["start_bits_percent"] = grouped["tree_start_bits"] / grouped["total_bits"] * 100
 grouped["deflate_bits_percent"] = grouped["deflate_bits"] / grouped["total_bits"] * 100
 
 # Reorder categories

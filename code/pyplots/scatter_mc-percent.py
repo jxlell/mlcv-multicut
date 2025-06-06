@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 
 # Load and combine CSVs
 csv_files = [
-    'code/output_files/mc_results_test_screenshots_new.csv',
-    'code/output_files/mc_results_test_textures_new.csv',
-    'code/output_files/mc_results_test_photos_new.csv',
-    'code/output_files/mc_results_test_icons_new.csv'
+    'code/output_files/mc_results_test_screenshots_final.csv',
+    'code/output_files/mc_results_test_textures_final.csv',
+    'code/output_files/mc_results_test_photos_final.csv',
+    'code/output_files/mc_results_test_icons_final.csv'
 ]
 
 data_frames = [pd.read_csv(file) for file in csv_files]
@@ -15,7 +15,7 @@ df = pd.concat(data_frames, ignore_index=True)
 # Define x and y values
 x = df["mc_percentage"]
 ys = {
-    "rCMV": df["red_edgebits_rate"],
+    "rCMV": df["edgebits_deflate_rate"],
     "DT": df["tree_rate"],
     "DEC": df["rle_rate"],
     "SLS": df["straights_huffman_rate"]

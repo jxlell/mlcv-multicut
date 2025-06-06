@@ -40,6 +40,9 @@ struct CompressedImage{
 
     double multicutPercentage;
     long long total_tree_bits;
+    int treeMCBits;
+    int dpcm_deflate_bits;
+    int dpcm_deflate_bits_no_inter;
 
     double treeCompressionRate;
     double rleCompressionRate;
@@ -74,6 +77,7 @@ struct CompressedImage{
     double tree_bpp;
     double avg_straight_length;
     int rcmv_bits;
+    int huffman_MCBits;
 
     int bitsfortransferingcodes;
     int bitsfortransferingfrequencymap;
@@ -92,6 +96,7 @@ struct CompressedImage{
     double sls_bitstring_time;
     double rcmv_construction_time;
     double rcmv_bitstring_time;
+    double deflate_edgebits_time;
 
 };
 

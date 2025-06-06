@@ -1,7 +1,10 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # Load the CSV
 data = pd.read_csv('/Users/jalell/Documents/GitHub/mlcv-multicut/code/output_files/parsed_qoi_results_new.csv')
+data2 = pd.read_csv('/Users/jalell/Documents/GitHub/mlcv-multicut/code/output_files/mc_results_test_screenshots_new.csv')
+data3 = pd.read_csv('/Users/jalell/Documents/GitHub/lossless-benchmark/compression_results_total.csv')
 
 # Define mapping from specific categories to broader groups
 category_mapping = {
@@ -21,10 +24,36 @@ category_mapping = {
     'pngimg': None  # Exclude this category
 }
 
-# Apply mapping
-data['group'] = data['category'].map(category_mapping)
+# Map categories to broader groups
+data['broad_category'] = data['category'].map(category_mapping)
+data2['broad_category'] = data2['category'].map(category_mapping)
+data3['broad_category'] = data3['category'].map(category_mapping)
 
-# Filter out rows not assigned to a group (i.e., pngimg)
-data_grouped = data.dropna(subset=['group'])
+# Filter for 'screenshots' and 'icons' categories
+screenshots_data = data[data['broad_category'] == 'screenshots']
+screenshots_data2 = data2[data2['broad_category'] == 'screenshots']
+screenshots_data3 = data3[data3['broad_category'] == 'screenshots']
 
-# TODO: boxplot
+icons_data = data[data['broad_category'] == 'icons']
+icons_data2 = data2[data2['broad_category'] == 'icons']
+icons_data3 = data3[data3['broad_category'] == 'icons']
+
+screenshots_data = pd.concat([screenshots_data, icons_data], ignore_index=True)
+screenshots_data2 = pd.concat([screenshots_data2, icons_data2], ignore_index=True)
+screenshots_data3 = pd.concat([screenshots_data3, icons_data3], ignore_index=True)
+
+# Prepare data for boxplot
+boxplot_data = [
+    screenshots_data['rate'].dropna(),
+    screenshots_data2['tree_rate'].dropna(),
+    screenshots_data3['jxl_cr'].dropna()
+]
+
+plt.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
+
+plt.boxplot(boxplot_data, labels=['PNG', 'MC (DT)', 'JPEG XL'])
+plt.ylabel('Compression Rate')
+plt.title('Compression Rate for Artificial Images (Screenshots and Icons)')
+plt.yscale('log')
+plt.show()
+

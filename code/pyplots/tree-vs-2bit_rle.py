@@ -7,7 +7,7 @@ import matplotlib.patches as patches
 show_average = False  # <<<< CHANGE THIS TO True for average-only view
 
 # Load your CSV
-df = pd.read_csv("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_test_reduced.csv")
+df = pd.read_csv("/Users/jalell/Documents/GitHub/mlcv-multicut/code/output_files/mc_results_test_screenshots_new.csv")
 
 # Sort by filename or other metric
 df_sorted = df.sort_values(by="filename")

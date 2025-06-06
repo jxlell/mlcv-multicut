@@ -102,6 +102,7 @@ int main() {
       vector<int> dpcm_huffman_bits;
       vector<int> deflate_bits;
       vector<int> deflate_bits_unseparated;
+      vector<int> treeMCBits;
 
       vector<double> setEdgeBitsTime;
       vector<double> read_img_time;
@@ -117,6 +118,8 @@ int main() {
         vector<double> sls_bitstring_time;
         vector<double> rcmv_construction_time;
         vector<double> rcmv_bitstring_time;
+        vector<double> deflate_edgebits_times;
+        vector<double> inflate_edgebits_times;
 
       vector<double> rebuild_dpcm_huffman_time;
       vector<double> decode_colors_time;
@@ -138,12 +141,17 @@ int main() {
       vector<int> new2bitDirectionBits;
       vector<int> edgebits;
       vector<int> rcmv_bits;
+      vector <int> huffman_MCBits;
+      vector<int> dpcm_deflate_bits;
+        vector<int> dpcm_deflate_bits_no_inter;
 
         vector<int> bitsfortransferingcodes;
         vector<int> bitsfortransferingfrequencymap;
 
         vector<double> tree_bpp;
         vector<double> avg_straight_length;
+
+        vector<double> edgebits_deflate_rates;
 
 
     vector<string> filenames;
@@ -155,9 +163,9 @@ int main() {
     std::unordered_set<std::string> category_set = {
         // "icon_64",
         // "icon_512",
-        "photo_kodak",
-        "photo_tecnick",
-        "photo_wikipedia",
+        // "photo_kodak",
+        // "photo_tecnick",
+        // "photo_wikipedia",
         // "pngimg",
         // "screenshot_web",
         // "screenshot_game",
@@ -167,7 +175,7 @@ int main() {
         // "textures_pk02",
         // "textures_plants",
 
-
+        "sample_images",
         // "screenshot_game_reduced2"
     };
 
@@ -186,7 +194,7 @@ int main() {
     inputFile.close();
 
     // control parameters 
-    bool single_image = true;
+    bool single_image = false;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
     //showImg = false;
@@ -239,7 +247,7 @@ int main() {
             categories.push_back(entry.path().filename().string());
 
             start = std::chrono::high_resolution_clock::now();
-            std::ofstream outFile("tree_paths.bit", std::ios::binary);
+            std::ofstream outFile("tree_paths.bin", std::ios::binary);
             if (outFile.is_open()) {
                 uint8_t byte = 0;
                 int count = 0;
@@ -275,6 +283,9 @@ int main() {
             paths_2bits_compression_times.push_back(compImg.paths2bit_compression_time);
             compression_times.push_back(compression_time);
             //compression_times_total.push_back(comp.getCompressionTime());
+            // edgebits_deflate_rates.push_back(compImg.oldCompressionRate);
+            huffman_MCBits.push_back(compImg.huffman_MCBits);
+            deflate_edgebits_times.push_back(compImg.deflate_edgebits_time);
 
             //double compression_rate = getCompressionRate(compImg.colorVector, compImg.paths, compImg.originalImage);
             //std::cout << "Compression Rate: " << compression_rate << std::endl;
@@ -334,7 +345,9 @@ int main() {
                 rcmv_bitstring_time.push_back(compImg.rcmv_bitstring_time);
             edgebits.push_back(compImg.edgeBits01.size());
             rcmv_bits.push_back(compImg.rcmv_bits);
-
+            treeMCBits.push_back(compImg.treeMCBits);
+            dpcm_deflate_bits.push_back(compImg.dpcm_deflate_bits);
+            dpcm_deflate_bits_no_inter.push_back(compImg.dpcm_deflate_bits_no_inter);
             //stateless approach
             start = std::chrono::high_resolution_clock::now();
             decompInfo decomp_info = reconstructImage(compImg, showImg); 
@@ -363,6 +376,7 @@ int main() {
             sls_reconstruction_time.push_back(decomp_info.sls_reconstruction_time);
             sls_cmv_reconstruction_time.push_back(decomp_info.sls_cmv_reconstruction_time);
             read_times.push_back(decomp_info.read_time);
+            inflate_edgebits_times.push_back(decomp_info.inflate_edgebits_time);
         std::cout << "pushed dfs_reconstruction_time: " << (decomp_info.dfs_reconstruction_time / 1000.0f) << std::endl;
 
             progress++;
@@ -628,7 +642,7 @@ if(writeToFile){
             csvFile.close();
       }else{
             std::cout << "Writing test mode csv file..." << std::endl;
-            csvFile << "filename,category,pixels,mc_percentage,edgebits,rcmv_bits,total_tree_bits,tree_rate,2bit_rate,red_edgebits_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,deflate_bits,deflate_unseparated,transfer_codes,transfer_map,tree_bpp,avg_straight_lenght,read_img_time,write_time,read_time,setEdgeBitsTime,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,dec_construction_time,dec_bitstring_time,sls_construction_time,sls_bitstring_time,rcmv_construction_time,rcmv_bitstring_time,rebuild_dpcm_huffman_time,decode_colors_time,cmv_reconstruction_time,reconstruct_rcmv_time,reconstruct_rcmv_cmv_time,dec_reconstruction_time,dec_cmv_reconstruction_time,sls_reconstruction_time,sls_cmv_reconstruction_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
+            csvFile << "filename,category,pixels,mc_percentage,edgebits,rcmv_bits,total_tree_bits,treeMCBits,dpcm_deflate_bits,dpcm_deflate_bits_no_inter,sls_mc_bits,tree_rate,edgebits_deflate_rate,2bit_rate,red_edgebits_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,deflate_bits,deflate_unseparated,transfer_codes,transfer_map,tree_bpp,avg_straight_lenght,read_img_time,write_time,read_time,inflate_edgebits_time,deflate_edgebits_time,setEdgeBitsTime,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,dec_construction_time,dec_bitstring_time,sls_construction_time,sls_bitstring_time,rcmv_construction_time,rcmv_bitstring_time,rebuild_dpcm_huffman_time,decode_colors_time,cmv_reconstruction_time,reconstruct_rcmv_time,reconstruct_rcmv_cmv_time,dec_reconstruction_time,dec_cmv_reconstruction_time,sls_reconstruction_time,sls_cmv_reconstruction_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
         for (size_t i = 0; i < filenames.size(); ++i) {
             csvFile << filenames[i] << ","
                     << categories[i] << ","
@@ -637,7 +651,12 @@ if(writeToFile){
                     << edgebits[i] << ","
                     << rcmv_bits[i] << ","
                     << total_tree_bits[i] << ","
+                    << treeMCBits[i] << ","
+                    << dpcm_deflate_bits[i] << ","
+                    << dpcm_deflate_bits_no_inter[i] << ","
+                    << huffman_MCBits[i] << ","
                     << tree_compression_rates_total[i] << ","
+                    << old_compression_rates_total[i] << ","
                     << paths2bit_compression_rates_total[i] << ","
                     << reduced_edgebits_compression_rates_total[i] << ","
                     << tree_3bit_bits[i] << ","
@@ -662,6 +681,8 @@ if(writeToFile){
                     << read_img_time[i] << ","
                     << write_times[i] << ","
                     << read_times[i] << ","
+                    << inflate_edgebits_times[i] << ","
+                    << deflate_edgebits_times[i] << ","
                     << setEdgeBitsTime[i] << ","
                     << region_color_UF_time[i] << ","
                     << region_color_dfs_time[i] << ","

@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Load the CSV
-data = pd.read_csv('/Users/jalell/Documents/GitHub/lossless-benchmark/compression_results.csv')
+data = pd.read_csv('/Users/jalell/Documents/GitHub/lossless-benchmark/compression_results_lossless_all.csv')
 
 # Define mapping from specific categories to broader groups
 category_mapping = {
@@ -30,6 +30,11 @@ data_grouped = data.dropna(subset=['group'])
 # Calculate means
 mean_cr = data_grouped.groupby('group')[['png_cr', 'jxl_cr']].mean()
 median_cr = data_grouped.groupby('group')[['png_cr', 'jxl_cr']].median()
+
+mean_comp_times = data_grouped.groupby('group')[['png_time_ms', 'png_dec_time', 'jxl_time_ms', 'djxl_time_ms']].mean()
+
+print("Mean Compression Times:")
+print(mean_comp_times)
 
 # Print results
 print("Mean Compression Rates:")

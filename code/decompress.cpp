@@ -60,6 +60,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     double dec_cmv_reconstruction_time = 0;
     double sls_reconstruction_time = 0;
     double sls_cmv_reconstruction_time = 0;
+    double inflate_edgebits_time = 0;
 
     std::vector<bool> straightsHuffmanCodesBitString;// = compImg.straightsHuffmanCodesBitString;
     std::vector<uint32_t> straightsHuffmanCodesStartPoints;// = compImg.straightsHuffmanCodesStartPoints;
@@ -109,7 +110,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     std::vector<RGB> decodedColorsTree_inflated;
 
 
-        std::ifstream inFile("tree_paths.bit", std::ios::binary);
+        std::ifstream inFile("tree_paths.bin", std::ios::binary);
     std::vector<bool> pathsBitString;
 
     start = std::chrono::high_resolution_clock::now();
@@ -377,12 +378,36 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         std::string edgeBitsAmountStr = edgeBitsBitStringStr.substr(bitIndex, 32);
         int edgeBitsAmount = std::stoi(edgeBitsAmountStr, nullptr, 2);
         bitIndex += 32;
+        std::cout << "edgeBitsAmount: " << edgeBitsAmount << std::endl;
 
+        start = std::chrono::high_resolution_clock::now();
         // Parse edge bits
-        for (size_t i = 0; i < edgeBitsAmount; i++) {
-            edgeBitsFromBitString[i] = edgeBitsBitStringStr[bitIndex++] == '1';
+        int numEdgeBytes = edgeBitsAmount / 8;
+        std::vector<uint8_t> deflated_edgebits_bytes(numEdgeBytes);
+        for (int i = 0; i < numEdgeBytes; ++i) {
+            std::string byteStr = edgeBitsBitStringStr.substr(bitIndex, 8);
+            deflated_edgebits_bytes[i] = static_cast<uint8_t>(std::stoi(byteStr, nullptr, 2));
+            bitIndex += 8;
         }
+        // Inflate edge bits
+        std::vector<uint8_t> inflated_edgebits_bytes;
+        bool inflateSuccess = ZlibInflate(deflated_edgebits_bytes, inflated_edgebits_bytes);
+        std::cout << "Zlib inflate success: " << (inflateSuccess ? "YES" : "NO") << std::endl;
+        // Convert inflated bytes to bool vector
+        edgeBitsFromBitString.resize(2 * cols_int * rows_int - cols_int - rows_int, false);
+        for (size_t i = 0; i < inflated_edgebits_bytes.size(); ++i) {
+            uint8_t byte = inflated_edgebits_bytes[i];
+            for (int j = 7; j >= 0; --j) {
+                edgeBitsFromBitString[i * 8 + (7 - j)] = (byte >> j) & 1;
+            }
+        }
+
+
+        // for (size_t i = 0; i < edgeBitsAmount; i++) {
+        //     edgeBitsFromBitString[i] = edgeBitsBitStringStr[bitIndex++] == '1';
+        // }
         end = std::chrono::high_resolution_clock::now();
+        inflate_edgebits_time = std::chrono::duration<double, std::milli>(end - start).count();
         old_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     }
@@ -1050,7 +1075,8 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     dec_cmv_reconstruction_time,
     sls_reconstruction_time,
     sls_cmv_reconstruction_time,
-    read_time
+    read_time,
+    inflate_edgebits_time
     };
     
     return decomp_info;

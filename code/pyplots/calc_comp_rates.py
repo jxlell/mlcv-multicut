@@ -4,13 +4,20 @@ import numpy as np
 
 # Load and combine CSVs
 csv_files = [
-    'code/output_files/mc_results_test_screenshots_new.csv',
-    'code/output_files/mc_results_test_textures_new.csv',
-    'code/output_files/mc_results_test_photos_new.csv',
-    'code/output_files/mc_results_test_icons_new.csv'
+    'code/output_files/mc_results_test_screenshots_final.csv',
+    'code/output_files/mc_results_test_textures_final.csv',
+    'code/output_files/mc_results_test_photos_final.csv',
+    'code/output_files/mc_results_test_icons_final.csv'
 ]
 
+single_csv = 'code/output_files/mc_results_test_screenshots_final.csv'
+df_single = pd.read_csv(single_csv)
+mean_tree_rate = df_single["tree_rate"].mean()
+print(f"Average tree_rate for screenshots: {mean_tree_rate}")
+
 data_frames = [pd.read_csv(file) for file in csv_files]
+
+
 categories = ["screenshots", "textures", "photos", "icons"]
 for df_part, category in zip(data_frames, categories):
     df_part["category"] = category

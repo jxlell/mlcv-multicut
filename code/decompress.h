@@ -29,6 +29,7 @@ struct decompInfo{
     double sls_cmv_reconstruction_time;
     // int UF_reconstruction_time;
     double read_time;
+    double inflate_edgebits_time;
 };
 
 

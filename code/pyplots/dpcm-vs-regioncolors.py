@@ -2,7 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load the CSV
-df = pd.read_csv("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/mc_results_test.csv")
+df = pd.read_csv("/Users/jalell/Documents/GitHub/mlcv-multicut/code/output_files/mc_results_test_screenshots_final.csv")
+
 
 # Calculate the averages
 avg_region_color_bits = df["region_color_bits"].mean()

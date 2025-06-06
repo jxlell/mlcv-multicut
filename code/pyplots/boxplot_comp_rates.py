@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 
 # Load the CSV files and combine them into one DataFrame
 csv_files = [
-    'code/output_files/mc_results_test_screenshots_new.csv'
+    'code/output_files/mc_results_test_screenshots_final.csv'
     # 'code/output_files/mc_results_test_textures_new.csv'
     # ,'code/output_files/mc_results_test_photos.csv'
-    ,'code/output_files/mc_results_test_icons_new.csv'
+    ,'code/output_files/mc_results_test_icons_final.csv'
 ]
 
 # Read and concatenate all CSV files
@@ -15,7 +15,7 @@ data_frames = [pd.read_csv(file) for file in csv_files]
 data = pd.concat(data_frames, ignore_index=True)
 
 # Specify the columns to compare
-columns_to_compare = ['red_edgebits_rate', 'tree_rate', 'rle_rate', 'straights_huffman_rate']  # Replace with your column names
+columns_to_compare = ['edgebits_deflate_rate', 'tree_rate', 'rle_rate', 'straights_huffman_rate']  # Replace with your column names
 
 # Check if all specified columns exist in the data
 for col in columns_to_compare:
