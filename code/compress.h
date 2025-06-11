@@ -77,7 +77,9 @@ struct CompressedImage{
     double tree_bpp;
     double avg_straight_length;
     int rcmv_bits;
+    int noHuffman_MCBits;
     int huffman_MCBits;
+    int edgeBitsMCBits;
 
     int bitsfortransferingcodes;
     int bitsfortransferingfrequencymap;

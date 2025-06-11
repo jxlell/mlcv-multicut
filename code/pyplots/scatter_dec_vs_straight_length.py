@@ -1,12 +1,25 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
+plt.rcParams.update(
+    {
+        'text.usetex': True,
+        "font.family": "serif",
+        "font.size": 15,
+        "pgf.texsystem": "pdflatex",
+        "pgf.rcfonts": False,
+    }
+)
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r'\usepackage{amssymb}\usepackage{wasysym}')
+
+
 # Load the CSV files and combine them into one DataFrame
 csv_files = [
-    'code/output_files/mc_results_test_screenshots_new.csv'
-    ,'code/output_files/mc_results_test_textures_new.csv'
-    ,'code/output_files/mc_results_test_photos_new.csv'
-    ,'code/output_files/mc_results_test_icons_new.csv'
+    'code/output_files/mc_results_test_screenshots_final.csv'
+    ,'code/output_files/mc_results_test_textures_final.csv'
+    ,'code/output_files/mc_results_test_photos_final.csv'
+    ,'code/output_files/mc_results_test_icons_final.csv'
 ]
 
 # Read and concatenate all CSV files
@@ -22,9 +35,9 @@ plt.scatter(x, y, color='black', alpha=0.5, marker='x', s=10)
 plt.axhline(y=1, color='red', linestyle='--', linewidth=1)
 
 # Labels and title
-plt.xlabel("Average straight length")
+plt.xlabel("Normalized average straight length")
 plt.ylabel("DEC directional bit reduction ratio")
-plt.title("Reduction of the DEC directional bits by applying RLE\n based on the average straight length\n(All Images)")
+plt.title("Reduction of the DEC directional bits by applying RLE\n compared to the average straight length\n(All Images)")
 plt.grid(True)
 plt.tight_layout()
 plt.xscale('log')

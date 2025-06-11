@@ -2,12 +2,25 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
+plt.rcParams.update(
+    {
+        'text.usetex': True,
+        "font.family": "serif",
+        "font.size": 15,
+        "pgf.texsystem": "pdflatex",
+        "pgf.rcfonts": False,
+    }
+)
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r'\usepackage{amssymb}\usepackage{wasysym}')
+
 # Load and combine CSVs
 csv_files = [
-    'code/output_files/mc_results_test_screenshots_new.csv',
-    'code/output_files/mc_results_test_textures_new.csv',
-    'code/output_files/mc_results_test_photos_new.csv',
-    'code/output_files/mc_results_test_icons_new.csv'
+    # 'code/output_files/mc_results_test_screenshots_final.csv',
+    # 'code/output_files/mc_results_test_textures_final.csv',
+    # 'code/output_files/mc_results_test_photos_final.csv',
+    # 'code/output_files/mc_results_test_icons_final.csv'
+    'code/output_files/mc_results_test_sample.csv'
 ]
 
 data_frames = [pd.read_csv(file) for file in csv_files]
@@ -19,13 +32,19 @@ df = pd.concat(data_frames, ignore_index=True)
 # Compute full compression and decompression times (unchanged)
 df["cmv_comp_time"] = df["region_color_dfs_time"]
 df["colors_comp_time"] = df["dpcm_huffman_time"] + df["dpcm_huffman_bitstring_time"]
-df["rcmv_comp_time"] = df["cmv_comp_time"] + df["rcmv_construction_time"] + df["rcmv_bitstring_time"] + df["write_time"]
+# To use a DataFrame that's all zeros, you can create it like this:
+zero_df = pd.DataFrame(0, index=np.arange(len(df)), columns=df.columns)
+
+# Example: replace df with zero_df for testing
+# df = zero_df
+
+df["rcmv_comp_time"] = df["cmv_comp_time"] + df["deflate_edgebits_time"] + 0 + df["write_time"]
 df["tree_comp_time"] = df["cmv_comp_time"] + df["tree_construction_time"] + df["tree_bitstring_time"] + df["write_time"]
 df["dec_comp_time"] = df["cmv_comp_time"] + df["dec_construction_time"] + df["dec_bitstring_time"] + df["write_time"]
 df["sls_comp_time"] = df["cmv_comp_time"] + df["sls_construction_time"] + df["sls_bitstring_time"] + df["write_time"]
 
 df["cmv_decomp_time"] = df["decode_colors_time"] + df["cmv_reconstruction_time"] + df["dfs_reconstruction_time"]
-df["rcmv_decomp_time"] = df["read_time"] + df["decode_colors_time"] + df["reconstruct_rcmv_time"] + df["reconstruct_rcmv_cmv_time"] + df["dfs_reconstruction_time"]
+df["rcmv_decomp_time"] = df["read_time"] + df["decode_colors_time"] + df["inflate_edgebits_time"] + 0 + df["dfs_reconstruction_time"]
 df["dt_decomp_time"] = df["read_time"] + df["decode_colors_time"] + df["assemble_tree_paths_time"] + df["reconstruct_tree_edgebits_time"] + df["dfs_reconstruction_time"]
 df["dec_decomp_time"] = df["read_time"] + df["decode_colors_time"] + df["dec_reconstruction_time"] + df["dec_cmv_reconstruction_time"] + df["dfs_reconstruction_time"]
 df["sls_decomp_time"] = df["read_time"] + df["decode_colors_time"] + df["sls_reconstruction_time"] + df["sls_cmv_reconstruction_time"] + df["dfs_reconstruction_time"]
@@ -35,13 +54,13 @@ methods = ["rcmv", "tree", "dec", "sls"]
 # Define parts for stacked bars
 comp_parts = ["region_color_dfs_time", "dpcm_huffman_time", "dpcm_huffman_bitstring_time"]
 comp_method_parts = {
-    "rcmv": ["rcmv_construction_time", "rcmv_bitstring_time", "write_time"],
+    "rcmv": ["inflate_edgebits_time", "rcmv_bitstring_time", "write_time"],
     "tree": ["tree_construction_time", "tree_bitstring_time", "write_time"],
     "dec": ["dec_construction_time", "dec_bitstring_time", "write_time"],
     "sls": ["sls_construction_time", "sls_bitstring_time", "write_time"]
 }
 decomp_method_parts = {
-    "rcmv": ["read_time", "decode_colors_time", "reconstruct_rcmv_time", "reconstruct_rcmv_cmv_time", "dfs_reconstruction_time"],
+    "rcmv": ["read_time", "decode_colors_time", "inflate_edgebits_time", 0, "dfs_reconstruction_time"],
     "tree": ["read_time", "decode_colors_time", "assemble_tree_paths_time", "reconstruct_tree_edgebits_time", "dfs_reconstruction_time"],
     "dec": ["read_time", "decode_colors_time", "dec_reconstruction_time", "dec_cmv_reconstruction_time", "dfs_reconstruction_time"],
     "sls": ["read_time", "decode_colors_time", "sls_reconstruction_time", "sls_cmv_reconstruction_time", "dfs_reconstruction_time"]
@@ -53,9 +72,13 @@ comp_times = {
     for method in methods
 }
 decomp_times = {
-    method: [df[p].mean() for p in decomp_method_parts[method]]
+    method: [
+        df[p].mean() if isinstance(p, str) else 0.0
+        for p in decomp_method_parts[method]
+    ]
     for method in methods
 }
+
 
 # Plotting setup
 x = np.arange(len(methods))
@@ -88,14 +111,14 @@ ax.set_xticks(x)
 ax.set_xticklabels(["rCMV", "DT", "DEC", "SLS"])
 ax.set_ylabel("Average Time (ms)")
 ax.set_title("Compression and Decompression Time per Method")
-
+ax.grid(axis='y', linestyle='--', alpha=0.7)
 # Legend: below the plot, centered, in 5 columns
 ax.legend([
     "Color Region Discovery", "DPCM + Deflate", "Color Bitstring",
     "Multicut Construction", "Multicut Bitstring", "Write to File",
     "Read from File", "Color Decoding", "Multicut Structure Reconstruction",
     "Edge Bit Reconstruction", "Image DFS"
-], loc='lower center', bbox_to_anchor=(0.5, -0.2), ncol=5, fontsize="small")
+], loc='lower center', bbox_to_anchor=(0.5, -0.3), ncol=4, fontsize="small")
 
 # Reserve vertical space for the legend
 plt.tight_layout(rect=[0, 0.2, 1, 0])

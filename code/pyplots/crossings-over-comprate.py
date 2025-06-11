@@ -1,12 +1,14 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 # Load the CSV files and combine them into one DataFrame
 csv_files = [
     'code/output_files/mc_results_test_screenshots_new.csv',
-    'code/output_files/mc_results_test_textures_new.csv',
-    'code/output_files/mc_results_test_photos_new.csv',
-    'code/output_files/mc_results_test_icons_new.csv'
+    # 'code/output_files/mc_results_test_textures_new.csv',
+    # 'code/output_files/mc_results_test_photos_new.csv',
+    'code/output_files/mc_results_test_icons_new.csv',
+    # 'code/output_files/mc_results_test_sample.csv',
 ]
 
 # Read and concatenate all CSV files
@@ -19,11 +21,26 @@ df['crossings_minus_disc_comp'] = df['crossings'] - df['disc_comp']
 # Calculate the relative difference (factor) between tree_rate and 2bit_rate
 df['rate_difference_factor'] = (df['tree_rate'] - df['2bit_rate']) / df['2bit_rate']
 
+df['crossings_per_pixel'] = df['crossings'] / df['pixels']
+
+x = df['crossings_per_pixel'].values
+y = df['rate_difference_factor'].values
+
+# Fit a polynomial of degree 2
+coeffs = np.polyfit(x, y, deg=2)
+poly_eq = np.poly1d(coeffs)
+
+# Create smooth x values for plotting
+x_fit = np.linspace(x.min(), x.max(), 500)
+y_fit = poly_eq(x_fit)
+
 # Set up the plot
 fig, ax = plt.subplots(figsize=(10, 6))
 
+ax.plot(x_fit, y_fit, color='blue', label='Quadratic Fit')
+
 # Scatter plot for all points
-ax.scatter(df['crossings'], df['rate_difference_factor'], alpha=0.6, color='black', marker='x', s=10)
+ax.scatter(df['crossings_per_pixel'], df['rate_difference_factor'], alpha=0.6, color='black', marker='x', s=10)
 # Add a horizontal line at y=0
 ax.axhline(y=0, color='red', linestyle='--', linewidth=1)
 # Set labels and title
@@ -44,5 +61,6 @@ print(f"Filename with the biggest rate difference: {max_diff_row['filename']}")
 
 # Show the plot
 plt.tight_layout()
-plt.xscale('log')
+# plt.xscale('log')
+# plt.yscale('log')
 plt.show()

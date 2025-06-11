@@ -128,7 +128,7 @@ CompressedImage compress(const std::string& imagePath){
     int deflate_bits = 0;
     int deflate_bits_unseparated = 0;
     int rcmv_bits = 0;
-
+    int dpcm_deflate_bits_no_inter = 0;
     int bitsfortransferingcodes = 0;
     int bitsfortransferingfrequencymap = 0;
 
@@ -199,13 +199,7 @@ CompressedImage compress(const std::string& imagePath){
     std::vector<RGB> differentialColors_no_inter = dpcm(regionColors);
     std::vector<uint8_t> differentialColors_no_inter_flat = flatten_colors(differentialColors_no_inter);
     std::vector<uint8_t> differentialColors_no_inter_deflated = ZlibDeflate(differentialColors_no_inter_flat);
-    int dpcm_deflate_bits_no_inter = differentialColors_no_inter_deflated.size() * 8;
-    // std::cout << "differential colors: " << std::endl;
-    // for (const auto& color : differentialColors) {
-    //     std::cout << "R: " << static_cast<int>(color.red) 
-    //               << ", G: " << static_cast<int>(color.green) 
-    //               << ", B: " << static_cast<int>(color.blue) << std::endl;
-    // }
+    dpcm_deflate_bits_no_inter = differentialColors_no_inter_deflated.size() * 8;
     std::vector<uint8_t> flat_differences = flatten_colors(differentialColors);
     // std::vector<uint8_t> flat_regioncolors = flatten_colors(regionColors);
     
@@ -881,7 +875,9 @@ CompressedImage compress(const std::string& imagePath){
     oldCompressionRate = (img.rows * img.cols * 24) / (double)(edgeBitsMCBits + colorsBitstringSize);
     std::cout << "old compression rate: " << oldCompressionRate << std::endl;
     straightsCompressionRate = (img.rows * img.cols * 24) / (double)(straightsMCBits + colorsBitstringSize);
+    std::cout << "straightsMCBits: " << straightsMCBits << std::endl;
     straightsHuffmanCompressionRate = (img.rows * img.cols * 24) / (double)(straightsHuffmanMCBits + colorsBitstringSize);
+    std::cout << "straightsHuffmanMCBits: " << straightsHuffmanMCBits << std::endl;
     std::cout << "straights compression rate: " << straightsCompressionRate << std::endl;
     // straightsHuffmanCompressionRate = (img.rows * img.cols * 24) / (double)(straightsHuffmanMCBits + colorsBitstringSize - (bitsfortransferingfrequencymap - bitsfortransferingcodes));
     newEdgeBitsCompressionRate = (img.rows * img.cols * 24) / (double)(newEdgeBitsMCBits + colorsBitstringSize);
@@ -901,7 +897,7 @@ CompressedImage compress(const std::string& imagePath){
     tree_compression_time, old_compression_time, rle_compression_time, straights_compression_time, straights_huffman_compression_time, reduced_edgebits_compression_time, paths2bit_compression_time,
     threeBitCount, currentTreeDirectionBits,tree_start_bits,disconnectedComponents, paths2bit_bits, paths2bit_start_bits, paths2bit_components, rle_direction_bits, region_colors_bits, dpcm_huffman_bits, deflate_bits, deflate_bits_unseparated, new2bitDirectionBits,
     tree_bpp,avg_straight_length, 
-    rcmv_bits,straightsHuffmanMCBits,
+    rcmv_bits,straightsMCBits,straightsHuffmanMCBits,edgeBitsMCBits, 
     bitsfortransferingcodes, bitsfortransferingfrequencymap,
     read_img_time,setEdgeBitsTime, region_color_dfs_time, region_color_UF_time,dpcm_huffman_time, dpcm_huffman_bitstring_time,tree_construction_time, tree_bitstring_time,
     dec_construction_time, dec_bitstring_time, sls_construction_time, sls_bitstring_time, rcmv_construction_time, rcmv_bitstring_time, deflate_edgebits_time

@@ -2,10 +2,10 @@ import pandas as pd
 
 # Load and combine CSVs
 csv_files = [
-    # 'code/output_files/mc_results_test_screenshots_new.csv',
-    # 'code/output_files/mc_results_test_icons_new.csv',
-    'code/output_files/mc_results_test_textures_new.csv',
-    # 'code/output_files/mc_results_test_photos_new.csv'
+    'code/output_files/mc_results_test_screenshots_final.csv',
+    # 'code/output_files/mc_results_test_icons_final.csv',
+    # 'code/output_files/mc_results_test_textures_final.csv',
+    # 'code/output_files/mc_results_test_photos_final.csv'
     # # 'code/output_files/mc_results_test.csv',
 ]
 data_frames = [pd.read_csv(file) for file in csv_files]
@@ -21,8 +21,9 @@ df["cmv_comp_time"] = (
 
 df["rcmv_comp_time"] = (
     df["cmv_comp_time"] +
-    df["rcmv_construction_time"] +
-    df["rcmv_bitstring_time"] +
+    # df["rcmv_construction_time"] +
+    # df["rcmv_bitstring_time"] +
+    df["deflate_edgebits_time"] +
     df["write_time"]
 )
 
@@ -57,8 +58,7 @@ df["cmv_decomp_time"] = (
 df["rcmv_decomp_time"] = (
     df["read_time"] +
     df["decode_colors_time"] +
-    df["reconstruct_rcmv_time"] +
-    df["reconstruct_rcmv_cmv_time"] +
+    df["inflate_edgebits_time"] +
     df["dfs_reconstruction_time"]
 )
 

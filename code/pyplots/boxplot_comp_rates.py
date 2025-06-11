@@ -2,11 +2,23 @@ import pandas as pd
 
 import matplotlib.pyplot as plt
 
+plt.rcParams.update(
+    {
+        'text.usetex': True,
+        "font.family": "serif",
+        "font.size": 15,
+        "pgf.texsystem": "pdflatex",
+        "pgf.rcfonts": False,
+    }
+)
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r'\usepackage{amssymb}\usepackage{wasysym}')
+
 # Load the CSV files and combine them into one DataFrame
 csv_files = [
     'code/output_files/mc_results_test_screenshots_final.csv'
-    # 'code/output_files/mc_results_test_textures_new.csv'
-    # ,'code/output_files/mc_results_test_photos.csv'
+    # 'code/output_files/mc_results_test_textures_final.csv'
+    # ,'code/output_files/mc_results_test_photo_finals.csv'
     ,'code/output_files/mc_results_test_icons_final.csv'
 ]
 
@@ -46,14 +58,17 @@ for col in columns_to_compare:
     filename = data.loc[min_idx, 'filename'] if 'filename' in data.columns else 'N/A'
     print(f"{col}: {filename}")
 
+box_data = [data[col].dropna() for col in columns_to_compare]
+
 # Create the boxplot
 plt.figure(figsize=(8, 6))
-data[columns_to_compare].boxplot()
+# data[columns_to_compare].boxplot()
+plt.boxplot(box_data)
 plt.xticks([1, 2, 3, 4], ["rCMV", "DT", "DEC", "SLS"])
 plt.title('Comparison of Compression Rates (Artificial Images)')
 plt.ylabel('Compression Rate')
 plt.xlabel('Multicut Encoding Methods')
-plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+plt.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
 plt.yscale('log')  # Set y-axis to logarithmic scale for better visualization
 
 # Save the plot or show it

@@ -139,6 +139,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     start = std::chrono::high_resolution_clock::now();
 
     std::string pathsBitStringStr;
+    pathsBitStringStr.reserve(pathsBitString.size());
     for (bool bit : pathsBitString) {
         pathsBitStringStr += bit ? '1' : '0';
     }
@@ -416,7 +417,6 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     if(compressionMethods.use2bits){
         //reconstruct 2bitpaths from paths_2bit_bitstring
         // std::cout << "parse 2bitpaths bitstring" << std::endl;
-        start = std::chrono::high_resolution_clock::now();
         PathInfoVector paths_2bit_from_bitstring;
         std::string paths2bitBitStringStr;
         for (bool bit : paths2bitBitString) {
@@ -451,6 +451,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
             regionColorsBitStringFrom2BitPaths.push_back(c == '1');
         }
         bitIndex += regionColorBitStringStr.size();
+        start = std::chrono::high_resolution_clock::now();
 
         // Extract paths2bitAmount (number of paths)
         std::string paths2bitAmountStr = paths2bitBitStringStr.substr(bitIndex, 32);
@@ -687,6 +688,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         for (size_t i = 0; i < regionColorBitsSizeInt * 24; ++i) {
             regionColorsBitStringFromStraightsHuffman.push_back(straightsBitStringStr[bitIndex++] == '1');
         }
+        start = std::chrono::high_resolution_clock::now();
 
         // Read Huffman start points amount (32 bits)
         int huffmanStartPointsAmount = std::stoi(straightsBitStringStr.substr(bitIndex, 32), nullptr, 2);
@@ -755,7 +757,6 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         straights_huffman_decompression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
         // create huffman tree from lengths and frequencies 
-        start = std::chrono::high_resolution_clock::now();
         map<int,int> straightLengths;
         for (size_t i = 0; i < straightLengthsList.size(); ++i) {
             straightLengths[straightLengthsList[i]] = straightLengthFrequencies[i];

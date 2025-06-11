@@ -103,6 +103,8 @@ int main() {
       vector<int> deflate_bits;
       vector<int> deflate_bits_unseparated;
       vector<int> treeMCBits;
+      vector<int> edgeBitsMCBits;
+      vector<int> straights_MCBits;
 
       vector<double> setEdgeBitsTime;
       vector<double> read_img_time;
@@ -194,7 +196,7 @@ int main() {
     inputFile.close();
 
     // control parameters 
-    bool single_image = false;
+    bool single_image = true;
     string single_image_name = single_image_txt;
     bool showImg = single_image;
     //showImg = false;
@@ -348,6 +350,8 @@ int main() {
             treeMCBits.push_back(compImg.treeMCBits);
             dpcm_deflate_bits.push_back(compImg.dpcm_deflate_bits);
             dpcm_deflate_bits_no_inter.push_back(compImg.dpcm_deflate_bits_no_inter);
+            edgeBitsMCBits.push_back(compImg.edgeBitsMCBits);
+            straights_MCBits.push_back(compImg.noHuffman_MCBits);
             //stateless approach
             start = std::chrono::high_resolution_clock::now();
             decompInfo decomp_info = reconstructImage(compImg, showImg); 
@@ -642,7 +646,7 @@ if(writeToFile){
             csvFile.close();
       }else{
             std::cout << "Writing test mode csv file..." << std::endl;
-            csvFile << "filename,category,pixels,mc_percentage,edgebits,rcmv_bits,total_tree_bits,treeMCBits,dpcm_deflate_bits,dpcm_deflate_bits_no_inter,sls_mc_bits,tree_rate,edgebits_deflate_rate,2bit_rate,red_edgebits_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,deflate_bits,deflate_unseparated,transfer_codes,transfer_map,tree_bpp,avg_straight_lenght,read_img_time,write_time,read_time,inflate_edgebits_time,deflate_edgebits_time,setEdgeBitsTime,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,dec_construction_time,dec_bitstring_time,sls_construction_time,sls_bitstring_time,rcmv_construction_time,rcmv_bitstring_time,rebuild_dpcm_huffman_time,decode_colors_time,cmv_reconstruction_time,reconstruct_rcmv_time,reconstruct_rcmv_cmv_time,dec_reconstruction_time,dec_cmv_reconstruction_time,sls_reconstruction_time,sls_cmv_reconstruction_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
+            csvFile << "filename,category,pixels,mc_percentage,edgebits,rcmv_bits,total_tree_bits,treeMCBits,edgeBitsMCBits,dpcm_deflate_bits,dpcm_deflate_bits_no_inter,straights_mc_bits,sls_mc_bits,tree_rate,edgebits_deflate_rate,2bit_rate,red_edgebits_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,deflate_bits,deflate_unseparated,transfer_codes,transfer_map,tree_bpp,avg_straight_lenght,read_img_time,write_time,read_time,inflate_edgebits_time,deflate_edgebits_time,setEdgeBitsTime,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,dec_construction_time,dec_bitstring_time,sls_construction_time,sls_bitstring_time,rcmv_construction_time,rcmv_bitstring_time,rebuild_dpcm_huffman_time,decode_colors_time,cmv_reconstruction_time,reconstruct_rcmv_time,reconstruct_rcmv_cmv_time,dec_reconstruction_time,dec_cmv_reconstruction_time,sls_reconstruction_time,sls_cmv_reconstruction_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
         for (size_t i = 0; i < filenames.size(); ++i) {
             csvFile << filenames[i] << ","
                     << categories[i] << ","
@@ -652,8 +656,10 @@ if(writeToFile){
                     << rcmv_bits[i] << ","
                     << total_tree_bits[i] << ","
                     << treeMCBits[i] << ","
+                    << edgeBitsMCBits[i] << ","
                     << dpcm_deflate_bits[i] << ","
                     << dpcm_deflate_bits_no_inter[i] << ","
+                    << straights_MCBits[i] << ","
                     << huffman_MCBits[i] << ","
                     << tree_compression_rates_total[i] << ","
                     << old_compression_rates_total[i] << ","

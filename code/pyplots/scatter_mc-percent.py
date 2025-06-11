@@ -1,6 +1,18 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
+plt.rcParams.update(
+    {
+        'text.usetex': True,
+        "font.family": "serif",
+        "font.size": 18,
+        "pgf.texsystem": "pdflatex",
+        "pgf.rcfonts": False,
+    }
+)
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r'\usepackage{amssymb}\usepackage{wasysym}')
+
 # Load and combine CSVs
 csv_files = [
     'code/output_files/mc_results_test_screenshots_final.csv',
@@ -56,7 +68,7 @@ categories = df["category"]
 labeled_groups = set()
 
 # Create 2×2 subplots
-fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(12, 8), sharex=True)
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(12, 7), sharex=True)
 axes = axes.flatten()
 
 # Plot
@@ -79,8 +91,8 @@ for ax, (title, y_data) in zip(axes, ys.items()):
     ax.grid(True)
 
 # Final formatting
-axes[2].set_xlabel("Share of edges that belong to the multicut in %")
-axes[3].set_xlabel("Share of edges that belong to the multicut in %")
+axes[2].set_xlabel("Share of edges that belong to the multicut in \%")
+axes[3].set_xlabel("Share of edges that belong to the multicut in \%")
 axes[0].set_ylabel("Compression Rate")
 axes[2].set_ylabel("Compression Rate")
 
@@ -88,19 +100,18 @@ axes[2].set_ylabel("Compression Rate")
 fig.legend(
     handles=axes[0].get_legend_handles_labels()[0],
     labels=axes[0].get_legend_handles_labels()[1],
-    loc='lower center',
-    bbox_to_anchor=(0.5, -0.01),
-    ncol=4,
+    loc='center right',
+    bbox_to_anchor=(1, 0.4),
+    ncol=1,
     title="Category",
     fontsize="small",
     title_fontsize="small"
 )
 # plt.tight_layout(rect=[0, 0.08, 1, 0.96])
 
-fig.suptitle("Compression Rate vs. Multicut Share (per Method)", fontsize=14)
-plt.tight_layout(rect=[0.01, 0, 1.5, 0])
+fig.suptitle("Compression rate vs. share of multicut edges for each encoding method", fontsize=22)
+plt.tight_layout(rect=[0.01, 10, 1.5, 0])
 plt.show()
-
 
 # # axes[0].legend(title="Category", bbox_to_anchor=(1.05, 1), loc='upper left')
 # fig.legend(

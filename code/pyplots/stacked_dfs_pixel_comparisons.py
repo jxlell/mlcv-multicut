@@ -2,6 +2,19 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
+plt.rcParams.update(
+    {
+        'text.usetex': True,
+        "font.family": "serif",
+        "font.size": 15,
+        "pgf.texsystem": "pdflatex",
+        "pgf.rcfonts": False,
+    }
+)
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r'\usepackage{amssymb}\usepackage{wasysym}')
+
+
 # Load CSV files
 csv_file1 = 'code/output_files/mc_results_test_screenshot_reduced_region_dfs.csv'
 csv_file2 = 'code/output_files/mc_results_test_screenshot_reduced2_pixel_comparisons.csv'
@@ -19,7 +32,7 @@ avg2_col1 = df2[col1].mean()
 avg2_col2 = df2[col2].mean()
 
 # Swapped data: Pixel-Based first, DFS-Based second
-bar_labels = ['Pixel-Based', 'DFS-Based']
+bar_labels = ['Pixel-Based', 'CMV-Based']
 bar1 = [avg2_col1, avg2_col2]  # Pixel-Based
 bar2 = [avg1_col1, avg1_col2]  # DFS-Based
 
@@ -43,7 +56,7 @@ ax.bar(x[1], bar2[1], width, bottom=bar2[0], color=top_color)
 
 # Labels
 ax.set_ylabel('Average Time (ms)')
-ax.set_title('Stacked Average Times by Method (Subset of Artificial Image Category, 50 Images)')
+ax.set_title('Comparing average region discovery and DT construction times - \n pixel accesses vs. CMV accesses (Sample Image Dataset)')
 ax.set_xticks(x)
 ax.set_xticklabels(bar_labels)
 ax.legend([plt.Rectangle((0, 0), 1, 1, color=bottom_color),

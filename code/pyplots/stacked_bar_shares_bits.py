@@ -1,6 +1,18 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
+plt.rcParams.update(
+    {
+        'text.usetex': True,
+        "font.family": "serif",
+        "font.size": 15,
+        "pgf.texsystem": "pdflatex",
+        "pgf.rcfonts": False,
+    }
+)
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r'\usepackage{amssymb}\usepackage{wasysym}')
+
 # Load and combine CSVs
 csv_files = [
     'code/output_files/mc_results_test_screenshots_final.csv',
@@ -15,15 +27,14 @@ for df_part, category in zip(data_frames, categories):
     df_part["category"] = category
 df = pd.concat(data_frames, ignore_index=True)
 
-# Group by category and sum bits
-grouped = df.groupby("category")[["tree_path_bits", "tree_start_bits", "deflate_bits"]].sum()
+# Group by category and sum relevant bits
+grouped = df.groupby("category")[["treeMCBits", "deflate_bits"]].sum()
 
-# Compute total bits
-grouped["total_bits"] = grouped["tree_path_bits"] + grouped["tree_start_bits"] + grouped["deflate_bits"]
+# Calculate total bits per category
+grouped["total_bits"] = grouped["treeMCBits"] + grouped["deflate_bits"]
 
-# Calculate percentage shares
-grouped["path_bits_percent"] = grouped["tree_path_bits"] / grouped["total_bits"] * 100
-grouped["start_bits_percent"] = grouped["tree_start_bits"] / grouped["total_bits"] * 100
+# Calculate percentages
+grouped["treeMCBits_percent"] = grouped["treeMCBits"] / grouped["total_bits"] * 100
 grouped["deflate_bits_percent"] = grouped["deflate_bits"] / grouped["total_bits"] * 100
 
 # Reorder categories
@@ -36,36 +47,27 @@ indices = range(len(grouped))
 fig, ax = plt.subplots(figsize=(8, 6))
 ax.bar(
     indices,
-    grouped["path_bits_percent"],
+    grouped["treeMCBits_percent"],
     bar_width,
-    label="DT Directional Bits (%)",
+    label="DT Bits (\%)",
     color="#007EE3"
 )
-ax.bar(
-    indices,
-    grouped["start_bits_percent"],
-    bar_width,
-    bottom=grouped["path_bits_percent"],
-    label="DT Start Edge Bits (%)",
-    color="#00335D"
-)
+
+#00335D
 ax.bar(
     indices,
     grouped["deflate_bits_percent"],
     bar_width,
-    bottom=grouped["path_bits_percent"] + grouped["start_bits_percent"],
-    label="Color Bits (%)",
+    bottom=grouped["treeMCBits_percent"],
+    label="Region Color Bits (Deflate) (\%)",
     color="#007DE376"
 )
-
-current_ylim = ax.get_ylim()
-ax.set_ylim(current_ylim[0], current_ylim[1] * 1.05)
 
 ax.set_xticks(indices)
 ax.set_xticklabels(grouped.index)
 ax.set_xlabel("Category")
-ax.set_ylabel("Percent (%)")
-ax.set_title("Stacked Bar: Percent Contribution of Tree Bits and Deflate Bits per Category")
-ax.legend(loc='upper center', ncol=3)
+ax.set_ylabel("Percent (\%)")
+ax.set_title("Stacked Bars: Shares of DT bits and region color bits per Category")
+ax.legend(loc='upper center', ncol=2)
 plt.tight_layout()
 plt.show()
