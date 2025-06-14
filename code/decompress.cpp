@@ -109,6 +109,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg, std::string o
     std::vector<RGB> inflatedRegionColorsVec;
     std::vector<RGB> decodedColorsTree_inflated;
 
+    std::cout << "outputPath: " << outputPath << std::endl;
         std::ifstream inFile(outputPath, std::ios::binary);
     std::vector<bool> pathsBitString;
 
@@ -1047,7 +1048,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg, std::string o
     // std::cout << (success ? "✅" : "❌") << std::endl;
     
     if(showImg){
-        cv::imwrite("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/reconstructed.png", image);
+        // cv::imwrite("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/reconstructed.png", image);
         cv::destroyAllWindows();
         cv::imshow("Original", originalImg);
         cv::imshow("Reconstruction", image);

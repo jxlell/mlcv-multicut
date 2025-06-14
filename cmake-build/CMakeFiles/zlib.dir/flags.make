@@ -4,7 +4,7 @@
 # compile C with /usr/bin/cc
 C_DEFINES = 
 
-C_INCLUDES = -I/Users/jalell/Documents/GitHub/mlcv-multicut/zlib-1.31
+C_INCLUDES = -I/Users/jalell/Documents/GitHub/mlcv-multicut/zlib-1.3.1
 
 C_FLAGSarm64 =  -arch arm64 -O3 -g -fcolor-diagnostics -fansi-escape-codes
 

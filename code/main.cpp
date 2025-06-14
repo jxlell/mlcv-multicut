@@ -1,13 +1,13 @@
 #include <iostream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include "Graph.h"
+// #include "Graph.h"
 #include <chrono>
 #include <filesystem> 
 #include <fstream>
 #include <numeric>
 // #include "Compressor.h"
-#include "Decompressor.h"
+// #include "Decompressor.h"
 #include "Util.h"
 #include "compress.h"
 #include "decompress.h"
@@ -218,6 +218,7 @@ int main(int argc, char* argv[]) {
     // int progress = 0;    
 
     std::filesystem::path input_image = single_image_name;
+
     if (!std::filesystem::exists(input_image)) {
         std::cerr << "Error: Image file not found: " << input_image << std::endl;
         return 1;

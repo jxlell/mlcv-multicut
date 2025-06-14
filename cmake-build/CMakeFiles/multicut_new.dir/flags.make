@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/Users/jalell/Documents/GitHub/mlcv-multicut/code -I/Users/jalell/Documents/GitHub/mlcv-multicut/zlib-1.31 -isystem /opt/homebrew/Cellar/opencv/4.11.0_1/include/opencv4
+CXX_INCLUDES = -I/Users/jalell/Documents/GitHub/mlcv-multicut/code -I/Users/jalell/Documents/GitHub/mlcv-multicut/zlib-1.3.1 -isystem /opt/homebrew/Cellar/opencv/4.11.0_1/include/opencv4
 
 CXX_FLAGSarm64 = -std=gnu++17 -arch arm64 -O3 -g -fcolor-diagnostics -fansi-escape-codes
 
