@@ -21,7 +21,7 @@ columns_to_compare = ['region_color_bits', 'dpcm-huffman_bits', 'dpcm_deflate_bi
 
 # Calculate bpp (bits per pixel) for each method
 for col in columns_to_compare:
-    df[f'{col}_bpp'] = df[col] / df['edgebits']
+    df[f'{col}_bpp'] = df[col] / df['pixels']
 
 # Prepare data for boxplot
 bpp_columns = [f'{col}_bpp' for col in columns_to_compare]
@@ -30,7 +30,7 @@ bpp_data = [df[col] for col in bpp_columns]
 # Create boxplot
 plt.boxplot(bpp_data, labels=columns_to_compare)
 plt.xticks([1, 2, 3], ["no encoding", "Differential \n+ Huffman", "Differential \n+ Deflate"])
-plt.ylabel('Bits per edge (bpe)')
+plt.ylabel('Bits per pixel')
 plt.grid(which='both', linestyle='--', alpha=0.7)
-plt.title('Comparing bits per edge (bpe) for different color \nencoding methods (Sample Image Data)')
+plt.title('Comparing bit requirements for different color \nencoding methods (Sample Image Data)')
 plt.show()

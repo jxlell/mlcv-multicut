@@ -6,7 +6,7 @@ plt.rcParams.update(
     {
         'text.usetex': True,
         "font.family": "serif",
-        "font.size": 15,
+        "font.size": 13,
         "pgf.texsystem": "pdflatex",
         "pgf.rcfonts": False,
     }
@@ -16,10 +16,10 @@ plt.rc('text.latex', preamble=r'\usepackage{amssymb}\usepackage{wasysym}')
 
 # Load the CSV files and combine them into one DataFrame
 csv_files = [
-    'code/output_files/mc_results_test_screenshots_final.csv'
-    # 'code/output_files/mc_results_test_textures_final.csv'
-    # ,'code/output_files/mc_results_test_photo_finals.csv'
-    ,'code/output_files/mc_results_test_icons_final.csv'
+    'code/output_files/mc_results_test_screenshots_final.csv',
+    # 'code/output_files/mc_results_test_textures_final.csv',
+    # 'code/output_files/mc_results_test_photos_final.csv',
+    'code/output_files/mc_results_test_icons_final.csv'
 ]
 
 # Read and concatenate all CSV files

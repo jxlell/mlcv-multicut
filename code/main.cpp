@@ -23,7 +23,11 @@ using namespace std;
  * @brief main function loading image files and controlling compression and decompression procedure 
  * 
  */
-int main() {
+int main(/*int argc, char* argv[]*/) {
+    // if (argc < 2) {
+    //     std::cerr << "Usage: " << argv[0] << " <img_file>\n";
+    //     return 1;
+    // }
 
       auto completeStart = std::chrono::high_resolution_clock::now();
 
@@ -169,15 +173,15 @@ int main() {
         // "photo_tecnick",
         // "photo_wikipedia",
         // "pngimg",
-        // "screenshot_web",
-        // "screenshot_game",
+        "screenshot_web",
+        "screenshot_game",
         // "textures_photo",
         // "textures_pk",
         // "textures_pk01",
         // "textures_pk02",
         // "textures_plants",
 
-        "sample_images",
+        // "sample_images",
         // "screenshot_game_reduced2"
     };
 
@@ -198,6 +202,7 @@ int main() {
     // control parameters 
     bool single_image = true;
     string single_image_name = single_image_txt;
+    // string single_image_name = argv[1];
     bool showImg = single_image;
     //showImg = false;
     bool writeToFile = true;

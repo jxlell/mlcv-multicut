@@ -17,10 +17,11 @@ plt.rc('text.latex', preamble=r'\usepackage{amssymb}\usepackage{wasysym}')
 
 # Load the CSV files and combine them into one DataFrame
 csv_files = [
-    # 'code/output_files/mc_results_test_screenshots_new.csv'
-    # ,'code/output_files/mc_results_test_textures_new.csv'
-    # ,'code/output_files/mc_results_test_photos_new.csv'
-    'code/output_files/mc_results_test_sample.csv'
+    'code/output_files/mc_results_test_screenshots_final.csv'
+    ,'code/output_files/mc_results_test_textures_final.csv'
+    ,'code/output_files/mc_results_test_photos_final.csv'
+    ,'code/output_files/mc_results_test_icons_final.csv'
+    # 'code/output_files/mc_results_test_sample.csv'
 ]
 
 
@@ -34,7 +35,7 @@ columns_to_compare = ['edgebits', 'edgeBitsMCBits']  # Replace with your actual 
 
 data['edgebits_amount'] = data['edgebits'] * (data['mc_percentage'] / 100)
 
-data['edgebits_bpe'] = data['edgebits'] / data['edgebits_amount']
+data['edgebits_bpe'] = data['edgebits'] / data['edgebits']
 data['edgeBitsMCBits_bpe'] = data['edgeBitsMCBits'] / data['edgebits_amount']
 
 data['edgebits_bpp'] = data['edgebits'] / data['edgebits']
@@ -48,11 +49,16 @@ median_rcmv_bits = data['edgeBitsMCBits'].median()
 reduction_rate = (median_edgebits - median_rcmv_bits) / median_edgebits * 100
 # Calculate reduction factor
 reduction_factor = median_edgebits / median_rcmv_bits
-print(f"Reduction factor: {reduction_factor:.2f}")
+# print(f"Reduction factor: {reduction_factor:.2f}")
 
-print(f"Median edgebits: {median_edgebits:.2f}")
-print(f"Median rCMV bits: {median_rcmv_bits:.2f}")
-print(f"Reduction rate: {reduction_rate:.2f}%")
+# print(f"Median edgebits: {median_edgebits:.2f}")
+# print(f"Median rCMV bits: {median_rcmv_bits:.2f}")
+# print(f"Reduction rate: {reduction_rate:.2f}%")
+
+avg_edgebits_bpe = data['edgeBitsMCBits_bpp'].mean()
+std_edgebits_bpe = data['edgeBitsMCBits_bpp'].std()
+print(f"Average edgebits_bpe: {avg_edgebits_bpe:.4f}")
+print(f"Standard deviation of edgebits_bpe: {std_edgebits_bpe:.4f}")
 
 plt.figure(figsize=(8, 6))
 

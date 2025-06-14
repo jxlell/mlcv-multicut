@@ -3,6 +3,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.patches as patches
 
+plt.rcParams.update(
+    {
+        'text.usetex': True,
+        "font.family": "serif",
+        "font.size": 15,
+        "pgf.texsystem": "pdflatex",
+        "pgf.rcfonts": False,
+    }
+)
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r'\usepackage{amssymb}\usepackage{wasysym}')
+
 # Toggle between individual bars and averaged bar
 show_average = False  # <<<< CHANGE THIS TO True for average-only view
 
@@ -14,6 +26,9 @@ df_sorted = df.sort_values(by="filename")
 
 # Filter to only 15 images
 df_sorted = df_sorted.head(15)
+
+# Remove the first 5 rows from the sorted DataFrame
+df_sorted = df_sorted.iloc[5:]
 
 # Prepare data
 if show_average:
@@ -34,6 +49,11 @@ else:
 
 bar_width = 0.25
 
+# tree_path = tree_path / df_sorted["edgebits"].values
+# tree_start = tree_start / df_sorted["edgebits"].values
+# paths_dir = paths_dir / df_sorted["edgebits"].values
+# paths_start = paths_start / df_sorted["edgebits"].values
+
 # Determine the best (lowest total bits) method for each image
 if not show_average:
     total_tree = tree_path + tree_start
@@ -47,12 +67,12 @@ if not show_average:
 fig, ax1 = plt.subplots(figsize=(14, 6))
 
 # Tree bars (leftmost)
-ax1.bar(x - bar_width, tree_path, bar_width, label="tree_path_bits", color='tab:blue')
-ax1.bar(x - bar_width, tree_start, bar_width, bottom=tree_path, label="tree_start_bits", color='tab:cyan')
+ax1.bar(x - bar_width, tree_path, bar_width, label="DT directional bits", color='tab:blue')
+ax1.bar(x - bar_width, tree_start, bar_width, bottom=tree_path, label="DT start edge bits", color='tab:cyan')
 
 # 2bit bars (center)
-ax1.bar(x, paths_dir, bar_width, label="2bit_direction_bits", color='tab:green')
-ax1.bar(x, paths_start, bar_width, bottom=paths_dir, label="2bit_start_bits", color='lightgreen')
+ax1.bar(x, paths_dir, bar_width, label="DEC directional bits", color='tab:green')
+ax1.bar(x, paths_start, bar_width, bottom=paths_dir, label="DEC start edge bits", color='lightgreen')
 
 # new2bit bars (rightmost)
 # ax1.bar(x + bar_width, new2bit_dir, bar_width, label="new2bit_direction_bits", color='tab:red')
@@ -70,7 +90,26 @@ if not show_average:
             clip_on=False,
             color=color
         )
-        ax1.add_patch(rect)
+        # ax1.add_patch(rect)
+
+# Draw a dotted red rectangle around the last two bars
+if not show_average:
+    # Get positions of the last two bars
+    left_edge = x[-2] - bar_width * 1.5 - 0.14  # start of leftmost bar group
+    total_width = (x[-1] - x[-2]) + bar_width * 3  # include space for three bars (left, center, right)
+
+    rect = patches.Rectangle(
+        (left_edge, 0),         # (x, y) of bottom-left corner
+        total_width,            # width
+        ax1.get_ylim()[1]/8,      # height = current y max
+        linewidth=2.5,
+        edgecolor='red',
+        linestyle='dotted',
+        facecolor='none',
+        transform=ax1.transData
+    )
+    ax1.add_patch(rect)
+
 
 # Axis setup
 ax1.set_ylabel("Bit Count")
@@ -78,17 +117,15 @@ ax1.set_yscale('log')
 ax1.legend(loc="upper left")
 
 # Title and layout
-title = "Average Bit Distribution" if show_average else "Bit Distribution per Image"
+title = "Average Bit Distribution" if show_average else "Bit Distribution per Image (10 Screenshots) - Stacking DT and DEC start and direction bits"
 plt.title(title)
 plt.tight_layout()
 plt.grid(True, axis='y', linestyle='--', alpha=0.5)
 
-# X-axis ticks
-if not show_average:
-    plt.xticks([])
-else:
-    plt.xticks([0], ["Average"])
+# plt.xticks(x, df_sorted["filename"], ha='right')
+plt.xticks(x, x)
+print(df_sorted["filename"].values)
 
 # Make space for bottom indicators
-plt.subplots_adjust(bottom=0.15)
+# plt.subplots_adjust(bottom=0.15)
 plt.show()

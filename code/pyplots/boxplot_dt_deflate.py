@@ -30,11 +30,14 @@ column = 'treeMCBits'
 df['tree_stack_bpp'] = df['tree_stack'] / df['edgebits']
 df['treeMCBits_bpp'] = df[column] / df['edgebits']
 
+reduction_rate = 1 - (df['treeMCBits_bpp'].mean() / df['tree_stack_bpp'].mean())
+print(f"Reduction rate: {reduction_rate:.2%}")
+
 plt.boxplot([df['tree_stack_bpp'], df['treeMCBits_bpp']], labels=['tree_stack', column])
 plt.ylabel('Bits per pixel (bpp)')
 plt.grid(True, which="both", linestyle='--', linewidth=0.5)
 plt.xticks([1, 2], ["DT without Deflate", "DT with Deflate"])
-plt.title('Comparing bits per pixel (bpp) for the DT \n without and with application of the Deflate algorithm', fontsize=16)
+plt.title('Comparing bits per edge (bpe) for the DT \n without and with application of the Deflate algorithm', fontsize=14)
 plt.yscale('log')  # Set y-axis to logarithmic scale for better visualization
-plt.subplots_adjust(left=0.15, right=0.97, top=0.89, bottom=0.1)
+# plt.subplots_adjust(left=0.15, right=0.97, top=0.89, bottom=0.1)
 plt.show()

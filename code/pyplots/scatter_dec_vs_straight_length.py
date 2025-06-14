@@ -5,7 +5,7 @@ plt.rcParams.update(
     {
         'text.usetex': True,
         "font.family": "serif",
-        "font.size": 15,
+        "font.size": 14,
         "pgf.texsystem": "pdflatex",
         "pgf.rcfonts": False,
     }
@@ -37,7 +37,7 @@ plt.axhline(y=1, color='red', linestyle='--', linewidth=1)
 # Labels and title
 plt.xlabel("Normalized average straight length")
 plt.ylabel("DEC directional bit reduction ratio")
-plt.title("Reduction of the DEC directional bits by applying RLE\n compared to the average straight length\n(All Images)")
+plt.title("Reduction of the DEC directional bits by applying RLE\n compared to the average straight length (All Images)", fontsize=15)
 plt.grid(True)
 plt.tight_layout()
 plt.xscale('log')

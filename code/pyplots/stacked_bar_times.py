@@ -16,11 +16,11 @@ plt.rc('text.latex', preamble=r'\usepackage{amssymb}\usepackage{wasysym}')
 
 # Load and combine CSVs
 csv_files = [
-    # 'code/output_files/mc_results_test_screenshots_final.csv',
-    # 'code/output_files/mc_results_test_textures_final.csv',
-    # 'code/output_files/mc_results_test_photos_final.csv',
-    # 'code/output_files/mc_results_test_icons_final.csv'
-    'code/output_files/mc_results_test_sample.csv'
+    'code/output_files/mc_results_test_screenshots_final.csv',
+    'code/output_files/mc_results_test_textures_final.csv',
+    'code/output_files/mc_results_test_photos_final.csv',
+    'code/output_files/mc_results_test_icons_final.csv'
+    # 'code/output_files/mc_results_test_sample.csv'
 ]
 
 data_frames = [pd.read_csv(file) for file in csv_files]

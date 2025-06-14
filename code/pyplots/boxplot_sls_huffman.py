@@ -31,6 +31,14 @@ avg_straight_length_col = 'avg_straight_lenght'
 df[col1 + '_bpp'] = df[col1] / df[pixels_col]
 df[col2 + '_bpp'] = df[col2] / df[pixels_col]
 
+mean_col1_bpp = df[col1 + '_bpp'].mean()
+mean_col2_bpp = df[col2 + '_bpp'].mean()
+print(f"Mean {col1}_bpp: {mean_col1_bpp:.4f}")
+print(f"Mean {col2}_bpp: {mean_col2_bpp:.4f}")
+
+reduction_rate = 1 - (mean_col2_bpp / mean_col1_bpp)
+print(f"Reduction rate from SLS without Huffman to SLS with Huffman: {reduction_rate:.2%}")
+
 boxplot_columns = [col1 + '_bpp', col2 + '_bpp']
 df['col2_improvement'] = df[col1 + '_bpp'] / df[col2 + '_bpp']
 

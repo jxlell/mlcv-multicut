@@ -53,6 +53,8 @@ ax.bar(
     color="#007EE3"
 )
 
+# 007EE3 007DE376
+
 #00335D
 ax.bar(
     indices,

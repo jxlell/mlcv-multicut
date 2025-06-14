@@ -5,7 +5,7 @@ plt.rcParams.update(
     {
         'text.usetex': True,
         "font.family": "serif",
-        "font.size": 15,
+        "font.size": 12,
         "pgf.texsystem": "pdflatex",
         "pgf.rcfonts": False,
     }

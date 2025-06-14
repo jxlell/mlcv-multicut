@@ -31,10 +31,17 @@ avg1_col2 = df1[col2].mean()
 avg2_col1 = df2[col1].mean()
 avg2_col2 = df2[col2].mean()
 
+# Compute standard error of the mean (SEM)
+sem1_col1 = df1[col1].sem()
+sem1_col2 = df1[col2].sem()
+sem2_col1 = df2[col1].sem()
+sem2_col2 = df2[col2].sem()
+
 # Swapped data: Pixel-Based first, DFS-Based second
 bar_labels = ['Pixel-Based', 'CMV-Based']
 bar1 = [avg2_col1, avg2_col2]  # Pixel-Based
 bar2 = [avg1_col1, avg1_col2]  # DFS-Based
+
 
 x = np.arange(len(bar_labels))
 width = 0.4
@@ -46,13 +53,48 @@ top_color = "#007DE376"     # orange
 # Plot
 fig, ax = plt.subplots(figsize=(8, 6))
 
-# Pixel-based (left bar)
-ax.bar(x[0], bar1[0], width, label=col1, color=bottom_color)
-ax.bar(x[0], bar1[1], width, bottom=bar1[0], label=col2, color=top_color)
+# Pixel-based (left bar) – x[0]
+ax.bar(
+    x[0],
+    bar1[0],
+    width,
+    yerr=sem2_col1,  # sem for avg2_col1 (Pixel-Based)
+    label=col1,
+    color=bottom_color,
+    capsize=6
+)
 
-# DFS-based (right bar)
-ax.bar(x[1], bar2[0], width, color=bottom_color)
-ax.bar(x[1], bar2[1], width, bottom=bar2[0], color=top_color)
+ax.bar(
+    x[0],
+    bar1[1],
+    width,
+    yerr=sem2_col2,  # sem for avg2_col2 (Pixel-Based)
+    bottom=bar1[0],
+    label=col2,
+    color=top_color,
+    capsize=6
+)
+
+# DFS-based (right bar) – x[1]
+ax.bar(
+    x[1],
+    bar2[0],
+    width,
+    yerr=sem1_col1,  # sem for avg1_col1 (DFS-Based)
+    color=bottom_color,
+    capsize=6
+)
+
+ax.bar(
+    x[1],
+    bar2[1],
+    width,
+    yerr=sem1_col2,  # sem for avg1_col2 (DFS-Based)
+    bottom=bar2[0],
+    color=top_color,
+    capsize=6
+)
+
 
 # Labels
 ax.set_ylabel('Average Time (ms)')
