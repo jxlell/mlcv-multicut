@@ -29,7 +29,7 @@ CompressedImage compress(const std::string& imagePath){
     cv::Mat img = cv::imread(imagePath, cv::IMREAD_COLOR);
     // condition never met, since IMREAD_COLOR cannot be 16U
     if (img.depth() == CV_16U) {
-        std::cout << "Image depth rgb image : " << img.depth() << std::endl;
+        // std::cout << "Image depth rgb image : " << img.depth() << std::endl;
         img.convertTo(img, CV_8U, 1.0 / 256.0); // Scale down to 0-255 range
     }
 
@@ -46,9 +46,9 @@ CompressedImage compress(const std::string& imagePath){
 
     cv::Mat img_transparent = cv::imread(imagePath, cv::IMREAD_UNCHANGED);
     if (img_transparent.depth() == CV_16U) {
-        std::cout << "Image depth transparent image: " << img_transparent.depth() << std::endl;
+        // std::cout << "Image depth transparent image: " << img_transparent.depth() << std::endl;
         img_transparent.convertTo(img_transparent, CV_8U, 1.0 / 256.0); // Scale down to 0-255 range
-        cv::imwrite("code/output_files/converted_image.png", img_transparent);
+        // cv::imwrite("code/output_files/converted_image.png", img_transparent);
     }
     // std::cout << "reading transparency" << std::endl;
     // std::cout << "channels: " << img_transparent.channels() << std::endl;
@@ -68,7 +68,7 @@ CompressedImage compress(const std::string& imagePath){
 
     end = std::chrono::high_resolution_clock::now();
     auto read_img_time = std::chrono::duration<double, std::milli>(end - start).count();
-    std::cout << "read image time: " << read_img_time << "ms" << std::endl;
+    // std::cout << "read image time: " << read_img_time << "ms" << std::endl;
 
     methods compressionMethods = {
         true, // useEdgebits
@@ -203,11 +203,11 @@ CompressedImage compress(const std::string& imagePath){
     std::vector<uint8_t> flat_differences = flatten_colors(differentialColors);
     // std::vector<uint8_t> flat_regioncolors = flatten_colors(regionColors);
     
-    std::cout << "region colors size in bits: " << region_colors_bits << std::endl;
+    // std::cout << "region colors size in bits: " << region_colors_bits << std::endl;
 
     // std::vector<uint8_t> colors_deflated = ZlibDeflate(flat_regioncolors);
     std::vector<uint8_t> colors_differences_deflated = ZlibDeflate(flat_differences);
-    std::cout << "deflated differences size in bits: " << (colors_differences_deflated.size() * 8) << std::endl;
+    // std::cout << "deflated differences size in bits: " << (colors_differences_deflated.size() * 8) << std::endl;
     int dpcm_deflate_bits = colors_differences_deflated.size() * 8;
     // std::cout << "deflated size in bits: " << (colors_deflated.size() * 8) << std::endl;
     // deflate_bits_unseparated = colors_deflated.size() * 8;
@@ -236,7 +236,7 @@ CompressedImage compress(const std::string& imagePath){
         std::vector<bool> byteBits = intToBool(byte, 8);
         deflatedBitstring.insert(deflatedBitstring.end(), byteBits.begin(), byteBits.end());
     }
-    std::cout << "deflated bitstring size in bits: " << deflatedBitstring.size() << std::endl;
+    // std::cout << "deflated bitstring size in bits: " << deflatedBitstring.size() << std::endl;
 
 
     // Print the flattened differences
@@ -245,14 +245,14 @@ CompressedImage compress(const std::string& imagePath){
     //     std::cout << static_cast<int>(diff) << " ";
     // }
     // std::cout << std::endl;
-    std::cout << "flattened differences size in bits: " << flat_differences.size() * 8 << std::endl;
+    // std::cout << "flattened differences size in bits: " << flat_differences.size() * 8 << std::endl;
     std::map<uint8_t, int> frequencyMapDifferences = createFrequencyMap(flat_differences);
     // std::cout << "frequency map: " << std::endl;
     // for (const auto& pair : frequencyMapDifferences) {
     //     std::cout << "Value: " << static_cast<int>(pair.first) 
     //               << ", Frequency: " << pair.second << std::endl;
     // }
-    std::cout << "frequency map size: " << frequencyMapDifferences.size() << std::endl;
+    // std::cout << "frequency map size: " << frequencyMapDifferences.size() << std::endl;
     
 
     auto [RGBHuffmanCodes, RGBroot] = buildRGBCodes(frequencyMapDifferences);
@@ -264,7 +264,7 @@ CompressedImage compress(const std::string& imagePath){
     // }
     end = std::chrono::high_resolution_clock::now();
     dpcm_huffman_time = std::chrono::duration<double, std::milli>(end - start).count();
-    std::cout << "dpcm huffman construction time: " << dpcm_huffman_time << std::endl;
+    // std::cout << "dpcm huffman construction time: " << dpcm_huffman_time << std::endl;
     start = std::chrono::high_resolution_clock::now();
     std::vector<bool> RGBDifferencesHuffmanBitString;
 
@@ -309,7 +309,7 @@ CompressedImage compress(const std::string& imagePath){
     // }
     // std::cout << std::endl;
     int totalHuffmanEncodedLength = huffmanEncodedBitString.size();
-    std::cout << "dpcm huffman length: " << totalHuffmanEncodedLength << std::endl;
+    // std::cout << "dpcm huffman length: " << totalHuffmanEncodedLength << std::endl;
     int huffmanBitsAmount = std::ceil(totalHuffmanEncodedLength);
     std::vector<bool> huffmanBitsAmountVector = intToBool(huffmanBitsAmount, 32);
     // std::cout << "huffman bits amount: " << huffmanBitsAmount << std::endl;
@@ -323,7 +323,7 @@ CompressedImage compress(const std::string& imagePath){
     dpcm_huffman_bitstring_time = std::chrono::duration<double, std::milli>(end - start).count();
     // std::cout << "dpcm huffman bitstring time: " << dpcm_huffman_bitstring_time << std::endl;
     dpcm_huffman_bits = RGBDifferencesHuffmanBitString.size();
-    std::cout << "dpcm huffman bits: " << dpcm_huffman_bits << std::endl;
+    // std::cout << "dpcm huffman bits: " << dpcm_huffman_bits << std::endl;
     // Print the Huffman-encoded bitstring
     // std::cout << "Huffman-encoded bitstring: ";
     // for (bool bit : huffmanEncodedBitString) {
@@ -377,7 +377,7 @@ CompressedImage compress(const std::string& imagePath){
         // std::cout << "edgebits = edgebitsfromdfs: " << (edgeBits01 == edgeBitsFromDFS) << std::endl;
         for (size_t i = 0; i < edgeBits01.size(); ++i) {
             if (edgeBits01[i] != edgeBitsFromDFS[i]) {
-            std::cout << "Difference at index: " << i << std::endl;
+            // std::cout << "Difference at index: " << i << std::endl;
             }
         }
         end = std::chrono::high_resolution_clock::now();
@@ -397,9 +397,9 @@ CompressedImage compress(const std::string& imagePath){
         }
         std::vector<uint8_t> deflated_edgebits_bytes;
         deflated_edgebits_bytes = ZlibDeflate(edgebits_bytes);
-        std::cout << "---- 01 size in bits: " << (edgeBits01.size()) << std::endl;
-        std::cout << "--- not deflated edgebits size in bits: " << (edgebits_bytes.size() * 8) << std::endl;
-        std::cout << "----deflated edgebits size in bits: " << (deflated_edgebits_bytes.size() * 8) << std::endl;
+        // std::cout << "---- 01 size in bits: " << (edgeBits01.size()) << std::endl;
+        // std::cout << "--- not deflated edgebits size in bits: " << (edgebits_bytes.size() * 8) << std::endl;
+        // std::cout << "----deflated edgebits size in bits: " << (deflated_edgebits_bytes.size() * 8) << std::endl;
         end = std::chrono::high_resolution_clock::now();
         deflate_edgebits_time = std::chrono::duration<double, std::milli>(end - start).count();
         // std::cout << "set edgebits time: " << setEdgeBitsTime << "us" << std::endl;
@@ -418,7 +418,7 @@ CompressedImage compress(const std::string& imagePath){
         int prevEdgeBitsSize = edgeBitsBitString.size();
         int edgeBitsAmount = edgeBits01.size();
         edgeBitsAmount = deflated_edgebits_bytes.size() * 8; // use deflated size for compression rate
-        std::cout << "edge bits amount: " << edgeBitsAmount << std::endl;
+        // std::cout << "edge bits amount: " << edgeBitsAmount << std::endl;
         std::vector<bool> edgeBitsAmountVector = intToBool(edgeBitsAmount, 32);
         edgeBitsBitString.insert(edgeBitsBitString.end(), edgeBitsAmountVector.begin(), edgeBitsAmountVector.end());
         // push deflated edgebits bytes to bitstring
@@ -428,8 +428,8 @@ CompressedImage compress(const std::string& imagePath){
         }
 
         edgeBitsMCBits = edgeBitsBitString.size() - prevEdgeBitsSize;
-        std::cout << "edge bits amount: " << edgeBitsAmount << std::endl;
-        std::cout << "---edge bits mc bits: " << edgeBitsMCBits << std::endl;
+        // std::cout << "edge bits amount: " << edgeBitsAmount << std::endl;
+        // std::cout << "---edge bits mc bits: " << edgeBitsMCBits << std::endl;
 
         // for(auto bit : edgeBits01){
         //     edgeBitsBitString.push_back(bit);
@@ -448,7 +448,7 @@ CompressedImage compress(const std::string& imagePath){
     
     //std::vector<bool> verticalBits = setVerticalBits(img);
     double multicutPercentage = getMulticutPercentage(edgeBits01);
-    std::cout << "Percentage of edge bits set to 1: " << multicutPercentage << "%" << std::endl;
+    // std::cout << "Percentage of edge bits set to 1: " << multicutPercentage << "%" << std::endl;
 
     if(compressionMethods.useReducedEdgebits){
         // std::cout << "setting reduced edgebits" << std::endl;
@@ -545,7 +545,7 @@ CompressedImage compress(const std::string& imagePath){
         tree_dir_bits += std::get<2>(path).size();
     }
     treeMCBits = DT_bitstring.size();
-    std::cout << "----tree MC bits: " << tree_dir_bits << std::endl;
+    // std::cout << "----tree MC bits: " << tree_dir_bits << std::endl;
 
     end = std::chrono::high_resolution_clock::now();
     tree_bitstring_time = std::chrono::duration<double, std::milli>(end - start).count();
@@ -559,7 +559,7 @@ CompressedImage compress(const std::string& imagePath){
     std::vector<uint8_t> dtBytes = ConvertBitsToBytes(DT_bitstring);
     std::vector<uint8_t> compressedDT = ZlibDeflate(dtBytes);
     treeMCBits = compressedDT.size() * 8; // compressed size in bits
-    std::cout << "----defl_tree MC bits: " << treeMCBits << std::endl;
+    // std::cout << "----defl_tree MC bits: " << treeMCBits << std::endl;
     int compressedDTSizeBytes = compressedDT.size();
     std::vector<bool> compressedDTSizeBits = intToBool(compressedDTSizeBytes, 32); // 32 bits = 4 bytes
 
@@ -851,7 +851,7 @@ CompressedImage compress(const std::string& imagePath){
         end = std::chrono::high_resolution_clock::now();
         sls_bitstring_time = std::chrono::duration<double, std::milli>(end - start).count();
         straightsHuffmanMCBits = straightsBitString.size() - straightsPathsSizePrev;
-        std::cout << "----straights huffman MC bits: " << straightsHuffmanMCBits << std::endl;
+        // std::cout << "----straights huffman MC bits: " << straightsHuffmanMCBits << std::endl;
         straights_huffman_compression_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         straightsHuffmanCompressionRate = (img.rows * img.cols * 24) / ((double)straightsBitString.size() - differenceForRGBHuffman);
     }
@@ -866,19 +866,19 @@ CompressedImage compress(const std::string& imagePath){
 
     // std::cout << "treeMC + colorsBitstring size: " << treeMCBits + colorsBitstringSize << std::endl;
     // std::cout << "pathsbitstring size: " << pathsBitString.size() << std::endl;
-    std::cout << "colorsBitstring size: " << colorsBitstringSize << std::endl;
+    // std::cout << "colorsBitstring size: " << colorsBitstringSize << std::endl;
 
     pathCompressionRate = (img.rows * img.cols * 24) / (double)(treeMCBits + colorsBitstringSize);
-    std::cout << "tree compression rate: " << pathCompressionRate << std::endl;
+    // std::cout << "tree compression rate: " << pathCompressionRate << std::endl;
     rleCompressionRate = (img.rows * img.cols * 24) / (double)(rleMCBits + colorsBitstringSize);
-    std::cout << "rle compression rate: " << rleCompressionRate << std::endl;
+    // std::cout << "rle compression rate: " << rleCompressionRate << std::endl;
     oldCompressionRate = (img.rows * img.cols * 24) / (double)(edgeBitsMCBits + colorsBitstringSize);
-    std::cout << "old compression rate: " << oldCompressionRate << std::endl;
+    // std::cout << "old compression rate: " << oldCompressionRate << std::endl;
     straightsCompressionRate = (img.rows * img.cols * 24) / (double)(straightsMCBits + colorsBitstringSize);
-    std::cout << "straightsMCBits: " << straightsMCBits << std::endl;
+    // std::cout << "straightsMCBits: " << straightsMCBits << std::endl;
     straightsHuffmanCompressionRate = (img.rows * img.cols * 24) / (double)(straightsHuffmanMCBits + colorsBitstringSize);
-    std::cout << "straightsHuffmanMCBits: " << straightsHuffmanMCBits << std::endl;
-    std::cout << "straights compression rate: " << straightsCompressionRate << std::endl;
+    // std::cout << "straightsHuffmanMCBits: " << straightsHuffmanMCBits << std::endl;
+    // std::cout << "straights compression rate: " << straightsCompressionRate << std::endl;
     // straightsHuffmanCompressionRate = (img.rows * img.cols * 24) / (double)(straightsHuffmanMCBits + colorsBitstringSize - (bitsfortransferingfrequencymap - bitsfortransferingcodes));
     newEdgeBitsCompressionRate = (img.rows * img.cols * 24) / (double)(newEdgeBitsMCBits + colorsBitstringSize);
     paths2bit_compression_rate = (img.rows * img.cols * 24) / (double)(path2bitMCBits + colorsBitstringSize);
@@ -1472,7 +1472,7 @@ void getAnomalies(std::vector<bool> edgeBits01, cv::Mat img){
             current = getNeighbor(current, Direction::DOWN, 1, img.cols, img.rows);
         }
     }
-    std::cout << "Number of anomalies: " << count << std::endl;
+    // std::cout << "Number of anomalies: " << count << std::endl;
 }
 
 std::vector<RGB> dpcm(std::vector<RGB> colors){
@@ -1525,32 +1525,6 @@ std::map<uint8_t, int> createFrequencyMap(const std::vector<uint8_t>& difference
 }
 
 
-void testZlib() {
-    const char* original = "Hello, zlib!";
-    uLong originalLen = strlen(original) + 1; // include null terminator
-
-    uLong compressedLen = compressBound(originalLen);
-    Bytef* compressed = new Bytef[compressedLen];
-
-    if (compress(compressed, &compressedLen, reinterpret_cast<const Bytef*>(original), originalLen) != Z_OK) {
-        std::cerr << "Compression failed\n";
-        return;
-    }
-
-    Bytef* decompressed = new Bytef[originalLen];
-    uLong decompressedLen = originalLen;
-
-    if (uncompress(decompressed, &decompressedLen, compressed, compressedLen) != Z_OK) {
-        std::cerr << "Decompression failed\n";
-        return;
-    }
-
-    std::cout << "Original: " << original << "\n";
-    std::cout << "Decompressed: " << decompressed << "\n";
-
-    delete[] compressed;
-    delete[] decompressed;
-}
 
 #include <zlib.h>
 #include <vector>
@@ -1578,7 +1552,7 @@ std::vector<uint8_t> ZlibDeflate(const std::vector<uint8_t>& input) {
 
         deflateRes = deflate(&zs, Z_FINISH);
         if (deflateRes == Z_STREAM_ERROR) {
-            std::cerr << "Deflate failed: " << deflateRes << "\n";
+            // std::cerr << "Deflate failed: " << deflateRes << "\n";
             deflateEnd(&zs);
             return {};
         }

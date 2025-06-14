@@ -33,7 +33,7 @@ struct decompInfo{
 };
 
 
-decompInfo reconstructImage(CompressedImage compImg, bool showImg);
+decompInfo reconstructImage(CompressedImage compImg, bool showImg, std::string outputPath);
 void reconstruct_edgeBits_iterative(int currentEdge, Direction currentDir, std::vector<bool>& reconstructedEdgeBits, int cols, int rows, std::vector<bool>& visited, std::queue<bool>& directionQueue);
 std::vector<bool> reconstruct_edgeBits2bits(PathInfoVector paths, int edgeBitsSize, int cols, int rows);
 std::vector<bool> reconstructStraights(Straights straights, int edgeBitsSize, int cols, int rows);

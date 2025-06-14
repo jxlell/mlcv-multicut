@@ -17,7 +17,7 @@ extern "C" {
   }
   
 
-decompInfo reconstructImage(CompressedImage compImg, bool showImg){
+decompInfo reconstructImage(CompressedImage compImg, bool showImg, std::string outputPath){
     methods compressionMethods = compImg.compressionMethods;
     cv::Mat originalImg = compImg.originalImage;
     std::vector<bool> edgeBits01 = compImg.edgeBits01;
@@ -109,8 +109,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     std::vector<RGB> inflatedRegionColorsVec;
     std::vector<RGB> decodedColorsTree_inflated;
 
-
-        std::ifstream inFile("tree_paths.bin", std::ios::binary);
+        std::ifstream inFile(outputPath, std::ios::binary);
     std::vector<bool> pathsBitString;
 
     start = std::chrono::high_resolution_clock::now();
@@ -123,15 +122,15 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
             }
         }
         inFile.close();
-        std::cout << "Loaded " << pathsBitString.size() << " bits from tree_paths.bit\n";
+        // std::cout << "Loaded " << pathsBitString.size() << " bits from tree_paths.bit\n";
         // compImg.pathsBitString = pathsBitString;
     } else {
-        std::cerr << "Could not open tree_paths.bit for reading.\n";
+        std::cerr << "Could not open bin file for reading.\n";
     }
     end = std::chrono::high_resolution_clock::now();
-    std::cout << "Time to read pathsBitString from file: " 
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() 
-              << " ms\n";
+    // std::cout << "Time to read pathsBitString from file: " 
+    //           << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() 
+    //           << " ms\n";
     read_time = std::chrono::duration<double, std::milli>(end - start).count();
 
 
@@ -158,7 +157,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     // 2. Extract and inflate region colors
     std::string deflatedBitsAmount = pathsBitStringStr.substr(offset, 32);
     int deflatedBitsAmountInt = std::stoi(deflatedBitsAmount, nullptr, 2);
-    std::cout << "Deflated color bytes: " << deflatedBitsAmountInt << std::endl;
+    // std::cout << "Deflated color bytes: " << deflatedBitsAmountInt << std::endl;
     offset += 32;
 
     std::vector<uint8_t> deflatedColorData(deflatedBitsAmountInt);
@@ -170,7 +169,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
 
     std::vector<uint8_t> inflatedColorBytes;
     bool inflateSuccess = ZlibInflate(deflatedColorData, inflatedColorBytes);
-    std::cout << "Zlib color success: " << (inflateSuccess ? "YES" : "NO") << std::endl;
+    // std::cout << "Zlib color success: " << (inflateSuccess ? "YES" : "NO") << std::endl;
 
     std::vector<bool> inflatedColorBitstring;
     for (uint8_t byte : inflatedColorBytes) {
@@ -198,7 +197,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
 
     std::vector<uint8_t> inflatedDTBytes;
     bool inflateSuccessDT = ZlibInflate(deflatedDTData, inflatedDTBytes);
-    std::cout << "Zlib DT success: " << (inflateSuccessDT ? "YES" : "NO") << std::endl;
+    // std::cout << "Zlib DT success: " << (inflateSuccessDT ? "YES" : "NO") << std::endl;
 
     std::vector<bool> DT_bitstring_inflated;
     for (uint8_t byte : inflatedDTBytes) {
@@ -379,7 +378,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         std::string edgeBitsAmountStr = edgeBitsBitStringStr.substr(bitIndex, 32);
         int edgeBitsAmount = std::stoi(edgeBitsAmountStr, nullptr, 2);
         bitIndex += 32;
-        std::cout << "edgeBitsAmount: " << edgeBitsAmount << std::endl;
+        // std::cout << "edgeBitsAmount: " << edgeBitsAmount << std::endl;
 
         start = std::chrono::high_resolution_clock::now();
         // Parse edge bits
@@ -393,7 +392,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
         // Inflate edge bits
         std::vector<uint8_t> inflated_edgebits_bytes;
         bool inflateSuccess = ZlibInflate(deflated_edgebits_bytes, inflated_edgebits_bytes);
-        std::cout << "Zlib inflate success: " << (inflateSuccess ? "YES" : "NO") << std::endl;
+        // std::cout << "Zlib inflate success: " << (inflateSuccess ? "YES" : "NO") << std::endl;
         // Convert inflated bytes to bool vector
         edgeBitsFromBitString.resize(2 * cols_int * rows_int - cols_int - rows_int, false);
         for (size_t i = 0; i < inflated_edgebits_bytes.size(); ++i) {
@@ -862,8 +861,8 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
             }
             if (regionColorBitStrings[i] != regionColorBitStrings[j]) {
                 allRegionColorBitStringsMatch = false;
-                std::cout << "Mismatch found between regionColorBitString " << i 
-                          << " and regionColorBitString " << j << std::endl;
+                // std::cout << "Mismatch found between regionColorBitString " << i 
+                //           << " and regionColorBitString " << j << std::endl;
             }
         }
     }
@@ -971,46 +970,46 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
     //bool success = (edgeBits01 == reconstructed_edgeBits_from_paths) && (edgeBits01 == reconstructed_edgeBits_horizontals) && (edgeBits01 == reconstructed_edgeBits_2bits) && (edgeBits01 == reconstructed_edgeBits_straights) && (edgeBits01 == edgeBitsFromBitString) && (edgeBits01 == reconstructed_edgeBits_2bits_original) && (edgeBits01 == reconstructed_edgeBits_straights_no_huff);
     // bool success = true;
 
-    if (compressionMethods.useTree) {
-        bool match = (edgeBits01 == reconstructed_edgeBits_from_paths);
-        success = success && match;
-        if (!match)
-            std::cout << "Reconstructed edge bits from tree do not match!\n";
-    }
+    // if (compressionMethods.useTree) {
+    //     bool match = (edgeBits01 == reconstructed_edgeBits_from_paths);
+    //     success = success && match;
+    //     if (!match)
+    //         std::cout << "Reconstructed edge bits from tree do not match!\n";
+    // }
 
-    if (compressionMethods.useReducedEdgebits) {
-        bool match = (edgeBits01 == reconstructed_edgeBits_horizontals);
-        success = success && match;
-        if (!match)
-            std::cout << "Reconstructed edge bits from horizontals do not match!\n";
-    }
+    // if (compressionMethods.useReducedEdgebits) {
+    //     bool match = (edgeBits01 == reconstructed_edgeBits_horizontals);
+    //     success = success && match;
+    //     if (!match)
+    //         std::cout << "Reconstructed edge bits from horizontals do not match!\n";
+    // }
 
-    if (compressionMethods.use2bits) {
-        bool match1 = (edgeBits01 == reconstructed_edgeBits_2bits);
-        bool match2 = (edgeBits01 == reconstructed_edgeBits_2bits_original);
-        success = success && match1 && match2;
-        if (!match1)
-            std::cout << "Reconstructed edge bits from 2bits do not match!\n";
-        if (!match2)
-            std::cout << "Reconstructed edge bits from 2bits original do not match!\n";
-    }
+    // if (compressionMethods.use2bits) {
+    //     bool match1 = (edgeBits01 == reconstructed_edgeBits_2bits);
+    //     bool match2 = (edgeBits01 == reconstructed_edgeBits_2bits_original);
+    //     success = success && match1 && match2;
+    //     if (!match1)
+    //         std::cout << "Reconstructed edge bits from 2bits do not match!\n";
+    //     if (!match2)
+    //         std::cout << "Reconstructed edge bits from 2bits original do not match!\n";
+    // }
 
-    if (compressionMethods.useStraights && compressionMethods.useHuffman) {
-        bool match1 = (edgeBits01 == reconstructed_edgeBits_straights);
-        bool match2 = (edgeBits01 == reconstructed_edgeBits_straights_no_huff);
-        success = success && match1 && match2;
-        if (!match1)
-            std::cout << "Reconstructed edge bits from straights do not match!\n";
-        if (!match2)
-            std::cout << "Reconstructed edge bits from straights no huff do not match!\n";
-    }
+    // if (compressionMethods.useStraights && compressionMethods.useHuffman) {
+    //     bool match1 = (edgeBits01 == reconstructed_edgeBits_straights);
+    //     bool match2 = (edgeBits01 == reconstructed_edgeBits_straights_no_huff);
+    //     success = success && match1 && match2;
+    //     if (!match1)
+    //         std::cout << "Reconstructed edge bits from straights do not match!\n";
+    //     if (!match2)
+    //         std::cout << "Reconstructed edge bits from straights no huff do not match!\n";
+    // }
 
-    if (compressionMethods.useEdgebits) {
-        bool match = (edgeBits01 == edgeBitsFromBitString);
-        success = success && match;
-        if (!match)
-            std::cout << "Reconstructed edge bits from bitstring do not match!\n";
-    }
+    // if (compressionMethods.useEdgebits) {
+    //     bool match = (edgeBits01 == edgeBitsFromBitString);
+    //     success = success && match;
+    //     if (!match)
+    //         std::cout << "Reconstructed edge bits from bitstring do not match!\n";
+    // }
 
 
     cv::Mat reconstructedBGR;
@@ -1045,7 +1044,7 @@ decompInfo reconstructImage(CompressedImage compImg, bool showImg){
 
 
 
-    std::cout << (success ? "✅" : "❌") << std::endl;
+    // std::cout << (success ? "✅" : "❌") << std::endl;
     
     if(showImg){
         cv::imwrite("/Users/jalell/Library/CloudStorage/OneDrive-Persönlich/SURFACE/TuDD/MASTER/MLCV-Project/mlcv-multicut/code/output_files/reconstructed.png", image);
@@ -1301,7 +1300,7 @@ bool ZlibInflate(const std::vector<uint8_t>& compressedData, std::vector<uint8_t
     strm.opaque = Z_NULL;
     int ret = inflateInit(&strm);
     if (ret != Z_OK) {
-        std::cout << "inflateInit failed: " << ret << std::endl;
+        // std::cout << "inflateInit failed: " << ret << std::endl;
         return false; // Initialization failed
     }
 
@@ -1318,7 +1317,7 @@ bool ZlibInflate(const std::vector<uint8_t>& compressedData, std::vector<uint8_t
 
         ret = inflate(&strm, Z_NO_FLUSH);
         if (ret == Z_STREAM_ERROR || ret == Z_DATA_ERROR || ret == Z_MEM_ERROR) {
-            std::cout << "inflate failed: " << ret << std::endl;
+            // std::cout << "inflate failed: " << ret << std::endl;
             inflateEnd(&strm);
             return false; // Decompression failed
         }

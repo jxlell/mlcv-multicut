@@ -23,11 +23,11 @@ using namespace std;
  * @brief main function loading image files and controlling compression and decompression procedure 
  * 
  */
-int main(/*int argc, char* argv[]*/) {
-    // if (argc < 2) {
-    //     std::cerr << "Usage: " << argv[0] << " <img_file>\n";
-    //     return 1;
-    // }
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <img_file>\n";
+        return 1;
+    }
 
       auto completeStart = std::chrono::high_resolution_clock::now();
 
@@ -185,76 +185,84 @@ int main(/*int argc, char* argv[]*/) {
         // "screenshot_game_reduced2"
     };
 
-    std::ifstream inputFile("/Users/jalell/Documents/GitHub/mlcv-multicut/code/singlefile.txt");
-    if (!inputFile.is_open()) {
-        std::cerr << "Error: Unable to open file for reading." << std::endl;
-        return -1;
-    }
+    // std::ifstream inputFile("/Users/jalell/Documents/GitHub/mlcv-multicut/code/singlefile.txt");
+    // if (!inputFile.is_open()) {
+    //     std::cerr << "Error: Unable to open file for reading." << std::endl;
+    //     return -1;
+    // }
 
-    std::string single_image_txt;
-    if (std::getline(inputFile, single_image_txt)) {
-        // Process the single line read from the file
-        std::cout << single_image_txt << std::endl;
-    }
+    // std::string single_image_txt;
+    // if (std::getline(inputFile, single_image_txt)) {
+    //     // Process the single line read from the file
+    //     std::cout << single_image_txt << std::endl;
+    // }
 
-    inputFile.close();
+    // inputFile.close();
 
     // control parameters 
     bool single_image = true;
-    string single_image_name = single_image_txt;
-    // string single_image_name = argv[1];
+    // string single_image_name = single_image_txt;
+    string single_image_name = argv[1];
     bool showImg = single_image;
     //showImg = false;
     bool writeToFile = true;
     writeToFile = !single_image;
-    writeToFile = true;
+    writeToFile = false;
     
-    bool test_mode = (category_set.count("screenshot_game_reduced") > 0) && 
-                     (category_set.size() == 1);
-    test_mode = true;
+    // bool test_mode = (category_set.count("screenshot_game_reduced") > 0) && 
+    //                  (category_set.size() == 1);
+    bool test_mode = true;
 
-    std::filesystem::path parentDir = "/Users/jalell/Documents/images";
-    int imgCount = countImgFiles(parentDir, category_set);
-    int progress = 0;
+    // std::filesystem::path parentDir = "/Users/jalell/Documents/images";
+    // int imgCount = countImgFiles(parentDir, category_set);
+    // int progress = 0;    
 
-    if(single_image){
-        parentDir = "/Users/jalell/Documents/GitHub/mlcv-multicut/code";
-        category_set = {"test_img"};
+    std::filesystem::path input_image = single_image_name;
+    if (!std::filesystem::exists(input_image)) {
+        std::cerr << "Error: Image file not found: " << input_image << std::endl;
+        return 1;
     }
 
+    // if(single_image){
+    //     parentDir = "/Users/jalell/Documents/GitHub/mlcv-multicut/code";
+    //     category_set = {"test_img"};
+    // }
 
-    for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
-        if (!entry.is_directory() 
-        || category_set.find(entry.path().filename().string()) == category_set.end()
-        ) {
-            continue; 
-        }
-        for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
-            if(dirEntry.path().extension().string() != ".png" //|| dirEntry.path().filename().string() != "blek_1.png"
-            ){
-                continue;
-            }
-            if(single_image && dirEntry.path().filename().string() != single_image_name){
-                continue;
-            }
+    // for (const auto& entry : std::filesystem::directory_iterator(parentDir)) {
+    //     if (!entry.is_directory() 
+    //     || category_set.find(entry.path().filename().string()) == category_set.end()
+    //     ) {
+    //         continue; 
+    //     }
+    //     for (const auto& dirEntry : std::filesystem::directory_iterator(entry)){
+            // if(dirEntry.path().extension().string() != ".png" //|| dirEntry.path().filename().string() != "blek_1.png"
+            // ){
+            //     continue;
+            // }
+            // if(single_image && dirEntry.path().filename().string() != single_image_name){
+            //     continue;
+            // }
 
-            std::cout << "\nCompressing: " << dirEntry.path().filename().string() << "\nCategory: " << entry.path().filename().string() << std::endl;
+            
+
+            // std::cout << "\nCompressing: " << dirEntry.path().filename().string() << "\nCategory: " << entry.path().filename().string() << std::endl;
             //returning color vector, path vector, original image
 
             //stateless approach
             auto start = std::chrono::high_resolution_clock::now();
-            auto compImg = compress(dirEntry.path().string());
+            auto compImg = compress(input_image.string());
             auto end = std::chrono::high_resolution_clock::now();
             auto compression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-            std::string filename = dirEntry.path().filename().string();
+            std::string filename = input_image.string();
             // Remove comma if it exists in the filename
             filename.erase(std::remove(filename.begin(), filename.end(), ','), filename.end());
             filenames.push_back(filename);
-            categories.push_back(entry.path().filename().string());
+            categories.push_back(input_image.string());
 
             start = std::chrono::high_resolution_clock::now();
-            std::ofstream outFile("tree_paths.bin", std::ios::binary);
+            std::string bin_output = "compressed_" + input_image.stem().string() + ".bin";
+            std::ofstream outFile(bin_output, std::ios::binary);
             if (outFile.is_open()) {
                 uint8_t byte = 0;
                 int count = 0;
@@ -273,11 +281,11 @@ int main(/*int argc, char* argv[]*/) {
                 }
                 outFile.close();
             }
-            std::cout << "pathsBitString size: " << compImg.pathsBitString.size() << std::endl;
+            // std::cout << "pathsBitString size: " << compImg.pathsBitString.size() << std::endl;
             end = std::chrono::high_resolution_clock::now();
-            std::cout << "Time to write pathsBitString to file: " 
-                      << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() 
-                      << " ms\n";
+            // std::cout << "Time to write pathsBitString to file: " 
+            //           << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() 
+            //           << " ms\n";
             double write_time = std::chrono::duration<double, std::milli>(end - start).count();
             write_times.push_back(write_time);
 
@@ -339,7 +347,6 @@ int main(/*int argc, char* argv[]*/) {
             paths_2bit_crossings.push_back(compImg.paths2bit_components - compImg.disconnectedComponents);
             read_img_time.push_back(compImg.read_img_time);
             setEdgeBitsTime.push_back(compImg.setEdgeBitsTime);
-            std::cout << "pushed setEdgeBitsTime: " << compImg.setEdgeBitsTime << std::endl;
             bitsfortransferingcodes.push_back(compImg.bitsfortransferingcodes);
             bitsfortransferingfrequencymap.push_back(compImg.bitsfortransferingfrequencymap);
             tree_bpp.push_back(compImg.tree_bpp);
@@ -359,7 +366,7 @@ int main(/*int argc, char* argv[]*/) {
             straights_MCBits.push_back(compImg.noHuffman_MCBits);
             //stateless approach
             start = std::chrono::high_resolution_clock::now();
-            decompInfo decomp_info = reconstructImage(compImg, showImg); 
+            decompInfo decomp_info = reconstructImage(compImg, showImg, bin_output); 
             bool success = decomp_info.success;
             end = std::chrono::high_resolution_clock::now();
             auto decompression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -386,19 +393,18 @@ int main(/*int argc, char* argv[]*/) {
             sls_cmv_reconstruction_time.push_back(decomp_info.sls_cmv_reconstruction_time);
             read_times.push_back(decomp_info.read_time);
             inflate_edgebits_times.push_back(decomp_info.inflate_edgebits_time);
-        std::cout << "pushed dfs_reconstruction_time: " << (decomp_info.dfs_reconstruction_time / 1000.0f) << std::endl;
 
-            progress++;
+            // progress++;
             //std::cout << progress << "/" << imgCount << std::endl;
-            if(!single_image){
-                printProgressBar(progress, imgCount);
-            }
+            // if(!single_image){
+            //     printProgressBar(progress, imgCount);
+            // }
 
             if (!success) {
                 compression_successful = false;
             }
 
-        }
+        
 
         std::cout << "\n\n------\n" << (compression_successful ? "✅✅✅" : "❌❌❌") << std::endl << "------\n";
 
@@ -497,7 +503,7 @@ int main(/*int argc, char* argv[]*/) {
         // multicut_percentages.clear();
         // disconnected_components.clear();
         // pixel_sizes.clear();
-    }
+    
 
 if(writeToFile){
       ofstream csvFile;
@@ -650,7 +656,7 @@ if(writeToFile){
         }
             csvFile.close();
       }else{
-            std::cout << "Writing test mode csv file..." << std::endl;
+            // std::cout << "Writing test mode csv file..." << std::endl;
             csvFile << "filename,category,pixels,mc_percentage,edgebits,rcmv_bits,total_tree_bits,treeMCBits,edgeBitsMCBits,dpcm_deflate_bits,dpcm_deflate_bits_no_inter,straights_mc_bits,sls_mc_bits,tree_rate,edgebits_deflate_rate,2bit_rate,red_edgebits_rate,3bit_paths_bits,tree_path_bits,tree_start_bits,disc_comp,crossings,regions,paths2bit_disc_comp,paths2bit_direction_bits,new2bitDirectionBits,paths2bit_start_bits,rle_direction_bits,region_color_bits,dpcm-huffman_bits,deflate_bits,deflate_unseparated,transfer_codes,transfer_map,tree_bpp,avg_straight_lenght,read_img_time,write_time,read_time,inflate_edgebits_time,deflate_edgebits_time,setEdgeBitsTime,region_color_UF_time,region_color_dfs_time,dpcm_huffman_time,dpcm_huffman_bitstring_time,tree_construction_time,tree_bitstring_time,rle_rate,straights_huffman_rate,2bit_construction_time,dec_construction_time,dec_bitstring_time,sls_construction_time,sls_bitstring_time,rcmv_construction_time,rcmv_bitstring_time,rebuild_dpcm_huffman_time,decode_colors_time,cmv_reconstruction_time,reconstruct_rcmv_time,reconstruct_rcmv_cmv_time,dec_reconstruction_time,dec_cmv_reconstruction_time,sls_reconstruction_time,sls_cmv_reconstruction_time,reconstruct_tree_edgebits_time,dfs_reconstruction_time,assemble_tree_paths_time\n";
         for (size_t i = 0; i < filenames.size(); ++i) {
             csvFile << filenames[i] << ","
@@ -725,13 +731,12 @@ if(writeToFile){
                     
       }
         csvFile.close();
-        std::cout << "CSV file written successfully." << std::endl;
+        // std::cout << "CSV file written successfully." << std::endl;
     }
 
     auto completeEnd = std::chrono::high_resolution_clock::now();
     auto completeTime = std::chrono::duration_cast<std::chrono::milliseconds>(completeEnd - completeStart).count();
-    std::cout << "Total time: " << completeTime << " ms" << std::endl;
-
+    // std::cout << "Total time: " << completeTime << " ms" << std::endl;
+    }
     return 0;
-}
 }
