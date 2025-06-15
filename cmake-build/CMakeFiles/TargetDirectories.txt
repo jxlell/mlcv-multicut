@@ -1,4 +1,4 @@
 /Users/jalell/Documents/GitHub/mlcv-multicut/cmake-build/CMakeFiles/zlib.dir
-/Users/jalell/Documents/GitHub/mlcv-multicut/cmake-build/CMakeFiles/multicut_new.dir
+/Users/jalell/Documents/GitHub/mlcv-multicut/cmake-build/CMakeFiles/multicut_compression.dir
 /Users/jalell/Documents/GitHub/mlcv-multicut/cmake-build/CMakeFiles/edit_cache.dir
 /Users/jalell/Documents/GitHub/mlcv-multicut/cmake-build/CMakeFiles/rebuild_cache.dir

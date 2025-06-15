@@ -63,5 +63,5 @@ set(CMAKE_MAKEFILE_PRODUCTS
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/zlib.dir/DependInfo.cmake"
-  "CMakeFiles/multicut_new.dir/DependInfo.cmake"
+  "CMakeFiles/multicut_compression.dir/DependInfo.cmake"
   )

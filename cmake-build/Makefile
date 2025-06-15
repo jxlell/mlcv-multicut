@@ -130,24 +130,24 @@ zlib/fast:
 .PHONY : zlib/fast
 
 #=============================================================================
-# Target rules for targets named multicut_new
+# Target rules for targets named multicut_compression
 
 # Build rule for target.
-multicut_new: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 multicut_new
-.PHONY : multicut_new
+multicut_compression: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 multicut_compression
+.PHONY : multicut_compression
 
 # fast build rule for target.
-multicut_new/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/build
-.PHONY : multicut_new/fast
+multicut_compression/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/build
+.PHONY : multicut_compression/fast
 
 code/Image.o: code/Image.cpp.o
 .PHONY : code/Image.o
 
 # target to build an object file
 code/Image.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/Image.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/Image.cpp.o
 .PHONY : code/Image.cpp.o
 
 code/Image.i: code/Image.cpp.i
@@ -155,7 +155,7 @@ code/Image.i: code/Image.cpp.i
 
 # target to preprocess a source file
 code/Image.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/Image.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/Image.cpp.i
 .PHONY : code/Image.cpp.i
 
 code/Image.s: code/Image.cpp.s
@@ -163,7 +163,7 @@ code/Image.s: code/Image.cpp.s
 
 # target to generate assembly for a file
 code/Image.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/Image.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/Image.cpp.s
 .PHONY : code/Image.cpp.s
 
 code/Util.o: code/Util.cpp.o
@@ -171,7 +171,7 @@ code/Util.o: code/Util.cpp.o
 
 # target to build an object file
 code/Util.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/Util.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/Util.cpp.o
 .PHONY : code/Util.cpp.o
 
 code/Util.i: code/Util.cpp.i
@@ -179,7 +179,7 @@ code/Util.i: code/Util.cpp.i
 
 # target to preprocess a source file
 code/Util.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/Util.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/Util.cpp.i
 .PHONY : code/Util.cpp.i
 
 code/Util.s: code/Util.cpp.s
@@ -187,7 +187,7 @@ code/Util.s: code/Util.cpp.s
 
 # target to generate assembly for a file
 code/Util.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/Util.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/Util.cpp.s
 .PHONY : code/Util.cpp.s
 
 code/compress.o: code/compress.cpp.o
@@ -195,7 +195,7 @@ code/compress.o: code/compress.cpp.o
 
 # target to build an object file
 code/compress.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/compress.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/compress.cpp.o
 .PHONY : code/compress.cpp.o
 
 code/compress.i: code/compress.cpp.i
@@ -203,7 +203,7 @@ code/compress.i: code/compress.cpp.i
 
 # target to preprocess a source file
 code/compress.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/compress.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/compress.cpp.i
 .PHONY : code/compress.cpp.i
 
 code/compress.s: code/compress.cpp.s
@@ -211,7 +211,7 @@ code/compress.s: code/compress.cpp.s
 
 # target to generate assembly for a file
 code/compress.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/compress.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/compress.cpp.s
 .PHONY : code/compress.cpp.s
 
 code/decompress.o: code/decompress.cpp.o
@@ -219,7 +219,7 @@ code/decompress.o: code/decompress.cpp.o
 
 # target to build an object file
 code/decompress.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/decompress.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/decompress.cpp.o
 .PHONY : code/decompress.cpp.o
 
 code/decompress.i: code/decompress.cpp.i
@@ -227,7 +227,7 @@ code/decompress.i: code/decompress.cpp.i
 
 # target to preprocess a source file
 code/decompress.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/decompress.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/decompress.cpp.i
 .PHONY : code/decompress.cpp.i
 
 code/decompress.s: code/decompress.cpp.s
@@ -235,7 +235,7 @@ code/decompress.s: code/decompress.cpp.s
 
 # target to generate assembly for a file
 code/decompress.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/decompress.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/decompress.cpp.s
 .PHONY : code/decompress.cpp.s
 
 code/huffman.o: code/huffman.cpp.o
@@ -243,7 +243,7 @@ code/huffman.o: code/huffman.cpp.o
 
 # target to build an object file
 code/huffman.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/huffman.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/huffman.cpp.o
 .PHONY : code/huffman.cpp.o
 
 code/huffman.i: code/huffman.cpp.i
@@ -251,7 +251,7 @@ code/huffman.i: code/huffman.cpp.i
 
 # target to preprocess a source file
 code/huffman.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/huffman.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/huffman.cpp.i
 .PHONY : code/huffman.cpp.i
 
 code/huffman.s: code/huffman.cpp.s
@@ -259,7 +259,7 @@ code/huffman.s: code/huffman.cpp.s
 
 # target to generate assembly for a file
 code/huffman.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/huffman.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/huffman.cpp.s
 .PHONY : code/huffman.cpp.s
 
 code/main.o: code/main.cpp.o
@@ -267,7 +267,7 @@ code/main.o: code/main.cpp.o
 
 # target to build an object file
 code/main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/main.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/main.cpp.o
 .PHONY : code/main.cpp.o
 
 code/main.i: code/main.cpp.i
@@ -275,7 +275,7 @@ code/main.i: code/main.cpp.i
 
 # target to preprocess a source file
 code/main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/main.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/main.cpp.i
 .PHONY : code/main.cpp.i
 
 code/main.s: code/main.cpp.s
@@ -283,7 +283,7 @@ code/main.s: code/main.cpp.s
 
 # target to generate assembly for a file
 code/main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/main.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/main.cpp.s
 .PHONY : code/main.cpp.s
 
 code/mc.o: code/mc.cpp.o
@@ -291,7 +291,7 @@ code/mc.o: code/mc.cpp.o
 
 # target to build an object file
 code/mc.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/mc.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/mc.cpp.o
 .PHONY : code/mc.cpp.o
 
 code/mc.i: code/mc.cpp.i
@@ -299,7 +299,7 @@ code/mc.i: code/mc.cpp.i
 
 # target to preprocess a source file
 code/mc.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/mc.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/mc.cpp.i
 .PHONY : code/mc.cpp.i
 
 code/mc.s: code/mc.cpp.s
@@ -307,7 +307,7 @@ code/mc.s: code/mc.cpp.s
 
 # target to generate assembly for a file
 code/mc.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_new.dir/build.make CMakeFiles/multicut_new.dir/code/mc.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/multicut_compression.dir/build.make CMakeFiles/multicut_compression.dir/code/mc.cpp.s
 .PHONY : code/mc.cpp.s
 
 zlib-1.3.1/adler32.o: zlib-1.3.1/adler32.c.o
@@ -582,7 +582,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... multicut_new"
+	@echo "... multicut_compression"
 	@echo "... zlib"
 	@echo "... code/Image.o"
 	@echo "... code/Image.i"

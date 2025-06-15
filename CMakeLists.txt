@@ -55,7 +55,7 @@ target_include_directories(zlib PUBLIC zlib-1.3.1)
 # -------------------------------
 # Final executable
 # -------------------------------
-add_executable(multicut_new ${PROJECT_SOURCES})
-target_include_directories(multicut_new PRIVATE code)
-target_link_libraries(multicut_new PRIVATE zlib ${OpenCV_LIBS})
-target_include_directories(multicut_new PRIVATE ${OpenCV_INCLUDE_DIRS})
+add_executable(multicut_compression ${PROJECT_SOURCES})
+target_include_directories(multicut_compression PRIVATE code)
+target_link_libraries(multicut_compression PRIVATE zlib ${OpenCV_LIBS})
+target_include_directories(multicut_compression PRIVATE ${OpenCV_INCLUDE_DIRS})
