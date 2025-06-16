@@ -17,9 +17,7 @@ This code was written in the course of the Master's thesis
 - [zlib 1.3.1](https://zlib.net/manual.html)
 
 ## 🔨 Build Instructions 
-
-- the application comes pre-built for macOS Sequoia 15.2
-
+- a fresh build is required before running for the first time
 ### CMake
 <pre><code>
 mkdir -p cmake-build
@@ -28,11 +26,11 @@ cmake ..
 cmake --build .
 </code></pre>
 
-### Run the Executable
+### Running the Executable
+- move an image file to <code>/cmake-build</code>
 <pre><code>
 ./multicut_compression [img].png
 </code></pre>
-- image file must be in the <code>cmake-build</code> folder
 - executable must be run from the <code>cmake-build</code> folder
 - a <code>[compressed_img].bin</code> is going to be created
 
@@ -43,7 +41,8 @@ cmake --build .
 - <code>mc.cpp</code>: handles edge traversal logic
 - <code>Util.cpp</code>: provides helper functionalities relating to image pixel operations, graph traversal
 color management and bitstring serialization/parsing.
+- <code>main_png_jxl.cpp</code>: evaluation logic for obtaining the PNG and JPEG XL results 
 
 ## ℹ️ Notice 
-Parts of the code were written with the help of Large Language Models such as ChatGPT and Github Copilot. 
+Parts of the code were written with the help of Large Language Models such as ChatGPT and Github Copilot. The Huffman functionality was adapted from [a Github repo](https://github.com/mr-ayush-agrawal/Hacktoberfest/blob/9e5d9c36121664d988d2072cd8eafc476c008c9e/Most_Useful_Algorithms/HuffmanCoding.cpp).
 

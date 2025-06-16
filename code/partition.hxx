@@ -6,7 +6,7 @@
 #include <vector>
 #include <map>
 
-// code by Björn Andres et al. (http://www.andres.sc/graph.html)
+// code by Björn Andres and contributors (http://www.andres.sc/graph.html)
 //FULL COPYRIGHT NOTICE FROM THE WEBSITE BELOW:
 
 // Copyright © by Bjoern Andres (bjoern@andres.sc).
